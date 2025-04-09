@@ -4,7 +4,7 @@ import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
 import { type VariantProps } from "class-variance-authority"
 
 import { cn } from "../../lib/utils"
-import { toggleVariants } from "../../components/ui/toggle"
+import { toggleVariants } from "./toggle"
 
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants>
@@ -13,22 +13,18 @@ const ToggleGroupContext = React.createContext<
   variant: "default",
 })
 
+type ToggleGroupContextProps = VariantProps<typeof toggleVariants>
+
 const ToggleGroup = React.forwardRef<
   React.ElementRef<typeof ToggleGroupPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> &
-    VariantProps<typeof toggleVariants>
+    ToggleGroupContextProps
 >(({ className, variant, size, children, ...props }, ref) => {
-  // Fix the type issues by adding required properties
-  const rootProps = {
-    ...props,
-    type: props.type || "single", // Default to 'single' if not provided
-  };
-  
   return (
     <ToggleGroupPrimitive.Root
       ref={ref}
       className={cn("flex items-center justify-center gap-1", className)}
-      {...rootProps}
+      {...props}
     >
       <ToggleGroupContext.Provider value={{ variant, size }}>
         {children}
@@ -46,12 +42,6 @@ const ToggleGroupItem = React.forwardRef<
 >(({ className, children, variant, size, ...props }, ref) => {
   const context = React.useContext(ToggleGroupContext)
   
-  // Fix the value issue by ensuring it's always provided
-  const itemProps = {
-    ...props,
-    value: props.value || "",  // Ensure value is set
-  };
-
   return (
     <ToggleGroupPrimitive.Item
       ref={ref}
@@ -62,7 +52,7 @@ const ToggleGroupItem = React.forwardRef<
         }),
         className
       )}
-      {...itemProps}
+      {...props}
     >
       {children}
     </ToggleGroupPrimitive.Item>
