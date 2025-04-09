@@ -1,3 +1,4 @@
+
 import { Printer, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Define and export the Comanda type
@@ -39,11 +40,11 @@ export default function ComandasAnteriores({
       ) : (
         <div className="space-y-4">
           {comandas.map((comanda) => (
-            <div key={comanda.id} className="border rounded p-3">
+            <div key={comanda.id || Math.random().toString()} className="border rounded p-3">
               <div className="flex justify-between items-center">
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-gray-900">
-                    Pedido #{comanda.id?.slice(-8)}
+                    Pedido #{comanda.id?.slice(-8) || 'New'}
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{comanda.endereco}</p>
                   <p className="text-sm text-gray-600 mt-1">Bairro: {comanda.bairro}</p>
@@ -68,14 +69,14 @@ export default function ComandasAnteriores({
                     <Trash2 size={16} />
                   </button>
                   <button
-                    onClick={() => onToggleExpand(comanda.id)}
+                    onClick={() => comanda.id && onToggleExpand(comanda.id)}
                     className="text-gray-500 hover:text-gray-700"
                   >
-                    {expandedComandas[comanda.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    {comanda.id && expandedComandas[comanda.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
                 </div>
               </div>
-              {expandedComandas[comanda.id] && (
+              {comanda.id && expandedComandas[comanda.id] && (
                 <div className="mt-2">
                   <h3 className="text-sm font-semibold text-gray-900">Detalhes</h3>
                   <ul className="list-disc list-inside text-sm text-gray-600">

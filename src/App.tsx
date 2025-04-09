@@ -1,12 +1,14 @@
+
 import { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
 import { supabase } from './lib/supabase';
 import DeliveryApp from './components/DeliveryApp';
 import type { Profile } from './types/database';
+import type { Session } from '@supabase/supabase-js';
 
 function App() {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 

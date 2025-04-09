@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 
 const HeroSection: React.FC = () => {
   return (
