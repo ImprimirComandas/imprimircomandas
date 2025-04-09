@@ -4,7 +4,8 @@ import * as React from "react"
 import type { ToastActionElement, ToastProps } from "../components/ui/toast"
 
 const TOAST_LIMIT = 20
-const TOAST_REMOVE_DELAY = 1000
+// Remove unused constant or use it
+// const TOAST_REMOVE_DELAY = 1000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -86,7 +87,7 @@ const toastStateReducer = (state: State, action: Action): State => {
   }
 }
 
-const listeners: Array<React.Dispatch<Action>> = []
+const listeners: Array<(action: Action) => void> = []
 let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
@@ -133,9 +134,10 @@ export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    listeners.push(setState)
+    // Fix the type issue by using a type assertion
+    listeners.push(setState as (action: Action) => void)
     return () => {
-      const index = listeners.indexOf(setState)
+      const index = listeners.indexOf(setState as (action: Action) => void)
       if (index > -1) {
         listeners.splice(index, 1)
       }

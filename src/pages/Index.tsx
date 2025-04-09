@@ -1,5 +1,4 @@
 
-import React from 'react';
 import HeroSection from '../components/HeroSection';
 import InteractiveGlobe from '../components/InteractiveGlobe';
 import FeaturesSection from '../components/FeaturesSection';
