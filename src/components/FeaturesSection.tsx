@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FeaturesSection: React.FC = () => {
   const features = [
@@ -9,7 +10,7 @@ const FeaturesSection: React.FC = () => {
       color: "from-brasil-green to-brasil-blue"
     },
     {
-      title: "Language Learning", 
+      title: "Language Learning",
       description: "Discover new ways to communicate across different cultures.",
       color: "from-brasil-yellow to-portugal-red"
     },
