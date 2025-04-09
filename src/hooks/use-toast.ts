@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type { ToastActionElement, ToastProps } from "../components/ui/toast"
@@ -85,32 +86,29 @@ const toastStateReducer = (state: State, action: Action): State => {
   }
 }
 
-const update = (toast: Partial<ToasterToast>) => {
-  dispatch({ type: actionTypes.UPDATE_TOAST, toast })
-}
+const listeners: Array<React.Dispatch<Action>> = []
+let memoryState: State = { toasts: [] }
 
-const dismiss = (toastId?: string) => {
-  dispatch({ type: actionTypes.DISMISS_TOAST, toastId })
-}
-
-const remove = (toastId?: string) => {
-  dispatch({ type: actionTypes.REMOVE_TOAST, toastId })
+function dispatch(action: Action) {
+  memoryState = toastStateReducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(action)
+  })
 }
 
 type Toast = Omit<ToasterToast, "id">
 
-const createToast = ({ ...props }: Toast): ToasterToast => {
+function toast(props: Toast) {
   const id = crypto.randomUUID()
-  toast({ id, ...props })
-  return { id, ...props }
-}
 
-const toast = (props: ToastProps) => {
-  const id = props.id || crypto.randomUUID()
+  const update = (props: Toast) =>
+    dispatch({
+      type: actionTypes.UPDATE_TOAST,
+      toast: { ...props, id },
+    })
 
-  const update = (props: Partial<ToastProps>) =>
-    dispatch({ type: actionTypes.UPDATE_TOAST, toast: { ...props, id } })
-  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
+  const dismiss = () =>
+    dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
 
   dispatch({
     type: actionTypes.ADD_TOAST,
@@ -125,40 +123,24 @@ const toast = (props: ToastProps) => {
   })
 
   return {
-    id: id,
+    id,
     update,
     dismiss,
   }
 }
 
-let count = 0
-
-const listeners: Array<React.Dispatch<Action>> = []
-
-let memoryState: State = { toasts: [] }
-
-function reducer(state: State, action: Action): State {
-  memoryState = toastStateReducer(state, action)
-  listeners.forEach((listener) => {
-    listener(action)
-  })
-  return memoryState
-}
-
 export function useToast() {
-  const [state, dispatch] = React.useReducer(reducer, {
-    toasts: [],
-  })
+  const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    listeners.push(dispatch)
+    listeners.push(setState)
     return () => {
-      const index = listeners.indexOf(dispatch)
+      const index = listeners.indexOf(setState)
       if (index > -1) {
         listeners.splice(index, 1)
       }
     }
-  }, [dispatch])
+  }, [state])
 
   return {
     ...state,
