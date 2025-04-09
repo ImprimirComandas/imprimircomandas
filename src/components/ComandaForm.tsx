@@ -1,22 +1,9 @@
+
 import { PlusCircle, Save, Trash2 } from 'lucide-react';
-import type { Comanda, Produto } from '../types/database';
-
-// Ensure this file exports the 'Comanda' type
-export interface Comanda {
-  endereco: string;
-  total: number;
-  taxaentrega: number;
-  produtos: Produto[];
-}
-
-export interface Produto {
-  nome: string;
-  valor: number;
-  quantidade: number;
-}
+import type { Comanda as ComandaType, Produto as ProdutoType } from '../types/database';
 
 interface ComandaFormProps {
-  comanda: Comanda;
+  comanda: ComandaType;
   nomeProduto: string;
   valorProduto: string;
   quantidadeProduto: string;
@@ -119,7 +106,7 @@ export default function ComandaForm({
       <div className="mb-6">
         <h2 className="text-base md:text-lg font-semibold mb-3">Produtos</h2>
         <div className="space-y-2">
-          {comanda.produtos.map((produto: Produto, index: number) => (
+          {comanda.produtos.map((produto: ProdutoType, index: number) => (
             <div key={index} className="flex justify-between items-center bg-gray-50 p-2 md:p-3 rounded text-sm md:text-base">
               <span className="flex-1">{produto.nome}</span>
               <div className="flex items-center gap-2 md:gap-4">
