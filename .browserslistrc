@@ -1,5 +1,4 @@
 
-# Browsers that we support
-> 0.5%
-last 2 versions
-not dead
+defaults
+not IE 11
+maintained node versions

@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type { ToastActionElement, ToastProps } from "../components/ui/toast"
@@ -142,7 +143,8 @@ function useToast() {
   return context
 }
 
-const dispatch = (action: Action) => {}
+// Using a variable for dispatch to avoid initialization issues
+let dispatch = (action: Action) => {}
 
 function ToastProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatchAction] = React.useReducer(reducer, {
