@@ -1,25 +1,19 @@
 
 import React from 'react';
-import HeroSection from '@/components/HeroSection';
-import InteractiveGlobe from '@/components/InteractiveGlobe';
-import FeaturesSection from '@/components/FeaturesSection';
-import Footer from '@/components/Footer';
+import HeroSection from '../components/HeroSection';
+import InteractiveGlobe from '../components/InteractiveGlobe';
+import FeaturesSection from '../components/FeaturesSection';
+import Footer from '../components/Footer';
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <main>
-        <section className="relative">
-          <HeroSection />
-          <InteractiveGlobe />
-        </section>
-        
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-grow">
+        <HeroSection />
+        <InteractiveGlobe />
         <FeaturesSection />
       </main>
-      
       <Footer />
     </div>
   );
-};
-
-export default Index;
+}
