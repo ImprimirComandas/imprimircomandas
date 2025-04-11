@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export const useAuth = () => {
+export const useProfileMenu = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleSignOut = async () => {

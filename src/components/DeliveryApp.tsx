@@ -2,6 +2,7 @@
 import { useComandas } from '../hooks/useComandas';
 import { useComandaForm } from '../hooks/useComandaForm';
 import { useAuth } from '../hooks/useAuth';
+import { useProfileMenu } from '../hooks/useProfileMenu';
 import type { Profile } from '../types/database';
 import Header from './Header';
 import ComandaForm from './ComandaForm';
@@ -15,7 +16,7 @@ interface DeliveryAppProps {
 }
 
 export default function DeliveryApp({ profile }: DeliveryAppProps) {
-  const { showProfileMenu, setShowProfileMenu, handleSignOut } = useAuth();
+  const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
   const { 
     comandasAnteriores, 
     carregando, 
