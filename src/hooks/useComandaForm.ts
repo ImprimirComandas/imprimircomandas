@@ -24,11 +24,49 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   const [showTrocoModal, setShowTrocoModal] = useState(false);
   const [needsTroco, setNeedsTroco] = useState<boolean | null>(null);
   const [quantiapagaInput, setquantiapagaInput] = useState('');
+  const [produtosCadastrados, setProdutosCadastrados] = useState<{id: string, nome: string, valor: number}[]>([]);
+  const [produtosFiltrados, setProdutosFiltrados] = useState<{id: string, nome: string, valor: number}[]>([]);
+  const [pesquisaProduto, setPesquisaProduto] = useState('');
+
+  useEffect(() => {
+    carregarProdutosCadastrados();
+  }, []);
 
   useEffect(() => {
     const subtotal = comanda.produtos.reduce((acc, produto) => acc + (produto.valor * produto.quantidade), 0);
     setComanda(prev => ({ ...prev, total: subtotal }));
   }, [comanda.produtos]);
+
+  useEffect(() => {
+    if (pesquisaProduto.trim() === '') {
+      setProdutosFiltrados([]);
+    } else {
+      const filtrados = produtosCadastrados.filter(produto => 
+        produto.nome.toLowerCase().includes(pesquisaProduto.toLowerCase())
+      );
+      setProdutosFiltrados(filtrados);
+    }
+  }, [pesquisaProduto, produtosCadastrados]);
+
+  const carregarProdutosCadastrados = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('id, nome, valor')
+        .eq('user_id', session.user.id)
+        .order('nome');
+
+      if (error) throw error;
+      setProdutosCadastrados(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar produtos cadastrados:', error);
+    }
+  };
 
   const totalComTaxa = comanda.total + comanda.taxaentrega;
 
@@ -39,6 +77,13 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       bairro,
       taxaentrega,
     }));
+  };
+
+  const selecionarProdutoCadastrado = (produto: {id: string, nome: string, valor: number}) => {
+    setNomeProduto(produto.nome);
+    setValorProduto(produto.valor.toString());
+    setPesquisaProduto('');
+    setProdutosFiltrados([]);
   };
 
   const adicionarProduto = () => {
@@ -61,6 +106,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setNomeProduto('');
     setValorProduto('');
     setQuantidadeProduto('1');
+    setPesquisaProduto('');
   };
 
   const removerProduto = (index: number) => {
@@ -127,6 +173,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       setNeedsTroco(value);
     } else if (field === 'quantiapagaInput') {
       setquantiapagaInput(value);
+    } else if (field === 'pesquisaProduto') {
+      setPesquisaProduto(value);
     } else if (field === 'endereco' || field === 'pago') {
       setComanda(prev => ({ ...prev, [field]: value }));
     }
@@ -253,6 +301,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     nomeProduto,
     valorProduto,
     quantidadeProduto,
+    pesquisaProduto,
+    produtosFiltrados,
     showTrocoModal,
     needsTroco,
     quantiapagaInput,
@@ -264,6 +314,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     handleChange,
     handleTrocoConfirm,
     closeTrocoModal,
-    salvarComanda
+    salvarComanda,
+    selecionarProdutoCadastrado
   };
 };

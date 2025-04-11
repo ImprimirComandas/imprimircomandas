@@ -35,6 +35,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     nomeProduto, 
     valorProduto, 
     quantidadeProduto, 
+    pesquisaProduto,
+    produtosFiltrados,
     showTrocoModal, 
     needsTroco, 
     quantiapagaInput, 
@@ -46,7 +48,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     handleChange, 
     handleTrocoConfirm, 
     closeTrocoModal, 
-    salvarComanda 
+    salvarComanda,
+    selecionarProdutoCadastrado
   } = useComandaForm(carregarComandas, setSalvando);
 
   return (
@@ -66,6 +69,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             nomeProduto={nomeProduto}
             valorProduto={valorProduto}
             quantidadeProduto={quantidadeProduto}
+            pesquisaProduto={pesquisaProduto}
+            produtosFiltrados={produtosFiltrados}
             salvando={salvando}
             totalComTaxa={totalComTaxa}
             onAddProduto={adicionarProduto}
@@ -74,6 +79,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onChange={handleChange}
             onBairroChange={handleBairroChange}
             onFormaPagamentoChange={handleFormaPagamentoChange}
+            selecionarProdutoCadastrado={selecionarProdutoCadastrado}
           />
 
           {/* Modal de Troco */}

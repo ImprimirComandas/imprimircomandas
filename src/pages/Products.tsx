@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 
 interface Product {
   id: string;
-  name: string;
-  price: number;
+  nome: string;
+  valor: number;
   created_at: string;
 }
 
@@ -17,7 +17,7 @@ export function Products() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', price: '' });
+  const [newProduct, setNewProduct] = useState({ nome: '', valor: '' });
 
   useEffect(() => {
     loadProducts();
@@ -25,7 +25,7 @@ export function Products() {
 
   useEffect(() => {
     const filtered = products.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      product.nome.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredProducts(filtered);
   }, [searchTerm, products]);
@@ -43,9 +43,10 @@ export function Products() {
       }
       
       const { data, error } = await supabase
-        .from('products')
+        .from('produtos')
         .select('*')
-        .order('name');
+        .eq('user_id', session.user.id)
+        .order('nome');
 
       if (error) throw error;
       setProducts(data || []);
@@ -58,7 +59,7 @@ export function Products() {
   };
 
   const handleSave = async () => {
-    if (!newProduct.name || !newProduct.price) {
+    if (!newProduct.nome || !newProduct.valor) {
       toast.error('Por favor, preencha todos os campos');
       return;
     }
@@ -74,17 +75,18 @@ export function Products() {
       }
       
       const { data, error } = await supabase
-        .from('products')
+        .from('produtos')
         .insert([{
-          name: newProduct.name,
-          price: parseFloat(newProduct.price)
+          user_id: session.user.id,
+          nome: newProduct.nome,
+          valor: parseFloat(newProduct.valor)
         }])
         .select();
 
       if (error) throw error;
 
       setProducts(prev => [...prev, data[0]]);
-      setNewProduct({ name: '', price: '' });
+      setNewProduct({ nome: '', valor: '' });
       toast.success('Produto salvo com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
@@ -99,7 +101,7 @@ export function Products() {
 
     try {
       const { error } = await supabase
-        .from('products')
+        .from('produtos')
         .delete()
         .eq('id', id);
 
@@ -114,7 +116,7 @@ export function Products() {
   };
 
   const handleAddFromSearch = (product: Product) => {
-    setNewProduct({ name: product.name, price: product.price.toString() });
+    setNewProduct({ nome: product.nome, valor: product.valor.toString() });
     setSearchTerm('');
   };
 
@@ -143,7 +145,7 @@ export function Products() {
                       className="p-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => handleAddFromSearch(product)}
                     >
-                      {product.name}
+                      {product.nome}
                     </div>
                   ))}
                   {filteredProducts.length === 0 && (
@@ -161,15 +163,15 @@ export function Products() {
               <input
                 type="text"
                 placeholder="Nome do produto"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                value={newProduct.nome}
+                onChange={(e) => setNewProduct(prev => ({ ...prev, nome: e.target.value }))}
                 className="flex-1 p-2 border rounded"
               />
               <input
                 type="number"
                 placeholder="Preço"
-                value={newProduct.price}
-                onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
+                value={newProduct.valor}
+                onChange={(e) => setNewProduct(prev => ({ ...prev, valor: e.target.value }))}
                 className="w-full sm:w-32 p-2 border rounded"
                 step="0.01"
                 min="0"
@@ -196,8 +198,8 @@ export function Products() {
                   className="flex items-center justify-between p-4 bg-white border rounded-lg hover:bg-gray-50"
                 >
                   <div className="flex-1">
-                    <h3 className="font-medium">{product.name}</h3>
-                    <p className="text-gray-600">R$ {product.price.toFixed(2)}</p>
+                    <h3 className="font-medium">{product.nome}</h3>
+                    <p className="text-gray-600">R$ {product.valor.toFixed(2)}</p>
                   </div>
                   <button
                     onClick={() => handleDelete(product.id)}

@@ -40,7 +40,14 @@ export const useComandas = () => {
       }
 
       console.log('Comandas carregadas:', data);
-      setComandasAnteriores(data || []);
+      
+      // Converter o campo produtos de JSONB para objeto JavaScript
+      const comandasFormatadas = data?.map(comanda => ({
+        ...comanda,
+        produtos: Array.isArray(comanda.produtos) ? comanda.produtos : JSON.parse(comanda.produtos as any)
+      })) || [];
+      
+      setComandasAnteriores(comandasFormatadas);
     } catch (error) {
       console.error('Erro ao carregar comandas:', error);
       toast.error('Erro ao carregar comandas anteriores. Tente novamente.');

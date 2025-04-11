@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { PlusCircle, Save, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Search } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
 
 interface ComandaFormProps {
@@ -8,6 +8,8 @@ interface ComandaFormProps {
   nomeProduto: string;
   valorProduto: string;
   quantidadeProduto: string;
+  pesquisaProduto: string;
+  produtosFiltrados: {id: string, nome: string, valor: number}[];
   salvando: boolean;
   totalComTaxa: number;
   onAddProduto: () => void;
@@ -16,6 +18,7 @@ interface ComandaFormProps {
   onChange: (field: string, value: any) => void;
   onBairroChange: (bairro: string) => void;
   onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | '') => void;
+  selecionarProdutoCadastrado: (produto: {id: string, nome: string, valor: number}) => void;
 }
 
 export default function ComandaForm({
@@ -23,6 +26,8 @@ export default function ComandaForm({
   nomeProduto,
   valorProduto,
   quantidadeProduto,
+  pesquisaProduto,
+  produtosFiltrados,
   salvando,
   totalComTaxa,
   onAddProduto,
@@ -31,6 +36,7 @@ export default function ComandaForm({
   onChange,
   onBairroChange,
   onFormaPagamentoChange,
+  selecionarProdutoCadastrado,
 }: ComandaFormProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
@@ -50,6 +56,44 @@ export default function ComandaForm({
           className="w-full p-2 border rounded text-sm md:text-base"
           required
         />
+      </div>
+
+      {/* Busca de Produtos */}
+      <div className="mb-4">
+        <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
+          Buscar Produto
+        </label>
+        <div className="relative">
+          <input
+            id="pesquisaProduto"
+            type="text"
+            value={pesquisaProduto}
+            onChange={(e) => onChange('pesquisaProduto', e.target.value)}
+            placeholder="Digite para buscar produtos cadastrados"
+            className="w-full p-2 pl-8 border rounded text-sm md:text-base"
+          />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          
+          {pesquisaProduto && produtosFiltrados.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+              {produtosFiltrados.map(produto => (
+                <div 
+                  key={produto.id}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => selecionarProdutoCadastrado(produto)}
+                >
+                  <div className="font-medium">{produto.nome}</div>
+                  <div className="text-sm text-gray-600">R$ {produto.valor.toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {pesquisaProduto && produtosFiltrados.length === 0 && (
+            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
+              Nenhum produto encontrado
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Formulário de Adição de Produtos */}
@@ -121,6 +165,7 @@ export default function ComandaForm({
                 <span className="text-gray-600">Qtd: {produto.quantidade}</span>
                 <span>R$ {(produto.valor * produto.quantidade).toFixed(2)}</span>
                 <button
+                  type="button"
                   onClick={() => onRemoveProduto(index)}
                   className="text-red-500 hover:text-red-700"
                 >
