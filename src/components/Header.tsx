@@ -1,16 +1,15 @@
 
-import { useState } from 'react';
-import { LogOut, Settings, User } from 'lucide-react';
+import { User, Settings, LogOut } from 'lucide-react';
 import type { Profile } from '../types/database';
 
 interface HeaderProps {
   profile: Profile | null;
   onSignOut: () => void;
+  showProfileMenu: boolean;
+  setShowProfileMenu: (value: boolean) => void;
 }
 
-export default function Header({ profile, onSignOut }: HeaderProps) {
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-
+export default function Header({ profile, onSignOut, showProfileMenu, setShowProfileMenu }: HeaderProps) {
   return (
     <header className="bg-white shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
