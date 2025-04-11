@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { PlusCircle, Save, Trash2, Search } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
@@ -41,6 +40,25 @@ export default function ComandaForm({
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
       <h1 className="text-xl md:text-2xl font-bold mb-6 text-center">Comanda de Delivery</h1>
+
+      {/* Bairro */}
+      <div className="mb-6">
+        <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
+          Bairro
+        </label>
+        <select
+          id="bairro"
+          value={comanda.bairro}
+          onChange={(e) => onBairroChange(e.target.value)}
+          className="w-full p-2 border rounded text-sm md:text-base"
+          required
+        >
+          <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
+          <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
+          <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
+          <option value="Cubatão">Cubatão (R$ 9,00)</option>
+        </select>
+      </div>
 
       {/* Endereço */}
       <div className="mb-6">
@@ -177,7 +195,7 @@ export default function ComandaForm({
         </div>
       </div>
 
-      {/* Total, Forma de Pagamento, Status de Pagamento e Bairro */}
+      {/* Total, Forma de Pagamento e Status de Pagamento */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-base md:text-lg font-semibold">Subtotal:</h2>
@@ -222,25 +240,6 @@ export default function ComandaForm({
             <label htmlFor="pago" className="text-sm font-medium text-gray-700">
               Pedido Pago
             </label>
-          </div>
-
-          {/* Bairro */}
-          <div>
-            <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
-              Bairro
-            </label>
-            <select
-              id="bairro"
-              value={comanda.bairro}
-              onChange={(e) => onBairroChange(e.target.value)}
-              className="w-full p-2 border rounded text-sm md:text-base"
-              required
-            >
-              <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
-              <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
-              <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
-              <option value="Cubatão">Cubatão (R$ 9,00)</option>
-            </select>
           </div>
         </div>
       </div>

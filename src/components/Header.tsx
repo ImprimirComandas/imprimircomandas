@@ -1,5 +1,5 @@
-
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, Package, Home } from 'lucide-react'; // Adicionei o ícone Home
+import { Link } from 'react-router-dom';
 import type { Profile } from '../types/database';
 
 interface HeaderProps {
@@ -15,7 +15,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {profile?.store_name || 'Delivery System'}
+            {profile?.store_name || 'Bem vindo'}
           </h1>
           <div className="relative">
             <button
@@ -38,11 +38,25 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                 <div className="py-1">
+                  <Link
+                    to="/"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+                  >
+                    <Home size={16} className="mr-2" />
+                    Menu Principal
+                  </Link>
+                  <Link
+                    to="/products"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+                  >
+                    <Package size={16} className="mr-2" />
+                    Produtos
+                  </Link>
                   <button
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
                   >
                     <Settings size={16} className="mr-2" />
-                    Configurações de Perfil
+                    Perfil
                   </button>
                   <button
                     onClick={onSignOut}

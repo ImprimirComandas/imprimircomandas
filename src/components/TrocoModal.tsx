@@ -1,4 +1,3 @@
-
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
@@ -21,15 +20,30 @@ export default function TrocoModal({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-lg font-bold mb-4">Precisa de Troco?</h2>
-        <div className="flex gap-4 mb-4">
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 ${
+        show ? 'opacity-100' : 'opacity-0'
+      }`}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div
+        className={`bg-white rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg transform transition-all duration-300 ${
+          show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+      >
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-5">
+          Precisa de Troco?
+        </h2>
+        <div className="flex gap-3 mb-5">
           <button
             onClick={() => onChange('needsTroco', true)}
-            className={`px-4 py-2 rounded ${
-              needsTroco === true ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+            className={`flex-1 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+              needsTroco === true
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
+            aria-pressed={needsTroco === true}
           >
             Sim
           </button>
@@ -38,16 +52,22 @@ export default function TrocoModal({
               onChange('needsTroco', false);
               onChange('quantiapagaInput', '');
             }}
-            className={`px-4 py-2 rounded ${
-              needsTroco === false ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+            className={`flex-1 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+              needsTroco === false
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
+            aria-pressed={needsTroco === false}
           >
             Não
           </button>
         </div>
         {needsTroco && (
-          <div className="mb-4">
-            <label htmlFor="quantiapaga" className="block text-sm font-medium text-gray-700">
+          <div className="mb-5">
+            <label
+              htmlFor="quantiapaga"
+              className="block text-sm font-medium text-gray-700 mb-1.5"
+            >
               Quantia Paga (R$)
             </label>
             <input
@@ -56,28 +76,35 @@ export default function TrocoModal({
               value={quantiapagaInput}
               onChange={(e) => onChange('quantiapagaInput', e.target.value)}
               placeholder="Digite a quantia paga"
-              className="w-full p-2 border rounded text-sm md:text-base"
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
               step="0.01"
               min={totalComTaxa}
+              aria-describedby="troco-info"
             />
             {quantiapagaInput && parseFloat(quantiapagaInput) > totalComTaxa && (
-              <p className="mt-2 text-sm text-gray-600">
+              <p id="troco-info" className="mt-2 text-sm text-gray-500">
                 Troco: R$ {(parseFloat(quantiapagaInput) - totalComTaxa).toFixed(2)}
               </p>
             )}
           </div>
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200"
+            aria-label="Cancelar"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              needsTroco === null
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+            }`}
             disabled={needsTroco === null}
+            aria-label="Confirmar"
           >
             Confirmar
           </button>
