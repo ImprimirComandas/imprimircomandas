@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { LogOut, Settings, User } from 'lucide-react';
 import type { Profile } from '../types/database';
@@ -36,7 +37,7 @@ export default function Header({ profile, onSignOut }: HeaderProps) {
               <span>{profile?.full_name}</span>
             </button>
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                 <div className="py-1">
                   <button
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"

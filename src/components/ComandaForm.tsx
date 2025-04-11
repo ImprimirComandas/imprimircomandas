@@ -1,19 +1,7 @@
+
+import { useState } from 'react';
 import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
-
-// Ensure this file exports the 'Comanda' type
-export interface Comanda {
-  endereco: string;
-  total: number;
-  taxaentrega: number;
-  produtos: Produto[];
-}
-
-export interface Produto {
-  nome: string;
-  valor: number;
-  quantidade: number;
-}
 
 interface ComandaFormProps {
   comanda: Comanda;
@@ -21,10 +9,13 @@ interface ComandaFormProps {
   valorProduto: string;
   quantidadeProduto: string;
   salvando: boolean;
+  totalComTaxa: number;
   onAddProduto: () => void;
   onRemoveProduto: (index: number) => void;
   onSaveComanda: () => void;
-  onChange: (field: string, value: string | number) => void;
+  onChange: (field: string, value: any) => void;
+  onBairroChange: (bairro: string) => void;
+  onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | '') => void;
 }
 
 export default function ComandaForm({
@@ -33,16 +24,18 @@ export default function ComandaForm({
   valorProduto,
   quantidadeProduto,
   salvando,
+  totalComTaxa,
   onAddProduto,
   onRemoveProduto,
   onSaveComanda,
   onChange,
+  onBairroChange,
+  onFormaPagamentoChange,
 }: ComandaFormProps) {
-  const totalComTaxa = comanda.total + comanda.taxaentrega;
-
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
       <h1 className="text-xl md:text-2xl font-bold mb-6 text-center">Comanda de Delivery</h1>
+
       {/* Endereço */}
       <div className="mb-6">
         <label htmlFor="endereco" className="block text-sm font-medium text-gray-700">
@@ -58,7 +51,8 @@ export default function ComandaForm({
           required
         />
       </div>
-      {/* Produtos */}
+
+      {/* Formulário de Adição de Produtos */}
       <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-6">
         <div className="flex-1">
           <label htmlFor="nomeProduto" className="block text-sm font-medium text-gray-700">
@@ -115,11 +109,12 @@ export default function ComandaForm({
           </div>
         </div>
       </div>
+
       {/* Lista de Produtos */}
       <div className="mb-6">
         <h2 className="text-base md:text-lg font-semibold mb-3">Produtos</h2>
         <div className="space-y-2">
-          {comanda.produtos.map((produto: Produto, index: number) => (
+          {comanda.produtos.map((produto, index) => (
             <div key={index} className="flex justify-between items-center bg-gray-50 p-2 md:p-3 rounded text-sm md:text-base">
               <span className="flex-1">{produto.nome}</span>
               <div className="flex items-center gap-2 md:gap-4">
@@ -136,22 +131,76 @@ export default function ComandaForm({
           ))}
         </div>
       </div>
-      {/* Total */}
+
+      {/* Total, Forma de Pagamento, Status de Pagamento e Bairro */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-base">Subtotal:</h2>
-          <span className="font-bold">R$ {comanda.total.toFixed(2)}</span>
+          <h2 className="text-base md:text-lg font-semibold">Subtotal:</h2>
+          <span className="text-lg md:text-xl font-bold">R$ {comanda.total.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-base">Taxa de Entrega:</h2>
-          <span className="font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
+          <h2 className="text-base md:text-lg font-semibold">Taxa de Entrega:</h2>
+          <span className="text-lg md:text-xl font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-base">Total com Taxa:</h2>
-          <span className="font-bold">R$ {totalComTaxa.toFixed(2)}</span>
+          <h2 className="text-base md:text-lg font-semibold">Total com Taxa:</h2>
+          <span className="text-lg md:text-xl font-bold">R$ {totalComTaxa.toFixed(2)}</span>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="formaPagamento" className="block text-sm font-medium text-gray-700">
+              Forma de Pagamento
+            </label>
+            <select
+              id="formaPagamento"
+              value={comanda.forma_pagamento}
+              onChange={(e) => onFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | '')}
+              className="w-full p-2 border rounded text-sm md:text-base"
+              required
+            >
+              <option value="">Selecione a forma de pagamento</option>
+              <option value="pix">PIX</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="cartao">Cartão</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="pago"
+              checked={comanda.pago}
+              onChange={(e) => onChange('pago', e.target.checked)}
+              className="h-4 w-4 text-green-600 border-gray-300 rounded"
+            />
+            <label htmlFor="pago" className="text-sm font-medium text-gray-700">
+              Pedido Pago
+            </label>
+          </div>
+
+          {/* Bairro */}
+          <div>
+            <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
+              Bairro
+            </label>
+            <select
+              id="bairro"
+              value={comanda.bairro}
+              onChange={(e) => onBairroChange(e.target.value)}
+              className="w-full p-2 border rounded text-sm md:text-base"
+              required
+            >
+              <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
+              <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
+              <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
+              <option value="Cubatão">Cubatão (R$ 9,00)</option>
+            </select>
+          </div>
         </div>
       </div>
-      {/* Botão de Salvar */}
+
+      {/* Botão de Ação */}
       <div className="flex justify-end">
         <button
           onClick={onSaveComanda}

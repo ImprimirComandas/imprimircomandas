@@ -1,3 +1,4 @@
+
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;

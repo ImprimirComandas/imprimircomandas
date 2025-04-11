@@ -1,3 +1,4 @@
+
 interface TotaisPorFormaPagamentoProps {
   totais: {
     pix: number;
