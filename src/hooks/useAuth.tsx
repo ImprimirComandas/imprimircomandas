@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
+import { toast } from 'sonner';
 
 export const useAuth = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -10,23 +11,24 @@ export const useAuth = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    // Get initial session
+    // Set up auth listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        // Use setTimeout to avoid potential deadlocks with Supabase client
+        setTimeout(() => {
+          getProfile(session.user.id);
+        }, 0);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
       if (session?.user) {
         getProfile(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        getProfile(session.user.id);
-      } else {
-        setProfile(null);
       }
     });
 
@@ -40,12 +42,13 @@ export const useAuth = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Erro ao carregar perfil:', error);
+      toast.error('Erro ao carregar perfil do usuário');
     } finally {
       setLoading(false);
     }
@@ -57,12 +60,13 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Erro ao fazer logout:', error);
+        toast.error('Erro ao fazer logout. Tente novamente.');
         throw error;
       }
-      console.log('Usuário deslogado com sucesso');
+      toast.success('Logout realizado com sucesso');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-      alert('Erro ao fazer logout. Tente novamente.');
+      toast.error('Erro ao fazer logout. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -77,9 +81,11 @@ export const useAuth = () => {
       });
       
       if (error) throw error;
+      toast.success('Login realizado com sucesso!');
       return { success: true };
     } catch (error) {
       console.error('Erro ao fazer login:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao fazer login');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Erro ao fazer login' 
@@ -104,9 +110,14 @@ export const useAuth = () => {
       
       if (error) throw error;
       
+      toast.success('Verifique seu email para confirmar sua conta!', {
+        duration: 5000
+      });
+      
       return { success: true, data };
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao cadastrar');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Erro ao cadastrar' 
@@ -124,9 +135,11 @@ export const useAuth = () => {
       });
       
       if (error) throw error;
+      toast.success('Instruções para redefinir a senha foram enviadas para o seu e-mail');
       return { success: true };
     } catch (error) {
       console.error('Erro ao solicitar redefinição de senha:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao solicitar redefinição de senha');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Erro ao solicitar redefinição de senha' 
@@ -144,9 +157,11 @@ export const useAuth = () => {
       });
       
       if (error) throw error;
+      toast.success('Senha atualizada com sucesso!');
       return { success: true };
     } catch (error) {
       console.error('Erro ao atualizar senha:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar senha');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Erro ao atualizar senha' 

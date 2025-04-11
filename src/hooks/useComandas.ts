@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda } from '../types/database';
 import { imprimirComanda } from '../utils/printService';
+import { toast } from 'sonner';
 
 export const useComandas = () => {
   const [comandasAnteriores, setComandasAnteriores] = useState<Comanda[]>([]);
@@ -16,15 +17,20 @@ export const useComandas = () => {
 
   const carregarComandas = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuário não está autenticado. Faça login para carregar comandas.');
+      setCarregando(true);
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('Usuário não está autenticado');
+        setCarregando(false);
+        setComandasAnteriores([]);
+        return;
       }
 
       const { data, error } = await supabase
         .from('comandas')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -37,7 +43,7 @@ export const useComandas = () => {
       setComandasAnteriores(data || []);
     } catch (error) {
       console.error('Erro ao carregar comandas:', error);
-      alert('Erro ao carregar comandas anteriores. Tente novamente.');
+      toast.error('Erro ao carregar comandas anteriores. Tente novamente.');
     } finally {
       setCarregando(false);
     }
@@ -45,6 +51,7 @@ export const useComandas = () => {
 
   const reimprimirComanda = (comandaAntiga: Comanda) => {
     imprimirComanda(comandaAntiga);
+    toast.success('Comanda enviada para impressão');
   };
 
   const excluirComanda = async (id: string | undefined) => {
@@ -68,9 +75,10 @@ export const useComandas = () => {
         delete newExpanded[id];
         return newExpanded;
       });
+      toast.success('Pedido excluído com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir comanda:', error);
-      alert('Erro ao excluir o pedido. Tente novamente.');
+      toast.error('Erro ao excluir o pedido. Tente novamente.');
     }
   };
 

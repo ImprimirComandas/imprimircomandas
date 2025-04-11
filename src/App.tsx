@@ -1,9 +1,13 @@
+
 import { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
 import { supabase } from './lib/supabase';
 import DeliveryApp from './components/DeliveryApp';
 import type { Profile } from './types/database';
+import { Products } from './pages/Products';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -11,23 +15,25 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      // Use setTimeout to avoid potential deadlocks with Supabase client
+      if (session?.user) {
+        setTimeout(() => {
+          getProfile(session.user.id);
+        }, 0);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
         getProfile(session.user.id);
       } else {
-        setLoading(false);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        getProfile(session.user.id);
-      } else {
-        setProfile(null);
         setLoading(false);
       }
     });
@@ -41,7 +47,7 @@ function App() {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setProfile(data);
@@ -62,11 +68,20 @@ function App() {
 
   const isResetPassword = window.location.hash === '#reset-password';
 
-  if (!session) {
-    return isResetPassword ? <ResetPassword /> : <Auth />;
-  }
-
-  return <DeliveryApp profile={profile} />;
+  return (
+    <>
+      <Toaster position="top-right" richColors />
+      {!session ? (
+        isResetPassword ? <ResetPassword /> : <Auth />
+      ) : (
+        <Routes>
+          <Route path="/" element={<DeliveryApp profile={profile} />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      )}
+    </>
+  );
 }
 
 export default App;

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda, Produto } from '../types/database';
 import { imprimirComanda } from '../utils/printService';
+import { toast } from 'sonner';
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
   const [comanda, setComanda] = useState<Comanda>({
@@ -42,7 +43,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
 
   const adicionarProduto = () => {
     if (!nomeProduto || !valorProduto || !quantidadeProduto) {
-      alert('Preencha todos os campos do produto.');
+      toast.error('Preencha todos os campos do produto.');
       return;
     }
 
@@ -71,28 +72,28 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
 
   const validarComanda = () => {
     if (!comanda.endereco) {
-      alert('Por favor, preencha o endereço de entrega');
+      toast.error('Por favor, preencha o endereço de entrega');
       return false;
     }
     if (!comanda.bairro) {
-      alert('Por favor, selecione o bairro');
+      toast.error('Por favor, selecione o bairro');
       return false;
     }
     if (comanda.produtos.length === 0) {
-      alert('Por favor, adicione pelo menos um produto');
+      toast.error('Por favor, adicione pelo menos um produto');
       return false;
     }
     if (!comanda.forma_pagamento) {
-      alert('Por favor, selecione a forma de pagamento');
+      toast.error('Por favor, selecione a forma de pagamento');
       return false;
     }
     if (comanda.forma_pagamento === 'dinheiro') {
       if (needsTroco === null) {
-        alert('Por favor, confirme se precisa de troco.');
+        toast.error('Por favor, confirme se precisa de troco.');
         return false;
       }
       if (needsTroco && (!comanda.quantiapaga || comanda.quantiapaga <= totalComTaxa)) {
-        alert('Por favor, informe uma quantia válida para calcular o troco (deve ser maior que o total com a taxa).');
+        toast.error('Por favor, informe uma quantia válida para calcular o troco (deve ser maior que o total com a taxa).');
         return false;
       }
     }
@@ -133,13 +134,13 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
 
   const handleTrocoConfirm = () => {
     if (needsTroco === null) {
-      alert('Por favor, selecione se precisa de troco.');
+      toast.error('Por favor, selecione se precisa de troco.');
       return;
     }
     if (needsTroco) {
       const quantia = parseFloat(quantiapagaInput);
       if (isNaN(quantia) || quantia <= totalComTaxa) {
-        alert('Por favor, informe uma quantia válida maior que o total da comanda (incluindo a taxa de entrega).');
+        toast.error('Por favor, informe uma quantia válida maior que o total da comanda (incluindo a taxa de entrega).');
         return;
       }
       const trocoCalculado = quantia - totalComTaxa;
@@ -171,13 +172,16 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setSalvando(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuário não está autenticado. Faça login para salvar comandas.');
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar logado para salvar comandas.');
+        setSalvando(false);
+        return;
       }
 
       const comandaData: Omit<Comanda, 'id' | 'created_at'> = {
-        user_id: user.id,
+        user_id: session.user.id,
         produtos: comanda.produtos,
         total: totalComTaxa,
         forma_pagamento: comanda.forma_pagamento,
@@ -209,6 +213,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       }
 
       console.log('Comanda salva com sucesso:', data);
+      toast.success('Comanda salva com sucesso!');
       await carregarComandas();
 
       const comandaParaImprimir = { ...comandaData, id: data[0].id };
@@ -234,9 +239,9 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     } catch (error: unknown) {
       console.error('Erro ao salvar comanda:', error);
       if (error instanceof Error) {
-        alert(`Erro ao salvar comanda: ${error.message || 'Tente novamente.'}`);
+        toast.error(`Erro ao salvar comanda: ${error.message || 'Tente novamente.'}`);
       } else {
-        alert('Erro ao salvar comanda: Tente novamente.');
+        toast.error('Erro ao salvar comanda: Tente novamente.');
       }
     } finally {
       setSalvando(false);
