@@ -1,32 +1,41 @@
+
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'sonner';
 
 export function ResetPassword() {
+  const { updatePassword, loading } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-
+    setError(null);
+    
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.updateUser({ password });
+      if (password.length <= 8) {
+        throw new Error('A senha deve ter mais de 8 caracteres');
+      }
       
-      if (error) throw error;
+      if (password !== confirmPassword) {
+        setError('As senhas não coincidem');
+        return;
+      }
+
+      const { success, error } = await updatePassword(password);
+      
+      if (!success && error) {
+        throw new Error(error);
+      }
+      
       setSuccess(true);
+      toast.success('Senha atualizada com sucesso!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro');
-    } finally {
-      setLoading(false);
     }
   };
 

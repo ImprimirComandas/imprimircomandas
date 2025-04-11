@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
 import { Eye, EyeOff, Store } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'sonner';
 
 export function Auth() {
+  const { signIn, signUp, resetPassword, loading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -33,11 +36,10 @@ export function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     try {
       // Validação de senha: deve ter mais de 8 caracteres
-      if (formData.password.length <= 8) {
+      if (formData.password.length <= 8 && !isLogin) {
         throw new Error('A senha deve ter mais de 8 caracteres');
       }
 
@@ -46,11 +48,11 @@ export function Auth() {
       }
 
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-        if (error) throw error;
+        const { success, error } = await signIn(formData.email, formData.password);
+        if (!success && error) {
+          throw new Error(error);
+        }
+        toast.success('Login realizado com sucesso!');
       } else {
         // Validação adicional para o telefone no formato correto
         const cleanedPhone = formData.phone.replace(/\D/g, '');
@@ -58,23 +60,24 @@ export function Auth() {
           throw new Error('O telefone deve estar no formato (XX) XXXXX-XXXX');
         }
 
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-              phone: formData.phone,
-              store_name: formData.storeName,
-            },
-          },
-        });
-        if (error) throw error;
+        const { success, error } = await signUp(
+          formData.email, 
+          formData.password, 
+          {
+            full_name: formData.fullName,
+            phone: formData.phone,
+            store_name: formData.storeName,
+          }
+        );
+        
+        if (!success && error) {
+          throw new Error(error);
+        }
+        
+        toast.success('Cadastro realizado com sucesso! Verifique seu email para confirmar sua conta.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -85,16 +88,38 @@ export function Auth() {
     }
 
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
-      if (error) throw error;
-      alert('Instruções para redefinir a senha foram enviadas para o seu e-mail');
+      const { success, error } = await resetPassword(formData.email);
+      if (!success && error) {
+        throw new Error(error);
+      }
+      
+      setPasswordResetSent(true);
+      toast.success('Instruções para redefinir a senha foram enviadas para o seu e-mail');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro');
-    } finally {
-      setLoading(false);
     }
   };
+
+  if (passwordResetSent) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
+          <Store className="mx-auto h-12 w-12 text-indigo-600" />
+          <h2 className="mt-6 text-2xl font-bold text-gray-900">Verifique seu e-mail</h2>
+          <p className="mt-2 text-gray-600">
+            Enviamos instruções para redefinir sua senha para {formData.email}. 
+            Por favor, verifique sua caixa de entrada.
+          </p>
+          <button
+            onClick={() => setPasswordResetSent(false)}
+            className="mt-6 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            Voltar para o login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
