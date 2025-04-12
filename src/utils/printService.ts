@@ -106,7 +106,7 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
   `;
 
   const headerSection = `
-    <div class="header">Delivery</div>
+    <div class="header">Dom Luiz Bebidas</div>
     <div class="order-id">Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
   `;
 
