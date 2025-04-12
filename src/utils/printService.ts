@@ -1,32 +1,12 @@
 
 import type { Comanda } from '../types/database';
-import { supabase } from '../lib/supabase';
 
 export const getUltimos8Digitos = (id: string | undefined): string => {
   if (!id) return 'N/A';
   return id.slice(-8);
 };
 
-export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<void> => {
-  // Buscar o nome da loja do usuário atual
-  let storeName = "Delivery";
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('store_name')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (profileData?.store_name) {
-        storeName = profileData.store_name;
-      }
-    }
-  } catch (error) {
-    console.error('Erro ao buscar perfil:', error);
-  }
-
+export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
   const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
   if (!printWindow) {
     alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
@@ -117,32 +97,10 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
       margin-top: 10mm;
       font-size: 10px;
     }
-    .confirmacao-pagamento {
-      border: 2px solid #000;
-      padding: 2mm;
-      margin-top: 3mm;
-      text-align: center;
-    }
-    .confirmacao-titulo {
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 2mm;
-    }
-    .confirmacao-opcoes {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 2mm;
-    }
-    .opcao {
-      border: 1px solid #000;
-      padding: 2mm;
-      width: 45%;
-      text-align: center;
-    }
   `;
 
   const headerSection = `
-    <div class="header">${storeName}</div>
+    <div class="header">Delivery</div>
     <div class="order-id">Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
   `;
 
@@ -191,18 +149,6 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
     </div>
   `;
 
-  const confirmacaoPagamentoSection = `
-    <div class="confirmacao-pagamento">
-      <div class="confirmacao-titulo">CONFIRMAÇÃO DE PAGAMENTO</div>
-      <div>Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
-      <div>Total: R$ ${comandaParaImprimir.total.toFixed(2)}</div>
-      <div class="confirmacao-opcoes">
-        <div class="opcao">[ ] Pago</div>
-        <div class="opcao">[ ] Não Pago</div>
-      </div>
-    </div>
-  `;
-
   const footerSection = `
     <div class="footer">
       <div class="status-pago">${comandaParaImprimir.pago ? 'PAGO' : 'NÃO PAGO'}</div>
@@ -213,7 +159,7 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${storeName}</title>
+        <title>Delivery</title>
         <style>${styles}</style>
       </head>
       <body>
@@ -243,9 +189,6 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
 
         <!-- Rodapé -->
         ${footerSection}
-
-        <!-- Confirmação de Pagamento -->
-        ${confirmacaoPagamentoSection}
 
         <!-- Linha de Corte -->
         <div class="cut-line"></div>
