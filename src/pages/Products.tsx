@@ -1,16 +1,21 @@
-
 import { useState, useEffect } from 'react';
 import { PlusCircle, Save, Trash2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import Header from '../components/Header';
-import { Profile } from '../types/database';
+import Header from '../components/Header'; // Import correto para src/components/Header
 
 interface Product {
   id: string;
   nome: string;
   valor: number;
   created_at: string;
+}
+
+interface Profile {
+  id: string;
+  full_name: string;
+  store_name: string;
+  avatar_url?: string;
 }
 
 export function Products() {
@@ -41,7 +46,7 @@ export function Products() {
       if (session) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, email, phone, store_name, avatar_url, updated_at')
+          .select('id, full_name, store_name, avatar_url')
           .eq('id', session.user.id)
           .single();
 
@@ -72,7 +77,7 @@ export function Products() {
 
       if (error) throw error;
       setProducts(data || []);
-      setFilteredProducts(data || []);
+      setFilteredProducts(data || []); // Inicializa filteredProducts com os dados
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast.error('Erro ao carregar produtos. Tente novamente.');
@@ -166,6 +171,7 @@ export function Products() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Gerenciamento de Produtos</h1>
 
+            {/* Search Bar */}
             <div className="mb-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -195,6 +201,7 @@ export function Products() {
               </div>
             </div>
 
+            {/* Add New Product Form */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h2 className="text-lg font-semibold mb-4">Adicionar Novo Produto</h2>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -202,14 +209,14 @@ export function Products() {
                   type="text"
                   placeholder="Nome do produto"
                   value={newProduct.nome}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, nome: e.target.value }))} 
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, nome: e.target.value }))}
                   className="flex-1 p-2 border rounded"
                 />
                 <input
                   type="number"
                   placeholder="Preço"
                   value={newProduct.valor}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, valor: e.target.value }))} 
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, valor: e.target.value }))}
                   className="w-full sm:w-32 p-2 border rounded"
                   step="0.01"
                   min="0"
@@ -225,6 +232,7 @@ export function Products() {
               </div>
             </div>
 
+            {/* Products List */}
             {loading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : (

@@ -7,7 +7,6 @@ import type { Profile } from '../types/database';
 import Header from './Header';
 import ComandaForm from './ComandaForm';
 import TrocoModal from './TrocoModal';
-import PagamentoMistoModal from './PagamentoMistoModal';
 import TotaisPorFormaPagamento from './TotaisPorFormaPagamento';
 import ComandasAnterioresModificado from './ComandasAnterioresModificado';
 import { getUltimos8Digitos } from '../utils/printService';
@@ -48,10 +47,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     needsTroco, 
     quantiapagaInput, 
     totalComTaxa,
-    showPagamentoMistoModal,
-    valorCartaoInput,
-    valorDinheiroInput,
-    valorPixInput,
     handleBairroChange, 
     adicionarProduto, 
     removerProduto, 
@@ -59,8 +54,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     handleChange, 
     handleTrocoConfirm, 
     closeTrocoModal, 
-    handlePagamentoMistoConfirm,
-    closePagamentoMistoModal,
     salvarComanda,
     selecionarProdutoCadastrado
   } = useComandaForm(carregarComandas, setSalvando);
@@ -103,18 +96,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             totalComTaxa={totalComTaxa}
             onClose={closeTrocoModal}
             onConfirm={handleTrocoConfirm}
-            onChange={handleChange}
-          />
-
-          {/* Modal de Pagamento Misto */}
-          <PagamentoMistoModal
-            show={showPagamentoMistoModal}
-            totalComTaxa={totalComTaxa}
-            valorCartaoInput={valorCartaoInput}
-            valorDinheiroInput={valorDinheiroInput}
-            valorPixInput={valorPixInput}
-            onClose={closePagamentoMistoModal}
-            onConfirm={handlePagamentoMistoConfirm}
             onChange={handleChange}
           />
 

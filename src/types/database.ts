@@ -24,7 +24,7 @@ export interface Comanda {
   user_id?: string;
   produtos: Produto[];
   total: number;
-  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | '' | 'misto';
+  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | '';
   data: string;
   endereco: string;
   bairro: string;
@@ -33,7 +33,4 @@ export interface Comanda {
   created_at?: string;
   quantiapaga?: number;
   troco?: number;
-  valor_cartao?: number;
-  valor_dinheiro?: number;
-  valor_pix?: number;
 }
