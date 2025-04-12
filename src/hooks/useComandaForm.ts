@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda, Produto } from '../types/database';
@@ -17,6 +16,9 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     pago: false,
     quantiapaga: 0,
     troco: 0,
+    valor_cartao: 0,
+    valor_dinheiro: 0,
+    valor_pix: 0,
   });
   const [nomeProduto, setNomeProduto] = useState('');
   const [valorProduto, setValorProduto] = useState('');
@@ -27,6 +29,10 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   const [produtosCadastrados, setProdutosCadastrados] = useState<{id: string, nome: string, valor: number}[]>([]);
   const [produtosFiltrados, setProdutosFiltrados] = useState<{id: string, nome: string, valor: number}[]>([]);
   const [pesquisaProduto, setPesquisaProduto] = useState('');
+  const [showPagamentoMistoModal, setShowPagamentoMistoModal] = useState(false);
+  const [valorCartaoInput, setValorCartaoInput] = useState('');
+  const [valorDinheiroInput, setValorDinheiroInput] = useState('');
+  const [valorPixInput, setValorPixInput] = useState('');
 
   useEffect(() => {
     carregarProdutosCadastrados();
@@ -133,9 +139,30 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       toast.error('Por favor, selecione a forma de pagamento');
       return false;
     }
-    if (comanda.forma_pagamento === 'dinheiro') {
+    
+    if (comanda.forma_pagamento === 'misto') {
+      const valorCartao = parseFloat(valorCartaoInput) || 0;
+      const valorDinheiro = parseFloat(valorDinheiroInput) || 0;
+      const valorPix = parseFloat(valorPixInput) || 0;
+      const totalPagamento = valorCartao + valorDinheiro + valorPix;
+      
+      if (Math.abs(totalPagamento - totalComTaxa) > 0.01) {
+        toast.error(`O total dos pagamentos (${totalPagamento.toFixed(2)}) deve ser igual ao valor total (${totalComTaxa.toFixed(2)})`);
+        return false;
+      }
+      
+      if (valorDinheiro > 0 && needsTroco === null) {
+        setShowTrocoModal(true);
+        return false;
+      }
+      
+      if (needsTroco && (!comanda.quantiapaga || comanda.quantiapaga <= valorDinheiro)) {
+        toast.error('Por favor, informe uma quantia válida para calcular o troco (deve ser maior que o valor em dinheiro).');
+        return false;
+      }
+    } else if (comanda.forma_pagamento === 'dinheiro') {
       if (needsTroco === null) {
-        toast.error('Por favor, confirme se precisa de troco.');
+        setShowTrocoModal(true);
         return false;
       }
       if (needsTroco && (!comanda.quantiapaga || comanda.quantiapaga <= totalComTaxa)) {
@@ -143,22 +170,30 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         return false;
       }
     }
+    
     return true;
   };
 
-  const handleFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | '') => {
+  const handleFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
     setComanda(prev => ({
       ...prev,
       forma_pagamento: forma,
       quantiapaga: 0,
       troco: 0,
+      valor_cartao: 0,
+      valor_dinheiro: 0,
+      valor_pix: 0,
     }));
     setNeedsTroco(null);
     setquantiapagaInput('');
-    if (forma === 'dinheiro') {
-      setShowTrocoModal(true);
+    setValorCartaoInput('');
+    setValorDinheiroInput('');
+    setValorPixInput('');
+    
+    if (forma === 'misto') {
+      setShowPagamentoMistoModal(true);
     } else {
-      setShowTrocoModal(false);
+      setShowPagamentoMistoModal(false);
     }
   };
 
@@ -175,6 +210,12 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       setquantiapagaInput(value);
     } else if (field === 'pesquisaProduto') {
       setPesquisaProduto(value);
+    } else if (field === 'valorCartaoInput') {
+      setValorCartaoInput(value);
+    } else if (field === 'valorDinheiroInput') {
+      setValorDinheiroInput(value);
+    } else if (field === 'valorPixInput') {
+      setValorPixInput(value);
     } else if (field === 'endereco' || field === 'pago') {
       setComanda(prev => ({ ...prev, [field]: value }));
     }
@@ -185,13 +226,23 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       toast.error('Por favor, selecione se precisa de troco.');
       return;
     }
+    
     if (needsTroco) {
+      let valorDinheiro = 0;
+      
+      if (comanda.forma_pagamento === 'misto') {
+        valorDinheiro = parseFloat(valorDinheiroInput) || 0;
+      } else {
+        valorDinheiro = totalComTaxa;
+      }
+      
       const quantia = parseFloat(quantiapagaInput);
-      if (isNaN(quantia) || quantia <= totalComTaxa) {
-        toast.error('Por favor, informe uma quantia válida maior que o total da comanda (incluindo a taxa de entrega).');
+      if (isNaN(quantia) || quantia <= valorDinheiro) {
+        toast.error('Por favor, informe uma quantia válida maior que o valor em dinheiro.');
         return;
       }
-      const trocoCalculado = quantia - totalComTaxa;
+      
+      const trocoCalculado = quantia - valorDinheiro;
       setComanda(prev => ({
         ...prev,
         quantiapaga: quantia,
@@ -204,14 +255,61 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         troco: 0,
       }));
     }
+    
     setShowTrocoModal(false);
+    
+    if (comanda.forma_pagamento === 'misto' && showPagamentoMistoModal) {
+      handlePagamentoMistoConfirm();
+    }
   };
 
   const closeTrocoModal = () => {
     setShowTrocoModal(false);
     setNeedsTroco(null);
     setquantiapagaInput('');
-    setComanda(prev => ({ ...prev, forma_pagamento: '', quantiapaga: 0, troco: 0 }));
+    
+    if (comanda.forma_pagamento === 'dinheiro') {
+      setComanda(prev => ({ ...prev, forma_pagamento: '', quantiapaga: 0, troco: 0 }));
+    }
+  };
+
+  const handlePagamentoMistoConfirm = () => {
+    const valorCartao = parseFloat(valorCartaoInput) || 0;
+    const valorDinheiro = parseFloat(valorDinheiroInput) || 0;
+    const valorPix = parseFloat(valorPixInput) || 0;
+    const totalPagamento = valorCartao + valorDinheiro + valorPix;
+    
+    if (Math.abs(totalPagamento - totalComTaxa) > 0.01) {
+      toast.error(`O total dos pagamentos (${totalPagamento.toFixed(2)}) deve ser igual ao valor total (${totalComTaxa.toFixed(2)})`);
+      return;
+    }
+    
+    setComanda(prev => ({
+      ...prev,
+      valor_cartao: valorCartao,
+      valor_dinheiro: valorDinheiro,
+      valor_pix: valorPix,
+    }));
+    
+    setShowPagamentoMistoModal(false);
+    
+    if (valorDinheiro > 0 && needsTroco === null) {
+      setShowTrocoModal(true);
+    }
+  };
+
+  const closePagamentoMistoModal = () => {
+    setShowPagamentoMistoModal(false);
+    setValorCartaoInput('');
+    setValorDinheiroInput('');
+    setValorPixInput('');
+    setComanda(prev => ({ 
+      ...prev, 
+      forma_pagamento: '', 
+      valor_cartao: 0, 
+      valor_dinheiro: 0, 
+      valor_pix: 0 
+    }));
   };
 
   const salvarComanda = async () => {
@@ -240,7 +338,16 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         pago: comanda.pago,
       };
 
-      if (comanda.forma_pagamento === 'dinheiro' && needsTroco && comanda.quantiapaga && comanda.troco) {
+      if (comanda.forma_pagamento === 'misto') {
+        comandaData.valor_cartao = parseFloat(valorCartaoInput) || 0;
+        comandaData.valor_dinheiro = parseFloat(valorDinheiroInput) || 0;
+        comandaData.valor_pix = parseFloat(valorPixInput) || 0;
+        
+        if (needsTroco && comanda.quantiapaga && comanda.troco) {
+          comandaData.quantiapaga = comanda.quantiapaga;
+          comandaData.troco = comanda.troco;
+        }
+      } else if (comanda.forma_pagamento === 'dinheiro' && needsTroco && comanda.quantiapaga && comanda.troco) {
         comandaData.quantiapaga = comanda.quantiapaga;
         comandaData.troco = comanda.troco;
       } else {
@@ -278,12 +385,18 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         pago: false,
         quantiapaga: 0,
         troco: 0,
+        valor_cartao: 0,
+        valor_dinheiro: 0,
+        valor_pix: 0,
       });
       setNomeProduto('');
       setValorProduto('');
       setQuantidadeProduto('1');
       setNeedsTroco(null);
       setquantiapagaInput('');
+      setValorCartaoInput('');
+      setValorDinheiroInput('');
+      setValorPixInput('');
     } catch (error: unknown) {
       console.error('Erro ao salvar comanda:', error);
       if (error instanceof Error) {
@@ -307,6 +420,10 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     needsTroco,
     quantiapagaInput,
     totalComTaxa,
+    showPagamentoMistoModal,
+    valorCartaoInput,
+    valorDinheiroInput,
+    valorPixInput,
     handleBairroChange,
     adicionarProduto,
     removerProduto,
@@ -314,6 +431,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     handleChange,
     handleTrocoConfirm,
     closeTrocoModal,
+    handlePagamentoMistoConfirm,
+    closePagamentoMistoModal,
     salvarComanda,
     selecionarProdutoCadastrado
   };

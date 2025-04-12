@@ -16,7 +16,7 @@ interface ComandaFormProps {
   onSaveComanda: () => void;
   onChange: (field: string, value: any) => void;
   onBairroChange: (bairro: string) => void;
-  onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | '') => void;
+  onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void;
   selecionarProdutoCadastrado: (produto: {id: string, nome: string, valor: number}) => void;
 }
 
@@ -218,7 +218,7 @@ export default function ComandaForm({
             <select
               id="formaPagamento"
               value={comanda.forma_pagamento}
-              onChange={(e) => onFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | '')}
+              onChange={(e) => onFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
               className="w-full p-2 border rounded text-sm md:text-base"
               required
             >
@@ -226,6 +226,7 @@ export default function ComandaForm({
               <option value="pix">PIX</option>
               <option value="dinheiro">Dinheiro</option>
               <option value="cartao">Cartão</option>
+              <option value="misto">Pagamento Misto</option>
             </select>
           </div>
 
