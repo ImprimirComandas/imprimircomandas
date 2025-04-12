@@ -65,9 +65,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     selecionarProdutoCadastrado
   } = useComandaForm(carregarComandas, setSalvando);
 
-  // Calculate the dinheiro value for passing to TrocoModal
-  const valorDinheiro = parseFloat(valorDinheiroInput) || 0;
-
   return (
     <div className="min-h-screen bg-gray-100">
       <Header 
@@ -104,8 +101,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             needsTroco={needsTroco}
             quantiapagaInput={quantiapagaInput}
             totalComTaxa={totalComTaxa}
-            valorDinheiro={valorDinheiro}
-            isMisto={comanda.forma_pagamento === 'misto'}
             onClose={closeTrocoModal}
             onConfirm={handleTrocoConfirm}
             onChange={handleChange}

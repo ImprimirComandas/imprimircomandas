@@ -6,9 +6,14 @@ export const getUltimos8Digitos = (id: string | undefined): string => {
   return id.slice(-8);
 };
 
-// Helper functions for creating the print content
-const createStyles = (): string => {
-  return `
+export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
+  const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
+  if (!printWindow) {
+    alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
+    return;
+  }
+
+  const styles = `
     @page {
       size: 80mm auto;
       margin: 0;
@@ -62,7 +67,7 @@ const createStyles = (): string => {
       text-align: center;
     }
     .produto-valor {
-      font-weight: bold;
+    font-weight: bold;
       flex: 1;
       text-align: right;
     }
@@ -99,98 +104,73 @@ const createStyles = (): string => {
       margin-bottom: 1mm;
     }
   `;
-};
 
-const createHeaderSection = (comanda: Comanda): string => {
-  return `
+  const headerSection = `
     <div class="header">Delivery</div>
-    <div class="order-id">Pedido #${getUltimos8Digitos(comanda.id)}</div>
+    <div class="order-id">Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
   `;
-};
 
-const createInfoSection = (comanda: Comanda): string => {
-  return `
+  const infoSection = `
     <div class="info-section">
-      <div><strong>Forma de pagamento:</strong> ${comanda.forma_pagamento.toUpperCase()}</div>
-      <div><strong>Endereço:</strong> ${comanda.endereco}</div>
-      <div><strong>Bairro:</strong> ${comanda.bairro}</div>
-      <div><strong>Data:</strong> ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
+      <div><strong>Forma de pagamento:</strong> ${comandaParaImprimir.forma_pagamento.toUpperCase()}</div>
+      <div><strong>Endereço:</strong> ${comandaParaImprimir.endereco}</div>
+      <div><strong>Bairro:</strong> ${comandaParaImprimir.bairro}</div>
+      <div><strong>Data:</strong> ${new Date(comandaParaImprimir.data).toLocaleString('pt-BR')}</div>
     </div>
   `;
-};
-
-const createPagamentoMistoSection = (comanda: Comanda): string => {
-  if (comanda.forma_pagamento !== 'misto') return '';
-  
-  return `
+          
+  // Criar seção de pagamento misto se for o caso
+  const pagamentoMistoSection = comandaParaImprimir.forma_pagamento === 'misto' ? `
     <div class="pagamento-misto">
-      ${comanda.valor_cartao ? `<div>Valor no Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
-      ${comanda.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
-      ${comanda.valor_pix ? `<div>Valor no PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
+      ${comandaParaImprimir.valor_cartao ? `<div>Valor no Cartão: R$ ${comandaParaImprimir.valor_cartao.toFixed(2)}</div>` : ''}
+      ${comandaParaImprimir.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comandaParaImprimir.valor_dinheiro.toFixed(2)}</div>` : ''}
+      ${comandaParaImprimir.valor_pix ? `<div>Valor no PIX: R$ ${comandaParaImprimir.valor_pix.toFixed(2)}</div>` : ''}
     </div>
+  ` : '';
+
+  const trocoSection = `
+    ${
+      comandaParaImprimir.quantiapaga && comandaParaImprimir.troco && comandaParaImprimir.quantiapaga > 0
+        ? `
+         
+                     <div>Troco para: R$ ${comandaParaImprimir.quantiapaga.toFixed(2)}</div>
+            <div>Valor do troco: R$ ${comandaParaImprimir.troco.toFixed(2)}</div>
+          </div>
+        `
+        : ''
+    }
   `;
-};
 
-const createTrocoSection = (comanda: Comanda): string => {
-  if (!comanda.quantiapaga || !comanda.troco || comanda.quantiapaga <= 0) return '';
-  
-  return `
-    <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
-    <div>Valor do troco: R$ ${comanda.troco.toFixed(2)}</div>
-  </div>
-  `;
-};
-
-const createProdutosSection = (comanda: Comanda): string => {
-  const produtosHtml = comanda.produtos
-    .map(
-      (produto) => `
-        <div class="produto-row">
-          <div class="produto-nome">${produto.nome}</div>
-          <div class="produto-qtd">${produto.quantidade}x</div>
-          <div class="produto-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
-        </div>
-      `
-    )
-    .join('');
-
-  return `
+  const produtosSection = `
     <div style="margin-bottom: 3mm;">
-      ${produtosHtml}
-    </div>  
-    <div class="divider"></div>
-    <div class="troco-section">
-      <div class="taxa">Taxa de entrega: R$ ${comanda.taxaentrega.toFixed(2)}</div>
+      ${comandaParaImprimir.produtos
+        .map(
+          (produto) => `
+            <div class="produto-row">
+              <div class="produto-nome">${produto.nome}</div>
+              <div class="produto-qtd">${produto.quantidade}x</div>
+              <div class="produto-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
+            </div>
+          `
+        )
+        .join('')}
+    </div>  <div class="divider"></div><div class="troco-section"><div class="taxa">Taxa de entrega: R$ ${comandaParaImprimir.taxaentrega.toFixed(2)}</div>
+ 
   `;
-};
 
-const createTotalsSection = (comanda: Comanda): string => {
-  return `
+  const totalsSection = `
     <div class="totals-section">
-        <div class="total">Total: R$ ${comanda.total.toFixed(2)}</div>
+        <div class="total">Total: R$ ${comandaParaImprimir.total.toFixed(2)}</div>
     </div>
   `;
-};
 
-const createFooterSection = (comanda: Comanda): string => {
-  return `
+  const footerSection = `
     <div class="footer">
-      <div class="status-pago">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
+      <div class="status-pago">${comandaParaImprimir.pago ? 'PAGO' : 'NÃO PAGO'}</div>
     </div>
   `;
-};
 
-const createPrintContent = (comanda: Comanda): string => {
-  const styles = createStyles();
-  const headerSection = createHeaderSection(comanda);
-  const infoSection = createInfoSection(comanda);
-  const pagamentoMistoSection = createPagamentoMistoSection(comanda);
-  const produtosSection = createProdutosSection(comanda);
-  const totalsSection = createTotalsSection(comanda);
-  const trocoSection = createTrocoSection(comanda);
-  const footerSection = createFooterSection(comanda);
-
-  return `
+  const printContent = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -214,6 +194,8 @@ const createPrintContent = (comanda: Comanda): string => {
         <!-- Lista de Produtos -->
         ${produtosSection}
 
+        <!-- Divisor -->
+        
         <!-- Totais -->
         ${totalsSection}
 
@@ -244,24 +226,7 @@ const createPrintContent = (comanda: Comanda): string => {
       </body>
     </html>
   `;
-};
 
-// Opens the print window and handles printing
-const openPrintWindow = (content: string): void => {
-  const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
-  if (!printWindow) {
-    alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
-    return;
-  }
-
-  printWindow.document.write(content);
+  printWindow.document.write(printContent);
   printWindow.document.close();
-};
-
-export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
-  // Generate the print content
-  const printContent = createPrintContent(comandaParaImprimir);
-  
-  // Open the print window and handle printing
-  openPrintWindow(printContent);
 };
