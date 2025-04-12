@@ -1,8 +1,11 @@
+
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
   quantiapagaInput: string;
   totalComTaxa: number;
+  valorDinheiro?: number;
+  isMisto?: boolean;
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
@@ -13,11 +16,17 @@ export default function TrocoModal({
   needsTroco,
   quantiapagaInput,
   totalComTaxa,
+  valorDinheiro = 0,
+  isMisto = false,
   onClose,
   onConfirm,
   onChange,
 }: TrocoModalProps) {
   if (!show) return null;
+
+  // Determine the minimum value for change calculation
+  const minValue = isMisto ? valorDinheiro : totalComTaxa;
+  const valueToPay = isMisto ? valorDinheiro : totalComTaxa;
 
   return (
     <div
@@ -78,12 +87,12 @@ export default function TrocoModal({
               placeholder="Digite a quantia paga"
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
               step="0.01"
-              min={totalComTaxa}
+              min={minValue}
               aria-describedby="troco-info"
             />
-            {quantiapagaInput && parseFloat(quantiapagaInput) > totalComTaxa && (
+            {quantiapagaInput && parseFloat(quantiapagaInput) > valueToPay && (
               <p id="troco-info" className="mt-2 text-sm text-gray-500">
-                Troco: R$ {(parseFloat(quantiapagaInput) - totalComTaxa).toFixed(2)}
+                Troco: R$ {(parseFloat(quantiapagaInput) - valueToPay).toFixed(2)}
               </p>
             )}
           </div>
@@ -101,9 +110,11 @@ export default function TrocoModal({
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               needsTroco === null
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : needsTroco && (!quantiapagaInput || parseFloat(quantiapagaInput) <= valueToPay)
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
             }`}
-            disabled={needsTroco === null}
+            disabled={needsTroco === null || (needsTroco && (!quantiapagaInput || parseFloat(quantiapagaInput) <= valueToPay))}
             aria-label="Confirmar"
           >
             Confirmar
