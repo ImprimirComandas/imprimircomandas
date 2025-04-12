@@ -8,8 +8,9 @@ import Header from './Header';
 import ComandaForm from './ComandaForm';
 import TrocoModal from './TrocoModal';
 import TotaisPorFormaPagamento from './TotaisPorFormaPagamento';
-import ComandasAnteriores from './ComandasAnteriores';
+import ComandasAnterioresModificado from './ComandasAnterioresModificado';
 import { getUltimos8Digitos } from '../utils/printService';
+import PaymentConfirmationModal from './PaymentConfirmationModal';
 
 interface DeliveryAppProps {
   profile: Profile | null;
@@ -27,7 +28,12 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     excluirComanda, 
     toggleExpandComanda, 
     carregarComandas,
-    totais 
+    totais,
+    confirmarPagamento,
+    comandaSelecionada,
+    setComandaSelecionada,
+    showPaymentConfirmation,
+    setShowPaymentConfirmation
   } = useComandas();
   
   const { 
@@ -93,11 +99,19 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onChange={handleChange}
           />
 
+          {/* Modal de Confirmação de Pagamento */}
+          <PaymentConfirmationModal 
+            show={showPaymentConfirmation}
+            comanda={comandaSelecionada}
+            onClose={() => setShowPaymentConfirmation(false)}
+            onConfirm={confirmarPagamento}
+          />
+
           {/* Totais por Forma de Pagamento */}
           <TotaisPorFormaPagamento totais={totais} />
 
           {/* Comandas Anteriores */}
-          <ComandasAnteriores
+          <ComandasAnterioresModificado
             comandas={comandasAnteriores}
             expandedComandas={expandedComandas}
             carregando={carregando}
@@ -105,6 +119,10 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onExcluir={excluirComanda}
             onToggleExpand={toggleExpandComanda}
             getUltimos8Digitos={getUltimos8Digitos}
+            onConfirmPayment={(comanda) => {
+              setComandaSelecionada(comanda);
+              setShowPaymentConfirmation(true);
+            }}
           />
         </div>
       </main>

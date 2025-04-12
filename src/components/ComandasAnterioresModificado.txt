@@ -1,0 +1,42 @@
+
+Para implementar a confirmação de pagamento no componente ComandasAnteriores.tsx, você precisará fazer as seguintes alterações:
+
+1. Adicionar um novo prop à interface ComandasAnterioresProps:
+```typescript
+interface ComandasAnterioresProps {
+  // ... props existentes
+  onConfirmPayment: (comanda: Comanda) => void;
+}
+```
+
+2. Adicionar um botão de confirmação de pagamento na lista de ações para cada comanda:
+```typescript
+{/* Ações */}
+<div className="mt-2 flex gap-2">
+  <button
+    onClick={() => onReimprimir(comanda)}
+    className="bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
+  >
+    <Printer size={14} />
+    Imprimir
+  </button>
+  <button
+    onClick={() => onExcluir(comanda.id)}
+    className="bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
+  >
+    <Trash2 size={14} />
+    Excluir
+  </button>
+  <button
+    onClick={() => onConfirmPayment(comanda)}
+    className={`${
+      comanda.pago ? 'bg-orange-500' : 'bg-green-500'
+    } text-white px-2 py-1 rounded text-xs flex items-center gap-1`}
+  >
+    <Check size={14} />
+    {comanda.pago ? 'Cancelar Pgt' : 'Confirmar Pgt'}
+  </button>
+</div>
+```
+
+Como o componente ComandasAnteriores.tsx é somente leitura, você precisará sobrescrever o arquivo completamente com essas alterações.

@@ -10,6 +10,8 @@ export const useComandas = () => {
   const [carregando, setCarregando] = useState(true);
   const [expandedComandas, setExpandedComandas] = useState<{ [key: string]: boolean }>({});
   const [salvando, setSalvando] = useState(false);
+  const [comandaSelecionada, setComandaSelecionada] = useState<Comanda | null>(null);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
 
   useEffect(() => {
     carregarComandas();
@@ -89,6 +91,37 @@ export const useComandas = () => {
     }
   };
 
+  const confirmarPagamento = async () => {
+    if (!comandaSelecionada || !comandaSelecionada.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('comandas')
+        .update({ pago: !comandaSelecionada.pago })
+        .eq('id', comandaSelecionada.id);
+
+      if (error) {
+        console.error('Erro ao atualizar status de pagamento:', error);
+        throw error;
+      }
+
+      await carregarComandas();
+      setShowPaymentConfirmation(false);
+      
+      const novoStatus = !comandaSelecionada.pago ? 'PAGO' : 'NÃO PAGO';
+      toast.success(`Pedido marcado como ${novoStatus} com sucesso!`);
+      
+      // Se estamos marcando como pago, reimprimimos a comanda atualizada
+      if (!comandaSelecionada.pago) {
+        const comandaAtualizada = { ...comandaSelecionada, pago: true };
+        imprimirComanda(comandaAtualizada);
+      }
+    } catch (error) {
+      console.error('Erro ao confirmar pagamento:', error);
+      toast.error('Erro ao atualizar status de pagamento. Tente novamente.');
+    }
+  };
+
   const toggleExpandComanda = (id: string) => {
     setExpandedComandas(prev => ({
       ...prev,
@@ -130,6 +163,11 @@ export const useComandas = () => {
     excluirComanda,
     toggleExpandComanda,
     carregarComandas,
-    totais
+    totais,
+    confirmarPagamento,
+    comandaSelecionada,
+    setComandaSelecionada,
+    showPaymentConfirmation,
+    setShowPaymentConfirmation
   };
 };
