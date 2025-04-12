@@ -97,6 +97,12 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
       margin-top: 10mm;
       font-size: 10px;
     }
+    .pagamento-misto {
+      margin: 2mm 0;
+    }
+    .pagamento-misto div {
+      margin-bottom: 1mm;
+    }
   `;
 
   const headerSection = `
@@ -113,6 +119,15 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
     </div>
   `;
           
+  // Criar seção de pagamento misto se for o caso
+  const pagamentoMistoSection = comandaParaImprimir.forma_pagamento === 'misto' ? `
+    <div class="pagamento-misto">
+      ${comandaParaImprimir.valor_cartao ? `<div>Valor no Cartão: R$ ${comandaParaImprimir.valor_cartao.toFixed(2)}</div>` : ''}
+      ${comandaParaImprimir.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comandaParaImprimir.valor_dinheiro.toFixed(2)}</div>` : ''}
+      ${comandaParaImprimir.valor_pix ? `<div>Valor no PIX: R$ ${comandaParaImprimir.valor_pix.toFixed(2)}</div>` : ''}
+    </div>
+  ` : '';
+
   const trocoSection = `
     ${
       comandaParaImprimir.quantiapaga && comandaParaImprimir.troco && comandaParaImprimir.quantiapaga > 0
@@ -169,6 +184,9 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
 
         <!-- Informações do Pedido -->
         ${infoSection}
+
+        <!-- Informações de Pagamento Misto (se aplicável) -->
+        ${pagamentoMistoSection}
 
         <!-- Divisor -->
         <div class="divider"></div>
