@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda, Produto } from '../types/database';
@@ -220,7 +219,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setSalvando(true);
 
     try {
-      // Verificar se o usuário está autenticado
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar logado para salvar comandas.');
