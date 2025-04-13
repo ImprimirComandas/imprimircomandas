@@ -1,12 +1,38 @@
 
 import type { Comanda } from '../types/database';
+import { supabase } from '../lib/supabase';
 
 export const getUltimos8Digitos = (id: string | undefined): string => {
   if (!id) return 'N/A';
   return id.slice(-8);
 };
 
-export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
+export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<void> => {
+  // Fetch store information for the print
+  let storeName = 'Dom Luiz Bebidas';
+  let avatarUrl = null;
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('store_name, avatar_url')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (data?.store_name) {
+        storeName = data.store_name;
+      }
+      
+      if (data?.avatar_url) {
+        avatarUrl = data.avatar_url;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching store data for print:', error);
+  }
+  
   const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
   if (!printWindow) {
     alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
@@ -25,6 +51,12 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
       font-size: 16px;
       width: 75mm;
       color: #000;
+    }
+    .store-logo {
+      max-width: 60mm;
+      max-height: 20mm;
+      margin: 0 auto 2mm;
+      display: block;
     }
     .header {
       text-align: center;
@@ -105,8 +137,12 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
     }
   `;
 
+  const logoSection = avatarUrl ? `
+    <img src="${avatarUrl}" alt="${storeName}" class="store-logo" />
+  ` : '';
+
   const headerSection = `
-    <div class="header">Dom Luiz Bebidas</div>
+    <div class="header">${storeName}</div>
     <div class="order-id">Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
   `;
 
@@ -178,6 +214,9 @@ export const imprimirComanda = (comandaParaImprimir: Comanda): void => {
         <style>${styles}</style>
       </head>
       <body>
+        <!-- Logo (se disponível) -->
+        ${logoSection}
+        
         <!-- Cabeçalho -->
         ${headerSection}
         <div class="cut-line"></div>

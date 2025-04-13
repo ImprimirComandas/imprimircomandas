@@ -1,124 +1,113 @@
 
 import { useState, useEffect } from 'react';
-import { PlusCircle, Save, Trash2, Search } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Search, Edit, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import Header from '../components/Header';
-import { Profile } from '../types/database';
+import type { Profile } from '../types/database';
 
 interface Product {
   id: string;
   nome: string;
   valor: number;
-  created_at: string;
 }
 
 export function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [newProduct, setNewProduct] = useState({ nome: '', valor: '' });
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [productName, setProductName] = useState('');
+  const [productValue, setProductValue] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    loadProfile();
-    loadProducts();
+    getProfile();
+    fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const filtered = products.filter(product =>
-      product.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  }, [searchTerm, products]);
-
-  const loadProfile = async () => {
+  const getProfile = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
-
+        
         if (error) throw error;
         setProfile(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-      toast.error('Erro ao carregar perfil.');
+      console.error('Error loading profile:', error);
     }
   };
 
-  const loadProducts = async () => {
+  const fetchProducts = async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar logado para ver os produtos');
-        setLoading(false);
-        return;
-      }
       
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('nome');
-
-      if (error) throw error;
-      setProducts(data || []);
-      setFilteredProducts(data || []);
+      if (session) {
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('*')
+          .order('nome');
+        
+        if (error) throw error;
+        setProducts(data || []);
+      }
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      toast.error('Erro ao carregar produtos. Tente novamente.');
+      console.error('Error fetching products:', error);
+      toast.error('Erro ao carregar produtos');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    if (!newProduct.nome || !newProduct.valor) {
-      toast.error('Por favor, preencha todos os campos');
+  const addProduct = async () => {
+    if (!productName || !productValue) {
+      toast.error('Por favor, preencha o nome e o valor do produto');
       return;
     }
 
-    setSaving(true);
     try {
+      setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
-        toast.error('Você precisa estar logado para adicionar produtos');
-        setSaving(false);
+        toast.error('Usuário não autenticado');
         return;
       }
-      
+
+      const newProduct = {
+        nome: productName,
+        valor: parseFloat(productValue),
+        user_id: session.user.id
+      };
+
       const { data, error } = await supabase
         .from('produtos')
-        .insert([{
-          user_id: session.user.id,
-          nome: newProduct.nome,
-          valor: parseFloat(newProduct.valor)
-        }])
+        .insert([newProduct])
         .select();
 
       if (error) throw error;
-
-      setProducts(prev => [...prev, data[0]]);
-      setNewProduct({ nome: '', valor: '' });
-      toast.success('Produto salvo com sucesso!');
+      
+      toast.success('Produto adicionado com sucesso!');
+      await fetchProducts();
+      setProductName('');
+      setProductValue('');
     } catch (error) {
-      console.error('Erro ao salvar produto:', error);
-      toast.error('Erro ao salvar produto. Tente novamente.');
+      console.error('Error adding product:', error);
+      toast.error('Erro ao adicionar produto');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const deleteProduct = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
 
     try {
@@ -128,129 +117,214 @@ export function Products() {
         .eq('id', id);
 
       if (error) throw error;
-
-      setProducts(prev => prev.filter(product => product.id !== id));
+      
       toast.success('Produto excluído com sucesso!');
+      await fetchProducts();
     } catch (error) {
-      console.error('Erro ao excluir produto:', error);
-      toast.error('Erro ao excluir produto. Tente novamente.');
+      console.error('Error deleting product:', error);
+      toast.error('Erro ao excluir produto');
     }
   };
 
-  const handleAddFromSearch = (product: Product) => {
-    setNewProduct({ nome: product.nome, valor: product.valor.toString() });
-    setSearchTerm('');
+  const startEditing = (product: Product) => {
+    setEditingProduct(product);
+    setProductName(product.nome);
+    setProductValue(product.valor.toString());
   };
 
-  const handleSignOut = async () => {
+  const cancelEditing = () => {
+    setEditingProduct(null);
+    setProductName('');
+    setProductValue('');
+  };
+
+  const saveEdit = async () => {
+    if (!editingProduct || !productName || !productValue) {
+      toast.error('Por favor, preencha o nome e o valor do produto');
+      return;
+    }
+
     try {
-      await supabase.auth.signOut();
-      setProfile(null);
-      toast.success('Logout realizado com sucesso!');
+      setSaving(true);
+      
+      const updatedProduct = {
+        nome: productName,
+        valor: parseFloat(productValue),
+      };
+
+      const { error } = await supabase
+        .from('produtos')
+        .update(updatedProduct)
+        .eq('id', editingProduct.id);
+
+      if (error) throw error;
+      
+      toast.success('Produto atualizado com sucesso!');
+      await fetchProducts();
+      cancelEditing();
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      toast.error('Erro ao fazer logout. Tente novamente.');
+      console.error('Error updating product:', error);
+      toast.error('Erro ao atualizar produto');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const filteredProducts = products.filter(product => 
+    product.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div>
-      <Header
-        profile={profile}
-        onSignOut={handleSignOut}
-        showProfileMenu={showProfileMenu}
-        setShowProfileMenu={setShowProfileMenu}
-      />
-      <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Gerenciamento de Produtos</h1>
-
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+    <div className="min-h-screen bg-gray-100 py-6 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-medium mb-4">
+              {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
+            </h2>
+            
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome do Produto
+                </label>
                 <input
+                  id="product-name"
                   type="text"
-                  placeholder="Buscar produtos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  placeholder="Ex: Água Mineral 500ml"
                 />
-                {searchTerm && (
-                  <div className="absolute bg-white border rounded-lg mt-1 w-full z-10 shadow-lg max-h-60 overflow-y-auto">
-                    {filteredProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="p-2 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => handleAddFromSearch(product)}
-                      >
-                        {product.nome}
-                      </div>
-                    ))}
-                    {filteredProducts.length === 0 && (
-                      <div className="p-2 text-gray-500">Nenhum produto encontrado</div>
-                    )}
-                  </div>
-                )}
               </div>
-            </div>
-
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h2 className="text-lg font-semibold mb-4">Adicionar Novo Produto</h2>
-              <div className="flex flex-col sm:flex-row gap-4">
+              
+              <div>
+                <label htmlFor="product-value" className="block text-sm font-medium text-gray-700 mb-1">
+                  Valor (R$)
+                </label>
                 <input
-                  type="text"
-                  placeholder="Nome do produto"
-                  value={newProduct.nome}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, nome: e.target.value }))} 
-                  className="flex-1 p-2 border rounded"
-                />
-                <input
+                  id="product-value"
                   type="number"
-                  placeholder="Preço"
-                  value={newProduct.valor}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, valor: e.target.value }))} 
-                  className="w-full sm:w-32 p-2 border rounded"
+                  value={productValue}
+                  onChange={(e) => setProductValue(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  placeholder="0.00"
                   step="0.01"
                   min="0"
                 />
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Save size={20} />
-                  {saving ? 'Salvando...' : 'Salvar'}
-                </button>
               </div>
             </div>
-
-            {loading ? (
-              <div className="text-center py-4">Carregando...</div>
-            ) : (
-              <div className="space-y-2">
-                {filteredProducts.map(product => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-4 bg-white border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-medium">{product.nome}</h3>
-                      <p className="text-gray-600">R$ {product.valor.toFixed(2)}</p>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                ))}
-                {filteredProducts.length === 0 && !loading && (
-                  <p className="text-center text-gray-500 py-4">
-                    {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto adicionado ainda'}
-                  </p>
+            
+            <div className="mt-4 flex justify-end space-x-3">
+              {editingProduct && (
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  disabled={saving}
+                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </button>
+              )}
+              
+              <button
+                type="button"
+                onClick={editingProduct ? saveEdit : addProduct}
+                disabled={saving}
+                className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                {saving ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Salvando...
+                  </span>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingProduct ? 'Salvar Edição' : 'Adicionar Produto'}
+                  </>
                 )}
+              </button>
+            </div>
+          </div>
+          
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Produtos Cadastrados</h2>
+              
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2"
+                  placeholder="Buscar produtos..."
+                />
+              </div>
+            </div>
+            
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="bg-gray-50 p-4 rounded-md text-center">
+                <p className="text-gray-500">Nenhum produto encontrado.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nome
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Valor
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredProducts.map(product => (
+                      <tr key={product.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {product.nome}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                          R$ {product.valor.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => startEditing(product)}
+                              className="text-blue-600 hover:text-blue-900"
+                              disabled={editingProduct !== null}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => deleteProduct(product.id)}
+                              className="text-red-600 hover:text-red-900"
+                              disabled={editingProduct !== null}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

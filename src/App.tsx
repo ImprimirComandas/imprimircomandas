@@ -6,6 +6,7 @@ import { supabase } from './lib/supabase';
 import DeliveryApp from './components/DeliveryApp';
 import type { Profile } from './types/database';
 import { Products } from './pages/Products';
+import StoreSettings from './pages/StoreSettings';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
@@ -77,6 +78,7 @@ function App() {
         <Routes>
           <Route path="/" element={<DeliveryApp profile={profile} />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/store-settings" element={<StoreSettings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
