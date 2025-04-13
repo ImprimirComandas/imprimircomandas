@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { PlusCircle, Save, Trash2, Search, Edit, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Profile } from '../types/database';
+import * as XLSX from 'xlsx';
 
 interface Product {
   id: string;
@@ -20,6 +20,7 @@ export function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   useEffect(() => {
     getProfile();
@@ -170,6 +171,107 @@ export function Products() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadedFile(file);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { 
+        type: 'array',
+        cellText: true,
+        cellDates: false,
+      });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+
+      // Extrair cabeçalhos (primeira linha)
+      const headers = jsonData[0].map((h: any) => h?.toString().toLowerCase().trim());
+      let nameColumn: number | null = null;
+      let priceColumn: number | null = null;
+
+      // Detectar colunas de nome e preço
+      headers.forEach((header: string, index: number) => {
+        if (['nome', 'produto', 'item'].includes(header)) nameColumn = index;
+        if (['preço', 'valor', 'preco', 'custo'].includes(header)) priceColumn = index;
+      });
+
+      if (nameColumn === null || priceColumn === null) {
+        toast.error('O arquivo deve conter colunas para "nome" (ou "produto", "item") e "preço" (ou "valor", "custo"). Verifique os cabeçalhos.');
+        setUploadedFile(null);
+        event.target.value = '';
+        return;
+      }
+
+      // Extrair produtos das linhas (ignorando a primeira linha de cabeçalhos)
+      const extractedProducts = jsonData.slice(1)
+        .filter(row => row[nameColumn] && row[priceColumn] != null) // Ignorar linhas sem nome ou preço
+        .map(row => {
+          const rawPrice = row[priceColumn].toString().trim();
+          const price = parseFloat(rawPrice.replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+          return {
+            nome: row[nameColumn].toString().trim(),
+            valor: price,
+          };
+        })
+        .filter(product => product.nome && product.valor > 0); // Ignorar produtos inválidos
+
+      if (extractedProducts.length === 0) {
+        toast.error('Nenhum produto válido encontrado no arquivo. Verifique se há nomes e preços válidos.');
+        setUploadedFile(null);
+        event.target.value = '';
+        return;
+      }
+
+      // Confirmar com o usuário
+      const confirmMessage = `Foram encontrados ${extractedProducts.length} produtos válidos no arquivo:\n${extractedProducts.map(p => `- ${p.nome}: R$${p.valor.toFixed(2)}`).join('\n')}\n\nDeseja adicioná-los ao banco de dados?`;
+      if (!confirm(confirmMessage)) {
+        setUploadedFile(null);
+        event.target.value = '';
+        return;
+      }
+
+      // Adicionar produtos ao banco
+      try {
+        setSaving(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Usuário não autenticado');
+          return;
+        }
+
+        const productsToInsert = extractedProducts.map(product => ({
+          nome: product.nome,
+          valor: product.valor,
+          user_id: session.user.id,
+        }));
+
+        const { error } = await supabase
+          .from('produtos')
+          .insert(productsToInsert);
+
+        if (error) throw error;
+
+        toast.success(`${extractedProducts.length} produtos adicionados com sucesso!`);
+        await fetchProducts();
+      } catch (error) {
+        console.error('Error adding products from file:', error);
+        toast.error(`Erro ao adicionar produtos: ${error.message || 'Erro desconhecido'}`);
+      } finally {
+        setSaving(false);
+        setUploadedFile(null);
+        event.target.value = '';
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+      toast.error('Erro ao processar o arquivo. Verifique se é um arquivo XLS, XLSX ou CSV válido.');
+      setUploadedFile(null);
+      event.target.value = '';
+    }
+  };
+
   const filteredProducts = products.filter(product => 
     product.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -213,6 +315,31 @@ export function Products() {
                   min="0"
                 />
               </div>
+            </div>
+
+            {/* Campo de upload de arquivo */}
+            <div className="mt-4">
+              <label htmlFor="product-file" className="block text-sm font-medium text-gray-700 mb-1">
+                Importar Produtos de Arquivo (XLS, XLSX ou CSV)
+              </label>
+              <input
+                id="product-file"
+                type="file"
+                accept=".xls,.xlsx,.csv"
+                onChange={handleFileUpload}
+                disabled={saving}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+              {uploadedFile && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Arquivo selecionado: {uploadedFile.name}
+                </p>
+              )}
             </div>
             
             <div className="mt-4 flex justify-end space-x-3">

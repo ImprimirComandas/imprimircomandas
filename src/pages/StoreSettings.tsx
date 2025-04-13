@@ -134,10 +134,10 @@ export default function StoreSettings() {
     <div className="bg-gray-100">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-blue-600">
+          <div className="px-6 py-4">
             <div className="flex justify-between items-center">
               
-              <h1 className="text-xl font-bold text-white">Configurações da Loja</h1>
+              <h1 className="text-xl font-bold ">Configurações da Loja</h1>
               <div className="w-6"></div> {/* Spacer for alignment */}
             </div>
           </div>

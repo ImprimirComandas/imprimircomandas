@@ -62,7 +62,7 @@ const generatePrintStyles = (): string => `
   }
   .store-logo {
     width: 40mm; /* Fixed size */
-    height: 12mm;
+    height: 40mm;
     margin: 0 auto 2mm;
     display: block;
     object-fit: contain;
@@ -200,9 +200,9 @@ const createCustomerSection = (comanda: Comanda): string => `
 const createProductsSection = (comanda: Comanda): string => {
   const productsHtml = comanda.produtos
     .map(
-      (produto, index) => `
+      (produto) => `
         <div class="product-row">
-          <div class="col-item">${index + 1}. ${truncateProductName(produto.nome)}</div>
+          <div class="col-item">${truncateProductName(produto.nome)}</div>
           <div class="col-qtd">${produto.quantidade}x</div>
           <div class="col-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
         </div>
@@ -269,7 +269,7 @@ const createPaymentSection = (comanda: Comanda): string => {
       <div class="section-title">Pagamento</div>
       ${paymentDetails}
     </div>
-         <div class="divider"></div>
+    <div class="divider"></div>
     <div class="payment-status">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
   `;
 };
