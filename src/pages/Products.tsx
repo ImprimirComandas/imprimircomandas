@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PlusCircle, Save, Trash2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -40,7 +41,7 @@ export function Products() {
       if (session) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, store_name, avatar_url')
+          .select('*')
           .eq('id', session.user.id)
           .single();
 
