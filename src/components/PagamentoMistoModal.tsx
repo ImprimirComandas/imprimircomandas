@@ -8,6 +8,7 @@ interface PagamentoMistoModalProps {
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
+  onSaveAndPrint: () => void;
 }
 
 export default function PagamentoMistoModal({
@@ -19,6 +20,7 @@ export default function PagamentoMistoModal({
   onClose,
   onConfirm,
   onChange,
+  onSaveAndPrint,
 }: PagamentoMistoModalProps) {
   if (!show) return null;
   
@@ -27,6 +29,14 @@ export default function PagamentoMistoModal({
   const valorPix = parseFloat(valorPixInput) || 0;
   const totalPagamento = valorCartao + valorDinheiro + valorPix;
   const diferenca = totalComTaxa - totalPagamento;
+
+  const handleConfirmAndSave = () => {
+    onConfirm();
+    // Only proceed to save if the payment values match the total
+    if (Math.abs(diferenca) < 0.01) {
+      onSaveAndPrint();
+    }
+  };
 
   return (
     <div
@@ -136,7 +146,7 @@ export default function PagamentoMistoModal({
             Cancelar
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirmAndSave}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               Math.abs(diferenca) >= 0.01
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -145,7 +155,7 @@ export default function PagamentoMistoModal({
             disabled={Math.abs(diferenca) >= 0.01}
             aria-label="Confirmar"
           >
-            Confirmar
+            Confirmar e Salvar
           </button>
         </div>
       </div>

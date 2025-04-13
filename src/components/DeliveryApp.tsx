@@ -104,6 +104,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onClose={closeTrocoModal}
             onConfirm={handleTrocoConfirm}
             onChange={handleChange}
+            onSaveAndPrint={salvarComanda}
           />
 
           {/* Modal de Pagamento Misto */}
@@ -116,6 +117,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onClose={closePagamentoMistoModal}
             onConfirm={handlePagamentoMistoConfirm}
             onChange={handleChange}
+            onSaveAndPrint={salvarComanda}
           />
 
           {/* Modal de Confirmação de Pagamento */}

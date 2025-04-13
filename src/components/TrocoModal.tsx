@@ -1,3 +1,4 @@
+
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
@@ -6,6 +7,7 @@ interface TrocoModalProps {
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
+  onSaveAndPrint: () => void;
 }
 
 export default function TrocoModal({
@@ -16,8 +18,14 @@ export default function TrocoModal({
   onClose,
   onConfirm,
   onChange,
+  onSaveAndPrint,
 }: TrocoModalProps) {
   if (!show) return null;
+
+  const handleConfirmAndSave = () => {
+    onConfirm();
+    onSaveAndPrint();
+  };
 
   return (
     <div
@@ -97,7 +105,7 @@ export default function TrocoModal({
             Cancelar
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirmAndSave}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               needsTroco === null
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -106,7 +114,7 @@ export default function TrocoModal({
             disabled={needsTroco === null}
             aria-label="Confirmar"
           >
-            Confirmar
+            Confirmar e Salvar
           </button>
         </div>
       </div>
