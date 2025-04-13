@@ -5,6 +5,8 @@ interface TotaisPorFormaPagamentoProps {
     dinheiro: number;
     cartao: number;
     geral: number;
+    confirmados?: number;
+    naoConfirmados?: number;
   };
 }
 

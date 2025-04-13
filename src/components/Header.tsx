@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Store, ShoppingBag, Settings, LogOut } from 'lucide-react';
+import { Store, ShoppingBag, Settings, LogOut, Calendar } from 'lucide-react';
 import type { Profile } from '../types/database';
 
 interface HeaderProps {
@@ -29,6 +29,13 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
               >
                 <ShoppingBag className="h-5 w-5 mr-1" />
                 <span>Produtos</span>
+              </Link>
+              <Link 
+                to="/orders-by-day" 
+                className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Calendar className="h-5 w-5 mr-1" />
+                <span>Pedidos por Dia</span>
               </Link>
               <Link 
                 to="/store-settings" 

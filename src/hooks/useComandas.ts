@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda } from '../types/database';
-import { imprimirComanda } from '../utils/printService';
 import { toast } from 'sonner';
 
 export const useComandas = () => {
@@ -58,8 +58,11 @@ export const useComandas = () => {
   };
 
   const reimprimirComanda = (comandaAntiga: Comanda) => {
-    imprimirComanda(comandaAntiga);
-    toast.success('Comanda enviada para impressão');
+    // Importar dinamicamente para evitar dependências circulares
+    import('../utils/printService').then(module => {
+      module.imprimirComanda(comandaAntiga);
+      toast.success('Comanda enviada para impressão');
+    });
   };
 
   const excluirComanda = async (id: string | undefined) => {
@@ -128,10 +131,19 @@ export const useComandas = () => {
       dinheiro: 0,
       cartao: 0,
       geral: 0,
+      confirmados: 0,
+      naoConfirmados: 0
     };
 
     comandasAnteriores.forEach(comanda => {
       totais.geral += comanda.total;
+      
+      if (comanda.pago) {
+        totais.confirmados += comanda.total;
+      } else {
+        totais.naoConfirmados += comanda.total;
+      }
+      
       if (comanda.forma_pagamento === 'pix') {
         totais.pix += comanda.total;
       } else if (comanda.forma_pagamento === 'dinheiro') {

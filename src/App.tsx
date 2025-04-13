@@ -7,6 +7,7 @@ import DeliveryApp from './components/DeliveryApp';
 import type { Profile } from './types/database';
 import { Products } from './pages/Products';
 import StoreSettings from './pages/StoreSettings';
+import OrdersByDay from './pages/OrdersByDay';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
@@ -89,6 +90,7 @@ function App() {
             <Route path="/" element={<DeliveryApp profile={profile} />} />
             <Route path="/products" element={<Products />} />
             <Route path="/store-settings" element={<StoreSettings />} />
+            <Route path="/orders-by-day" element={<OrdersByDay />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </>
