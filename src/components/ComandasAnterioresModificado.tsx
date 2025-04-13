@@ -59,7 +59,7 @@ const ComandasAnterioresModificado: FC<ComandasAnterioresProps> = ({
               <button
                 className="w-full flex justify-between items-center p-4 text-left"
                 onClick={() => comanda.id && onToggleExpand(comanda.id)}
-                aria-expanded={isExpanded}
+                aria-expanded={!!isExpanded}
                 aria-controls={`comanda-${comanda.id}`}
               >
                 <div className="flex items-center gap-3">
