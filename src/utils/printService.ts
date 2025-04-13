@@ -2,13 +2,18 @@
 import type { Comanda } from '../types/database';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Gets the last 8 digits of an ID for display purposes
+ */
 export const getUltimos8Digitos = (id: string | undefined): string => {
   if (!id) return 'N/A';
   return id.slice(-8);
 };
 
-export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<void> => {
-  // Fetch store information for the print
+/**
+ * Fetches store information from Supabase
+ */
+const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string | null }> => {
   let storeName = 'Dom Luiz Bebidas';
   let avatarUrl = null;
   
@@ -33,13 +38,14 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
     console.error('Error fetching store data for print:', error);
   }
   
-  const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
-  if (!printWindow) {
-    alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
-    return;
-  }
+  return { storeName, avatarUrl };
+};
 
-  const styles = `
+/**
+ * Generates CSS styles for the print window
+ */
+const generatePrintStyles = (): string => {
+  return `
     @page {
       size: 80mm auto;
       margin: 0;
@@ -99,7 +105,7 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
       text-align: center;
     }
     .produto-valor {
-    font-weight: bold;
+      font-weight: bold;
       flex: 1;
       text-align: right;
     }
@@ -136,77 +142,148 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
       margin-bottom: 1mm;
     }
   `;
+};
 
-  const logoSection = avatarUrl ? `
+/**
+ * Generates the logo section of the receipt
+ */
+const createLogoSection = (avatarUrl: string | null, storeName: string): string => {
+  return avatarUrl ? `
     <img src="${avatarUrl}" alt="${storeName}" class="store-logo" />
   ` : '';
+};
 
-  const headerSection = `
+/**
+ * Generates the header section of the receipt
+ */
+const createHeaderSection = (storeName: string, comandaId: string | undefined): string => {
+  return `
     <div class="header">${storeName}</div>
-    <div class="order-id">Pedido #${getUltimos8Digitos(comandaParaImprimir.id)}</div>
+    <div class="order-id">Pedido #${getUltimos8Digitos(comandaId)}</div>
   `;
+};
 
-  const infoSection = `
+/**
+ * Generates the order information section
+ */
+const createInfoSection = (comanda: Comanda): string => {
+  return `
     <div class="info-section">
-      <div><strong>Forma de pagamento:</strong> ${comandaParaImprimir.forma_pagamento.toUpperCase()}</div>
-      <div><strong>Endereço:</strong> ${comandaParaImprimir.endereco}</div>
-      <div><strong>Bairro:</strong> ${comandaParaImprimir.bairro}</div>
-      <div><strong>Data:</strong> ${new Date(comandaParaImprimir.data).toLocaleString('pt-BR')}</div>
+      <div><strong>Forma de pagamento:</strong> ${comanda.forma_pagamento.toUpperCase()}</div>
+      <div><strong>Endereço:</strong> ${comanda.endereco}</div>
+      <div><strong>Bairro:</strong> ${comanda.bairro}</div>
+      <div><strong>Data:</strong> ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
     </div>
   `;
-          
-  // Criar seção de pagamento misto se for o caso
-  const pagamentoMistoSection = comandaParaImprimir.forma_pagamento === 'misto' ? `
+};
+
+/**
+ * Generates the mixed payment section if applicable
+ */
+const createPagamentoMistoSection = (comanda: Comanda): string => {
+  if (comanda.forma_pagamento !== 'misto') return '';
+  
+  return `
     <div class="pagamento-misto">
-      ${comandaParaImprimir.valor_cartao ? `<div>Valor no Cartão: R$ ${comandaParaImprimir.valor_cartao.toFixed(2)}</div>` : ''}
-      ${comandaParaImprimir.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comandaParaImprimir.valor_dinheiro.toFixed(2)}</div>` : ''}
-      ${comandaParaImprimir.valor_pix ? `<div>Valor no PIX: R$ ${comandaParaImprimir.valor_pix.toFixed(2)}</div>` : ''}
+      ${comanda.valor_cartao ? `<div>Valor no Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
+      ${comanda.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
+      ${comanda.valor_pix ? `<div>Valor no PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
     </div>
-  ` : '';
-
-  const trocoSection = `
-    ${
-      comandaParaImprimir.quantiapaga && comandaParaImprimir.troco && comandaParaImprimir.quantiapaga > 0
-        ? `
-         
-                     <div>Troco para: R$ ${comandaParaImprimir.quantiapaga.toFixed(2)}</div>
-            <div>Valor do troco: R$ ${comandaParaImprimir.troco.toFixed(2)}</div>
-          </div>
-        `
-        : ''
-    }
   `;
+};
 
-  const produtosSection = `
+/**
+ * Generates the change information section if applicable
+ */
+const createTrocoSection = (comanda: Comanda): string => {
+  if (!comanda.quantiapaga || !comanda.troco || comanda.quantiapaga <= 0) return '';
+  
+  return `
+    <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
+    <div>Valor do troco: R$ ${comanda.troco.toFixed(2)}</div>
+  </div>
+  `;
+};
+
+/**
+ * Generates the product list section
+ */
+const createProdutosSection = (comanda: Comanda): string => {
+  const produtosHtml = comanda.produtos
+    .map(
+      (produto) => `
+        <div class="produto-row">
+          <div class="produto-nome">${produto.nome}</div>
+          <div class="produto-qtd">${produto.quantidade}x</div>
+          <div class="produto-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
+        </div>
+      `
+    )
+    .join('');
+
+  return `
     <div style="margin-bottom: 3mm;">
-      ${comandaParaImprimir.produtos
-        .map(
-          (produto) => `
-            <div class="produto-row">
-              <div class="produto-nome">${produto.nome}</div>
-              <div class="produto-qtd">${produto.quantidade}x</div>
-              <div class="produto-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
-            </div>
-          `
-        )
-        .join('')}
-    </div>  <div class="divider"></div><div class="troco-section"><div class="taxa">Taxa de entrega: R$ ${comandaParaImprimir.taxaentrega.toFixed(2)}</div>
- 
+      ${produtosHtml}
+    </div>  <div class="divider"></div><div class="troco-section"><div class="taxa">Taxa de entrega: R$ ${comanda.taxaentrega.toFixed(2)}</div>
   `;
+};
 
-  const totalsSection = `
+/**
+ * Generates the totals section
+ */
+const createTotalsSection = (comanda: Comanda): string => {
+  return `
     <div class="totals-section">
-        <div class="total">Total: R$ ${comandaParaImprimir.total.toFixed(2)}</div>
+        <div class="total">Total: R$ ${comanda.total.toFixed(2)}</div>
     </div>
   `;
+};
 
-  const footerSection = `
+/**
+ * Generates the footer section
+ */
+const createFooterSection = (comanda: Comanda): string => {
+  return `
     <div class="footer">
-      <div class="status-pago">${comandaParaImprimir.pago ? 'PAGO' : 'NÃO PAGO'}</div>
+      <div class="status-pago">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
     </div>
   `;
+};
 
-  const printContent = `
+/**
+ * Creates automatic print functionality script
+ */
+const createPrintScript = (): string => {
+  return `
+    <script>
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+          setTimeout(function() {
+            window.close();
+          }, 100);
+        }, 200);
+      };
+    </script>
+  `;
+};
+
+/**
+ * Assembles the complete HTML content for printing
+ */
+const assembleHtmlContent = (
+  styles: string,
+  logoSection: string,
+  headerSection: string,
+  infoSection: string,
+  pagamentoMistoSection: string,
+  produtosSection: string,
+  totalsSection: string,
+  trocoSection: string,
+  footerSection: string,
+  printScript: string
+): string => {
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -252,20 +329,60 @@ export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<voi
         <div class="cut">Deus é fiel.</div>
 
         <!-- Script para Impressão Automática -->
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-              setTimeout(function() {
-                window.close();
-              }, 100);
-            }, 200);
-          };
-        </script>
+        ${printScript}
       </body>
     </html>
   `;
+};
 
+/**
+ * Opens the print window and writes the content
+ */
+const openPrintWindow = (printContent: string): Window | null => {
+  const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
+  if (!printWindow) {
+    alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
+    return null;
+  }
+  
   printWindow.document.write(printContent);
   printWindow.document.close();
+  return printWindow;
+};
+
+/**
+ * Main function to print a comanda
+ */
+export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<void> => {
+  // Fetch store information
+  const { storeName, avatarUrl } = await fetchStoreInfo();
+  
+  // Generate all sections
+  const styles = generatePrintStyles();
+  const logoSection = createLogoSection(avatarUrl, storeName);
+  const headerSection = createHeaderSection(storeName, comandaParaImprimir.id);
+  const infoSection = createInfoSection(comandaParaImprimir);
+  const pagamentoMistoSection = createPagamentoMistoSection(comandaParaImprimir);
+  const produtosSection = createProdutosSection(comandaParaImprimir);
+  const totalsSection = createTotalsSection(comandaParaImprimir);
+  const trocoSection = createTrocoSection(comandaParaImprimir);
+  const footerSection = createFooterSection(comandaParaImprimir);
+  const printScript = createPrintScript();
+  
+  // Assemble the HTML content
+  const printContent = assembleHtmlContent(
+    styles,
+    logoSection,
+    headerSection,
+    infoSection,
+    pagamentoMistoSection,
+    produtosSection,
+    totalsSection,
+    trocoSection,
+    footerSection,
+    printScript
+  );
+  
+  // Open the print window and write the content
+  openPrintWindow(printContent);
 };
