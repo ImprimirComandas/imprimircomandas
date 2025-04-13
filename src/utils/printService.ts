@@ -1,3 +1,4 @@
+
 import type { Comanda } from '../types/database';
 import { supabase } from '../lib/supabase';
 
@@ -15,7 +16,7 @@ export const getUltimos8Digitos = (id: string | undefined): string => {
 const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string | null }> => {
   let storeName = 'Dom Luiz Bebidas';
   let avatarUrl = null;
-
+  
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
@@ -24,359 +25,364 @@ const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string 
         .select('store_name, avatar_url')
         .eq('id', session.user.id)
         .single();
-
-      if (data?.store_name) storeName = data.store_name;
-      if (data?.avatar_url) avatarUrl = data.avatar_url;
+      
+      if (data?.store_name) {
+        storeName = data.store_name;
+      }
+      
+      if (data?.avatar_url) {
+        avatarUrl = data.avatar_url;
+      }
     }
   } catch (error) {
     console.error('Error fetching store data for print:', error);
   }
-
+  
   return { storeName, avatarUrl };
 };
 
 /**
- * Truncates product name to prevent line breaks
+ * Generates CSS styles for the print window
  */
-const truncateProductName = (name: string, maxLength: number = 20): string => {
-  if (name.length <= maxLength) return name;
-  return name.slice(0, maxLength - 3) + '...';
+const generatePrintStyles = (): string => {
+  return `
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 2mm;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      width: 75mm;
+      color: #000;
+    }
+    .store-logo {
+      max-width: 60mm;
+      max-height: 20mm;
+      margin: 0 auto 2mm;
+      display: block;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 2mm;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .order-id {
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 2mm;
+    }
+    .info-section {
+      margin-bottom: 2mm;
+    }
+    .info-section div {
+      margin-bottom: 1mm;
+    }
+    .troco-section {
+      text-align: right;
+      margin-bottom: 1mm;
+    }
+    .troco-section div {
+      margin-bottom: 1mm;
+    }
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 2mm 0;
+    }
+    .produto-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2mm;
+    }
+    .produto-nome {
+      flex: 2;
+    }
+    .produto-qtd {
+      flex: 1;
+      text-align: center;
+    }
+    .produto-valor {
+      font-weight: bold;
+      flex: 1;
+      text-align: right;
+    }
+    .totals-section {
+      margin-top: 2mm;
+    }
+    .total {
+      text-align: right;
+      margin-bottom: 1mm;
+    }
+    .footer {
+      margin-top: 2mm;
+      text-align: center;
+      font-size: 14px;
+    }
+    .status-pago {
+      font-weight: bold;
+      font-size: 26px;
+      margin-bottom: 3mm;
+    }
+    .cut-line {
+      border-top: 1px dashed #000;
+      margin-top: 2mm;
+    }
+    .cut {
+      text-align: center;
+      margin-top: 10mm;
+      font-size: 10px;
+    }
+    .pagamento-misto {
+      margin: 2mm 0;
+    }
+    .pagamento-misto div {
+      margin-bottom: 1mm;
+    }
+  `;
 };
 
 /**
- * Generates CSS styles for a professional fiscal receipt with original font sizes
+ * Generates the logo section of the receipt
  */
-const generatePrintStyles = (): string => `
-  @page {
-    size: 80mm auto;
-    margin: 0;
-  }
-  body {
-    margin: 0;
-    padding: 2mm;
-    font-family: Arial, sans-serif;
-    font-size: 16px; /* Original */
-    width: 75mm;
-    color: #000;
-    line-height: 1.2;
-  }
-  .store-logo {
-    width: 40mm; /* Fixed size */
-    height: 12mm;
-    margin: 0 auto 2mm;
-    display: block;
-    object-fit: contain;
-  }
-  .header {
-    text-align: center;
-    margin-bottom: 2mm;
-  }
-  .header-title {
-    font-weight: bold;
-    font-size: 16px; /* Original */
-    margin-bottom: 1mm;
-  }
-  .header-info {
-    font-size: 14px; /* Original */
-  }
-  .divider {
-    border-top: 1px dashed #000;
-    margin: 2mm 0;
-  }
-  .section-title {
-    font-weight: bold;
-    font-size: 16px; /* Original body size */
-    margin-bottom: 2mm;
-    text-transform: uppercase;
-  }
-  .customer-info div {
-    margin-bottom: 1mm;
-    font-size: 16px; /* Original */
-  }
-  .product-table {
-    margin-bottom: 2mm;
-  }
-  .product-header {
-    display: flex;
-    font-weight: bold;
-    border-bottom: 1px solid #000;
-    padding-bottom: 1mm;
-    margin-bottom: 2mm;
-  }
-  .product-row {
-    display: flex;
-    margin-bottom: 1mm;
-  }
-  .col-item {
-    flex: 2.5;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 45mm; /* Limits width to prevent wrapping */
-  }
-  .col-qtd {
-    flex: 0.8;
-    text-align: center;
-  }
-  .col-valor {
-    flex: 1.2;
-    text-align: right;
-    font-weight: bold;
-  }
-  .totals-section {
-    margin: 2mm 0;
-  }
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1mm;
-    font-size: 16px; /* Original */
-  }
-  .total-row.total {
-    font-weight: bold;
-    font-size: 16px;
-    border-top: 1px solid #000;
-    padding-top: 2mm;
-  }
-  .payment-section {
-    margin-bottom: 2mm;
-  }
-  .payment-section div {
-    margin-bottom: 1mm;
-    font-size: 16px; /* Original */
-  }
-  .payment-status {
-    text-align: center;
-    font-weight: bold;
-    font-size: 26px; /* Original */
-    margin: 2mm 0;
-  }
-  .footer {
-    text-align: center;
-    font-size: 14px; /* Original footer size */
-    margin-top: 2mm;
-  }
-  .cut-line {
-    border-top: 1px dashed #000;
-    margin: 2mm 0;
-  }
-  .cut-text {
-    text-align: center;
-    font-size: 10px; /* Original */
-  }
-`;
+const createLogoSection = (avatarUrl: string | null, storeName: string): string => {
+  return avatarUrl ? `
+    <img src="${avatarUrl}" alt="${storeName}" class="store-logo" />
+  ` : '';
+};
 
 /**
- * Creates the logo section
+ * Generates the header section of the receipt
  */
-const createLogoSection = (avatarUrl: string | null, storeName: string): string =>
-  avatarUrl ? `<img src="${avatarUrl}" alt="${storeName}" class="store-logo" />` : '';
+const createHeaderSection = (storeName: string, comandaId: string | undefined): string => {
+  return `
+    <div class="header">${storeName}</div>
+    <div class="order-id">Pedido #${getUltimos8Digitos(comandaId)}</div>
+  `;
+};
 
 /**
- * Creates the header section with store and order details
+ * Generates the order information section
  */
-const createHeaderSection = (storeName: string, comanda: Comanda): string => `
-  <div class="header">
-    <div class="header-title">${storeName}</div>
-    <div class="header-info">Comanda #${getUltimos8Digitos(comanda.id)}</div>
-    <div class="header-info">Data: ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
+const createInfoSection = (comanda: Comanda): string => {
+  return `
+    <div class="info-section">
+      <div><strong>Forma de pagamento:</strong> ${comanda.forma_pagamento.toUpperCase()}</div>
+      <div><strong>Endereço:</strong> ${comanda.endereco}</div>
+      <div><strong>Bairro:</strong> ${comanda.bairro}</div>
+      <div><strong>Data:</strong> ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
+    </div>
+  `;
+};
+
+/**
+ * Generates the mixed payment section if applicable
+ */
+const createPagamentoMistoSection = (comanda: Comanda): string => {
+  if (comanda.forma_pagamento !== 'misto') return '';
+  
+  return `
+    <div class="pagamento-misto">
+      ${comanda.valor_cartao ? `<div>Valor no Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
+      ${comanda.valor_dinheiro ? `<div>Valor em Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
+      ${comanda.valor_pix ? `<div>Valor no PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
+    </div>
+  `;
+};
+
+/**
+ * Generates the change information section if applicable
+ */
+const createTrocoSection = (comanda: Comanda): string => {
+  if (!comanda.quantiapaga || !comanda.troco || comanda.quantiapaga <= 0) return '';
+  
+  return `
+    <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
+    <div>Valor do troco: R$ ${comanda.troco.toFixed(2)}</div>
   </div>
-`;
+  `;
+};
 
 /**
- * Creates the customer information section
+ * Generates the product list section
  */
-const createCustomerSection = (comanda: Comanda): string => `
-  <div class="customer-info">
-    <div class="section-title">Dados do Cliente</div>
-    <div>Endereço: ${comanda.endereco}</div>
-    <div>Bairro: ${comanda.bairro}</div>
-  </div>
-`;
-
-/**
- * Creates the product list section as a table
- */
-const createProductsSection = (comanda: Comanda): string => {
-  const productsHtml = comanda.produtos
+const createProdutosSection = (comanda: Comanda): string => {
+  const produtosHtml = comanda.produtos
     .map(
-      (produto, index) => `
-        <div class="product-row">
-          <div class="col-item">${index + 1}. ${truncateProductName(produto.nome)}</div>
-          <div class="col-qtd">${produto.quantidade}x</div>
-          <div class="col-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
+      (produto) => `
+        <div class="produto-row">
+          <div class="produto-nome">${produto.nome}</div>
+          <div class="produto-qtd">${produto.quantidade}x</div>
+          <div class="produto-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
         </div>
       `
     )
     .join('');
 
   return `
-    <div class="product-table">
-      <div class="section-title">Itens</div>
-      <div class="product-header">
-        <div class="col-item">Item</div>
-        <div class="col-qtd">Qtd</div>
-        <div class="col-valor">Valor</div>
-      </div>
-      ${productsHtml}
-    </div>
+    <div style="margin-bottom: 3mm;">
+      ${produtosHtml}
+    </div>  <div class="divider"></div><div class="troco-section"><div class="taxa">Taxa de entrega: R$ ${comanda.taxaentrega.toFixed(2)}</div>
   `;
 };
 
 /**
- * Creates the totals section
+ * Generates the totals section
  */
-const createTotalsSection = (comanda: Comanda): string => `
-  <div class="totals-section">
-    <div class="total-row">
-      <span>Subtotal:</span>
-      <span>R$ ${(comanda.total - comanda.taxaentrega).toFixed(2)}</span>
-    </div>
-    <div class="total-row">
-      <span>Taxa de Entrega:</span>
-      <span>R$ ${comanda.taxaentrega.toFixed(2)}</span>
-    </div>
-    <div class="total-row total">
-      <span>Total:</span>
-      <span>R$ ${comanda.total.toFixed(2)}</span>
-    </div>
-  </div>
-`;
-
-/**
- * Creates the payment details section, including troco and mixed payments
- */
-const createPaymentSection = (comanda: Comanda): string => {
-  let paymentDetails = `<div>Forma de Pagamento: ${comanda.forma_pagamento.toUpperCase()}</div>`;
-
-  if (comanda.forma_pagamento === 'misto') {
-    paymentDetails += `
-      ${comanda.valor_cartao ? `<div>Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
-      ${comanda.valor_dinheiro ? `<div>Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
-      ${comanda.valor_pix ? `<div>PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
-    `;
-  }
-
-  if (comanda.quantiapaga && comanda.troco && comanda.quantiapaga > 0) {
-    paymentDetails += `
-      <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
-      <div>Valor do troco: R$ ${comanda.troco.toFixed(2)}</div>
-    `;
-  }
-
+const createTotalsSection = (comanda: Comanda): string => {
   return `
-    <div class="payment-section">
-      <div class="section-title">Pagamento</div>
-      ${paymentDetails}
+    <div class="totals-section">
+        <div class="total">Total: R$ ${comanda.total.toFixed(2)}</div>
     </div>
-         <div class="divider"></div>
-    <div class="payment-status">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
   `;
 };
 
 /**
- * Creates the footer section
+ * Generates the footer section
  */
-const createFooterSection = (): string => `
-  <div class="footer">
-    <div>Deus é fiel.</div>
-  </div>
-`;
+const createFooterSection = (comanda: Comanda): string => {
+  return `
+    <div class="footer">
+      <div class="status-pago">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
+    </div>
+  `;
+};
 
 /**
- * Creates the auto-print script
+ * Creates automatic print functionality script
  */
-const createPrintScript = (): string => `
-  <script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
+const createPrintScript = (): string => {
+  return `
+    <script>
+      window.onload = function() {
         setTimeout(function() {
-          window.close();
-        }, 100);
-      }, 200);
-    };
-  </script>
-`;
+          window.print();
+          setTimeout(function() {
+            window.close();
+          }, 100);
+        }, 200);
+      };
+    </script>
+  `;
+};
 
 /**
- * Assembles the complete HTML content for the fiscal receipt
+ * Assembles the complete HTML content for printing
  */
 const assembleHtmlContent = (
   styles: string,
   logoSection: string,
   headerSection: string,
-  customerSection: string,
-  productsSection: string,
+  infoSection: string,
+  pagamentoMistoSection: string,
+  produtosSection: string,
   totalsSection: string,
-  paymentSection: string,
+  trocoSection: string,
   footerSection: string,
   printScript: string
-): string => `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Cupom Fiscal</title>
-      <style>${styles}</style>
-    </head>
-    <body>
-      ${logoSection}
-      ${headerSection}
-      <div class="divider"></div>
-      ${customerSection}
-      <div class="divider"></div>
-      ${productsSection}
-      ${totalsSection}
-      <div class="divider"></div>
-      ${paymentSection}
-      <div class="divider"></div>
-      ${footerSection} 
-      ${printScript}
-    </body>
-  </html>
-`;
+): string => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Delivery</title>
+        <style>${styles}</style>
+      </head>
+      <body>
+        <!-- Logo (se disponível) -->
+        ${logoSection}
+        
+        <!-- Cabeçalho -->
+        ${headerSection}
+        <div class="cut-line"></div>
+
+        <!-- Informações do Pedido -->
+        ${infoSection}
+
+        <!-- Informações de Pagamento Misto (se aplicável) -->
+        ${pagamentoMistoSection}
+
+        <!-- Divisor -->
+        <div class="divider"></div>
+
+        <!-- Lista de Produtos -->
+        ${produtosSection}
+
+        <!-- Divisor -->
+        
+        <!-- Totais -->
+        ${totalsSection}
+
+        <!-- Troco (se aplicável) -->
+        ${trocoSection}
+
+        <!-- Divisor -->
+        <div class="cut-line"></div>
+
+        <!-- Rodapé -->
+        ${footerSection}
+
+        <!-- Linha de Corte -->
+        <div class="cut-line"></div>
+        <div class="cut">Deus é fiel.</div>
+
+        <!-- Script para Impressão Automática -->
+        ${printScript}
+      </body>
+    </html>
+  `;
+};
 
 /**
- * Opens the print window and writes content
+ * Opens the print window and writes the content
  */
 const openPrintWindow = (printContent: string): Window | null => {
-  const printWindow = window.open('', '_blank', 'width=300,height=auto');
+  const printWindow = window.open('', '_blank', 'width=80mm,height=auto');
   if (!printWindow) {
     alert('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
     return null;
   }
+  
   printWindow.document.write(printContent);
   printWindow.document.close();
   return printWindow;
 };
 
 /**
- * Main function to print a professional fiscal receipt
+ * Main function to print a comanda
  */
-export const imprimirComanda = async (comanda: Comanda): Promise<void> => {
+export const imprimirComanda = async (comandaParaImprimir: Comanda): Promise<void> => {
+  // Fetch store information
   const { storeName, avatarUrl } = await fetchStoreInfo();
-
+  
+  // Generate all sections
   const styles = generatePrintStyles();
   const logoSection = createLogoSection(avatarUrl, storeName);
-  const headerSection = createHeaderSection(storeName, comanda);
-  const customerSection = createCustomerSection(comanda);
-  const productsSection = createProductsSection(comanda);
-  const totalsSection = createTotalsSection(comanda);
-  const paymentSection = createPaymentSection(comanda);
-  const footerSection = createFooterSection();
+  const headerSection = createHeaderSection(storeName, comandaParaImprimir.id);
+  const infoSection = createInfoSection(comandaParaImprimir);
+  const pagamentoMistoSection = createPagamentoMistoSection(comandaParaImprimir);
+  const produtosSection = createProdutosSection(comandaParaImprimir);
+  const totalsSection = createTotalsSection(comandaParaImprimir);
+  const trocoSection = createTrocoSection(comandaParaImprimir);
+  const footerSection = createFooterSection(comandaParaImprimir);
   const printScript = createPrintScript();
-
+  
+  // Assemble the HTML content
   const printContent = assembleHtmlContent(
     styles,
     logoSection,
     headerSection,
-    customerSection,
-    productsSection,
+    infoSection,
+    pagamentoMistoSection,
+    produtosSection,
     totalsSection,
-    paymentSection,
+    trocoSection,
     footerSection,
     printScript
   );
-
+  
+  // Open the print window and write the content
   openPrintWindow(printContent);
 };
