@@ -178,7 +178,7 @@ const createLogoSection = (avatarUrl: string | null, storeName: string): string 
 const createHeaderSection = (storeName: string, comanda: Comanda): string => `
   <div class="header">
     <div class="header-title">${storeName}</div>
-    <div class="header-info">Comanda #${getUltimos8Digitos(comanda.id)}</div>
+    <div class="header-info">Pedido #${getUltimos8Digitos(comanda.id)}</div>
     <div class="header-info">Data: ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
   </div>
 `;
