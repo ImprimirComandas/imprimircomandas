@@ -170,7 +170,6 @@ const ComandaForm = ({
 }: ComandaFormProps) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-
       {/* Busca de Produtos */}
       <div className="mb-4">
         <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
@@ -289,12 +288,12 @@ const ComandaForm = ({
           <span className="text-lg font-bold">R$ {comanda.total.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-base font-semibold">Taxa de Entrega:</h2>
-          <span className="text-lg font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
+          <h3 className="text-base">Taxa de Entrega:</h3>
+          <span className="text-base font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-base font-semibold">Total com Taxa:</h2>
-          <span className="text-lg font-bold">R$ {totalComTaxa.toFixed(2)}</span>
+          <h2 className="text-base">Total com Taxa:</h2>
+          <span className="text-base font-bold">R$ {totalComTaxa.toFixed(2)}</span>
         </div>
 
         <div className="space-y-4">
@@ -1044,9 +1043,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column: Comanda Form */}
-          <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Column: Fixed Comanda Form */}
+          <div className="md:w-1/2 md:sticky md:top-6 md:self-start">
             <ComandaForm
               comanda={comanda}
               pesquisaProduto={pesquisaProduto}
@@ -1064,8 +1063,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             />
           </div>
 
-          {/* Right Column: Cadastro, Totals, and Previous Orders */}
-          <div className="space-y-4">
+          {/* Right Column: Scrollable Content */}
+          <div className="md:w-1/2 space-y-4">
             <CadastroProdutoForm
               onSaveProduto={salvarProduto}
               onEditProduto={editarProduto}
@@ -1097,7 +1096,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
         <TrocoModal
           show={showTrocoModal}
           needsTroco={needsTroco}
-          quantiapagaInput={quantiapagaInput}
+          quantiapaga MacsInput={quantiapagaInput}
           totalComTaxa={totalComTaxa}
           onClose={closeTrocoModal}
           onConfirm={handleTrocoConfirm}

@@ -35,7 +35,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
                 className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
               >
                 <Calendar className="h-5 w-5 mr-1" />
-                <span>Pedidos por Dia</span>
+                <span>Pedidos</span>
               </Link>
               <Link 
                 to="/store-settings" 
