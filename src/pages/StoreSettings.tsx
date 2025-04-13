@@ -92,33 +92,46 @@ export default function StoreSettings() {
       
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random()}.${fileExt}`;
+      const fileName = `${Math.random()}.${fileExt}`;
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autorizado');
       
+      // Check if avatars bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const avatarBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
+      
+      // Create avatars bucket if it doesn't exist
+      if (!avatarBucketExists) {
+        await supabase.storage.createBucket('avatars', {
+          public: true
+        });
+      }
+      
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(fileName, file);
       
       if (uploadError) throw uploadError;
       
       const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
       
-      setAvatarUrl(data.publicUrl);
-      toast.success('Logo enviado com sucesso!');
+      if (data) {
+        setAvatarUrl(data.publicUrl);
+        toast.success('Logo enviado com sucesso!');
+      }
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error('Erro ao enviar logo');
+      toast.error('Erro ao enviar logo. Tente novamente.');
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
           <div className="px-6 py-4 bg-blue-600">

@@ -9,11 +9,14 @@ import { Products } from './pages/Products';
 import StoreSettings from './pages/StoreSettings';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
+import Header from './components/Header';
+import { useProfileMenu } from './hooks/useProfileMenu';
 
 function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -75,12 +78,20 @@ function App() {
       {!session ? (
         isResetPassword ? <ResetPassword /> : <Auth />
       ) : (
-        <Routes>
-          <Route path="/" element={<DeliveryApp profile={profile} />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/store-settings" element={<StoreSettings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <>
+          <Header 
+            profile={profile} 
+            onSignOut={handleSignOut} 
+            showProfileMenu={showProfileMenu}
+            setShowProfileMenu={setShowProfileMenu}
+          />
+          <Routes>
+            <Route path="/" element={<DeliveryApp profile={profile} />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/store-settings" element={<StoreSettings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </>
       )}
     </>
   );

@@ -22,9 +22,14 @@ export default function PaymentConfirmationModal({
       className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300"
       aria-modal="true"
       role="dialog"
+      onClick={(e) => {
+        // Close when clicking outside the modal
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="bg-white rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg transform transition-all duration-300"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
@@ -46,7 +51,9 @@ export default function PaymentConfirmationModal({
             Forma de pagamento: {comanda.forma_pagamento.toUpperCase()}
           </p>
           <p className="text-gray-600">
-            Status atual: {comanda.pago ? 'PAGO' : 'NÃO PAGO'}
+            Status atual: <span className={comanda.pago ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+              {comanda.pago ? 'PAGO' : 'NÃO PAGO'}
+            </span>
           </p>
         </div>
 
@@ -65,7 +72,11 @@ export default function PaymentConfirmationModal({
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-green-600 text-white hover:bg-green-700 shadow-sm flex items-center gap-2"
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              comanda.pago 
+                ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                : 'bg-green-600 text-white hover:bg-green-700'
+            } shadow-sm flex items-center gap-2`}
           >
             <Check size={18} />
             {comanda.pago ? 'Marcar como Não Pago' : 'Confirmar Pagamento'}

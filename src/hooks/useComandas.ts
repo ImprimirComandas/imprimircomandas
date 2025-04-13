@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda } from '../types/database';
@@ -110,12 +109,6 @@ export const useComandas = () => {
       
       const novoStatus = !comandaSelecionada.pago ? 'PAGO' : 'NÃO PAGO';
       toast.success(`Pedido marcado como ${novoStatus} com sucesso!`);
-      
-      // Se estamos marcando como pago, reimprimimos a comanda atualizada
-      if (!comandaSelecionada.pago) {
-        const comandaAtualizada = { ...comandaSelecionada, pago: true };
-        imprimirComanda(comandaAtualizada);
-      }
     } catch (error) {
       console.error('Erro ao confirmar pagamento:', error);
       toast.error('Erro ao atualizar status de pagamento. Tente novamente.');

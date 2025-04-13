@@ -1,10 +1,7 @@
 
 import { useComandas } from '../hooks/useComandas';
 import { useComandaForm } from '../hooks/useComandaForm';
-import { useAuth } from '../hooks/useAuth';
-import { useProfileMenu } from '../hooks/useProfileMenu';
 import type { Profile } from '../types/database';
-import Header from './Header';
 import ComandaForm from './ComandaForm';
 import TrocoModal from './TrocoModal';
 import PagamentoMistoModal from './PagamentoMistoModal';
@@ -18,7 +15,6 @@ interface DeliveryAppProps {
 }
 
 export default function DeliveryApp({ profile }: DeliveryAppProps) {
-  const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
   const { 
     comandasAnteriores, 
     carregando, 
@@ -67,13 +63,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header 
-        profile={profile} 
-        onSignOut={handleSignOut} 
-        showProfileMenu={showProfileMenu}
-        setShowProfileMenu={setShowProfileMenu}
-      />
-
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           {/* Formulário de Comanda */}
