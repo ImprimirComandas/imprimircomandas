@@ -35,7 +35,7 @@ export default function PaymentConfirmationModal({
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
             Confirmar Pagamento
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700" title="Fechar">
             <X size={24} />
           </button>
         </div>

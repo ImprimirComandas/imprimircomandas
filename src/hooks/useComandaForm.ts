@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Comanda, Produto } from '../types/database';
@@ -259,10 +258,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     
     setShowTrocoModal(false);
     
-    // Save after troco confirmation if mixed payment already confirmed
-    if (comanda.forma_pagamento === 'misto' && 
-        Math.abs((parseFloat(valorCartaoInput) || 0) + (parseFloat(valorDinheiroInput) || 0) + (parseFloat(valorPixInput) || 0) - totalComTaxa) < 0.01) {
-      // We don't need to call salvarComanda here as it will be triggered by onSaveAndPrint callback
+    if (comanda.forma_pagamento === 'misto' && showPagamentoMistoModal) {
+      handlePagamentoMistoConfirm();
     }
   };
 
