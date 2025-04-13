@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
@@ -8,6 +7,7 @@ import type { Profile } from './types/database';
 import { Products } from './pages/Products';
 import StoreSettings from './pages/StoreSettings';
 import OrdersByDay from './pages/OrdersByDay';
+import TestPage from './pages/TestPage'; // Importação
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
@@ -20,10 +20,8 @@ function App() {
   const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // Use setTimeout to avoid potential deadlocks with Supabase client
       if (session?.user) {
         setTimeout(() => {
           getProfile(session.user.id);
@@ -33,7 +31,6 @@ function App() {
       }
     });
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
@@ -91,6 +88,7 @@ function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/store-settings" element={<StoreSettings />} />
             <Route path="/orders-by-day" element={<OrdersByDay />} />
+            <Route path="/test" element={<TestPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </>

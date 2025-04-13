@@ -1,6 +1,5 @@
-
 import { Link } from 'react-router-dom';
-import { Store, ShoppingBag, Settings, LogOut, Calendar } from 'lucide-react';
+import { Store, ShoppingBag, Settings, LogOut, Calendar, FlaskConical } from 'lucide-react';
 import type { Profile } from '../types/database';
 
 interface HeaderProps {
@@ -22,29 +21,36 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             </Link>
           </div>
           <div className="flex items-center">
-            <nav className="flex space-x-2">
-              <Link 
-                to="/products" 
-                className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-              >
-                <ShoppingBag className="h-5 w-5 mr-1" />
-                <span>Produtos</span>
-              </Link>
-              <Link 
-                to="/orders-by-day" 
-                className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-              >
-                <Calendar className="h-5 w-5 mr-1" />
-                <span>Pedidos</span>
-              </Link>
-              <Link 
-                to="/store-settings" 
-                className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-              >
-                <Settings className="h-5 w-5 mr-1" />
-                <span>Configurações</span>
-              </Link>
-            </nav>
+          <nav className="flex space-x-2">
+  <Link 
+    to="/products" 
+    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+  >
+    <ShoppingBag className="h-5 w-5 mr-1" />
+    <span>Produtos</span>
+  </Link>
+  <Link 
+    to="/orders-by-day" 
+    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+  >
+    <Calendar className="h-5 w-5 mr-1" />
+    <span>Pedidos</span>
+  </Link>
+  <Link 
+    to="/test" 
+    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+  >
+    <FlaskConical className="h-5 w-5 mr-1" />
+    <span>Test</span>
+  </Link>
+  <Link 
+    to="/store-settings" 
+    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+  >
+    <Settings className="h-5 w-5 mr-1" />
+    <span>Configurações</span>
+  </Link>
+</nav>
             <div className="ml-4 relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
