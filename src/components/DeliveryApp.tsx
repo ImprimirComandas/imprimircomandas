@@ -869,9 +869,9 @@ const DeliveryApp = ({ profile }: DeliveryAppProps) => {
         
         <div>
           <TotaisPorStatusPagamento 
-            confirmados={totais.confirmados} 
-            naoConfirmados={totais.naoConfirmados} 
-            total={totais.geral} 
+            confirmados={Number(totais.confirmados)} 
+            naoConfirmados={Number(totais.naoConfirmados)} 
+            total={Number(totais.geral)} 
           />
           
           <ComandasAnterioresModificado
