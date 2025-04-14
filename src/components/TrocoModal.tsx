@@ -2,12 +2,12 @@
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
-  quantiapagaInput: string;
+  quantiapagaInput: string | number | null;
   totalComTaxa: number;
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
-  onSaveAndPrint: () => void;
+  onSaveAndPrint?: () => void;
 }
 
 export default function TrocoModal({
@@ -24,7 +24,7 @@ export default function TrocoModal({
 
   const handleConfirmAndSave = () => {
     onConfirm();
-    onSaveAndPrint();
+    if (onSaveAndPrint) onSaveAndPrint();
   };
 
   return (
@@ -81,7 +81,7 @@ export default function TrocoModal({
             <input
               id="quantiapaga"
               type="number"
-              value={quantiapagaInput}
+              value={quantiapagaInput === null ? '' : quantiapagaInput}
               onChange={(e) => onChange('quantiapagaInput', e.target.value)}
               placeholder="Digite a quantia paga"
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
@@ -89,9 +89,9 @@ export default function TrocoModal({
               min={totalComTaxa}
               aria-describedby="troco-info"
             />
-            {quantiapagaInput && parseFloat(quantiapagaInput) > totalComTaxa && (
+            {quantiapagaInput && parseFloat(quantiapagaInput.toString()) > totalComTaxa && (
               <p id="troco-info" className="mt-2 text-sm text-gray-500">
-                Troco: R$ {(parseFloat(quantiapagaInput) - totalComTaxa).toFixed(2)}
+                Troco: R$ {(parseFloat(quantiapagaInput.toString()) - totalComTaxa).toFixed(2)}
               </p>
             )}
           </div>
