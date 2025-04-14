@@ -49,6 +49,10 @@ export default function TestPage() {
   const [deliveryValue, setDeliveryValue] = useState('');
   const [matchedComanda, setMatchedComanda] = useState<Comanda | null>(null);
   
+  // State for managing multiple deliveries
+  const [selectedDeliveries, setSelectedDeliveries] = useState<string[]>([]);
+  const [pendingDeliveriesByMotoboy, setPendingDeliveriesByMotoboy] = useState<{[key: string]: number}>({});
+
   // Load profile, motoboys, deliveries, and comandas on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +87,9 @@ export default function TestPage() {
           
           if (deliveryError) throw deliveryError;
           setDeliveries(deliveryData || []);
+          
+          // Calculate pending deliveries by motoboy
+          calculatePendingDeliveriesByMotoboy(deliveryData || []);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -94,6 +101,23 @@ export default function TestPage() {
     
     fetchData();
   }, []);
+  
+  // Calculate pending deliveries by motoboy
+  const calculatePendingDeliveriesByMotoboy = (deliveryData: Delivery[]) => {
+    const pendingByMotoboy: {[key: string]: number} = {};
+    
+    deliveryData.forEach(delivery => {
+      if (delivery.status === 'pendente') {
+        if (pendingByMotoboy[delivery.motoboy_id]) {
+          pendingByMotoboy[delivery.motoboy_id]++;
+        } else {
+          pendingByMotoboy[delivery.motoboy_id] = 1;
+        }
+      }
+    });
+    
+    setPendingDeliveriesByMotoboy(pendingByMotoboy);
+  };
   
   // Search for comanda when order code changes
   useEffect(() => {
@@ -287,6 +311,7 @@ export default function TestPage() {
       
       if (fetchError) throw fetchError;
       setDeliveries(data || []);
+      calculatePendingDeliveriesByMotoboy(data || []);
       
       // Reset form and hide it
       setOrderCode('');
@@ -313,14 +338,64 @@ export default function TestPage() {
       if (error) throw error;
       
       // Update deliveries list
-      setDeliveries(deliveries.map(d => 
+      const updatedDeliveries = deliveries.map(d => 
         d.id === id ? { ...d, status: newStatus } : d
-      ));
+      );
+      setDeliveries(updatedDeliveries);
+      calculatePendingDeliveriesByMotoboy(updatedDeliveries);
       
       toast.success(`Status atualizado para: ${newStatus}`);
     } catch (error) {
       console.error('Error updating delivery status:', error);
       toast.error('Erro ao atualizar status da entrega');
+    }
+  };
+  
+  // Handle multiple deliveries selection
+  const toggleDeliverySelection = (deliveryId: string) => {
+    setSelectedDeliveries(prev => {
+      if (prev.includes(deliveryId)) {
+        return prev.filter(id => id !== deliveryId);
+      } else {
+        return [...prev, deliveryId];
+      }
+    });
+  };
+  
+  // Assign selected deliveries to a motoboy
+  const assignSelectedDeliveriesToMotoboy = async (motoboyId: string) => {
+    if (selectedDeliveries.length === 0) {
+      toast.error('Selecione pelo menos uma entrega para atribuir');
+      return;
+    }
+    
+    try {
+      const updates = selectedDeliveries.map(deliveryId => 
+        supabase
+          .from('entregas')
+          .update({ motoboy_id: motoboyId })
+          .eq('id', deliveryId)
+      );
+      
+      await Promise.all(updates);
+      
+      // Refresh deliveries list
+      const { data, error } = await supabase
+        .from('entregas')
+        .select('*')
+        .eq('user_id', profile?.id || '')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setDeliveries(data || []);
+      calculatePendingDeliveriesByMotoboy(data || []);
+      
+      // Clear selection
+      setSelectedDeliveries([]);
+      toast.success('Entregas atribuídas com sucesso');
+    } catch (error) {
+      console.error('Error assigning deliveries:', error);
+      toast.error('Erro ao atribuir entregas');
     }
   };
   
@@ -430,6 +505,7 @@ export default function TestPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregas Pendentes</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
@@ -441,6 +517,13 @@ export default function TestPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{motoboy.nome}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{motoboy.telefone || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{motoboy.placa || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          pendingDeliveriesByMotoboy[motoboy.id] > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {pendingDeliveriesByMotoboy[motoboy.id] || 0}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           motoboy.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -466,7 +549,7 @@ export default function TestPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                       Nenhum motoboy cadastrado
                     </td>
                   </tr>
@@ -523,6 +606,9 @@ export default function TestPage() {
                       <p className="text-sm text-green-800">
                         Total: R$ {matchedComanda.total.toFixed(2)} | {matchedComanda.bairro}
                       </p>
+                      <p className="text-sm text-green-800">
+                        Endereço: {matchedComanda.endereco}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -550,7 +636,9 @@ export default function TestPage() {
                   >
                     <option value="">Selecione um motoboy</option>
                     {motoboys.map((motoboy) => (
-                      <option key={motoboy.id} value={motoboy.id}>{motoboy.nome}</option>
+                      <option key={motoboy.id} value={motoboy.id}>
+                        {motoboy.nome} ({pendingDeliveriesByMotoboy[motoboy.id] || 0} entregas pendentes)
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -578,40 +666,97 @@ export default function TestPage() {
             </form>
           )}
           
+          {/* Multiple Deliveries Management */}
+          {selectedDeliveries.length > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+              <div className="text-blue-800">
+                <span className="font-semibold">{selectedDeliveries.length}</span> entrega(s) selecionada(s)
+              </div>
+              <div className="flex items-center">
+                {motoboys.length > 0 && (
+                  <select
+                    className="mr-2 p-2 border border-blue-300 rounded-md text-sm"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        assignSelectedDeliveriesToMotoboy(e.target.value);
+                      }
+                    }}
+                    value=""
+                  >
+                    <option value="">Atribuir para...</option>
+                    {motoboys.map(motoboy => (
+                      <option key={motoboy.id} value={motoboy.id}>{motoboy.nome}</option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  onClick={() => setSelectedDeliveries([])}
+                  className="text-blue-600 hover:text-blue-800 p-2"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* Deliveries List */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white rounded-lg">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plataforma</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motoboy</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endereço</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                  <th className="w-10 px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedDeliveries.length > 0 && selectedDeliveries.length === deliveries.filter(d => d.status === 'pendente').length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedDeliveries(deliveries.filter(d => d.status === 'pendente').map(d => d.id));
+                        } else {
+                          setSelectedDeliveries([]);
+                        }
+                      }}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                    />
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plataforma</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motoboy</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endereço</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {deliveries.length > 0 ? (
                   deliveries.map((delivery) => (
-                    <tr key={delivery.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <tr key={delivery.id} className={`hover:bg-gray-50 ${selectedDeliveries.includes(delivery.id) ? 'bg-blue-50' : ''}`}>
+                      <td className="px-2 py-3 whitespace-nowrap text-center">
+                        {delivery.status === 'pendente' && (
+                          <input 
+                            type="checkbox" 
+                            checked={selectedDeliveries.includes(delivery.id)}
+                            onChange={() => toggleDeliverySelection(delivery.id)}
+                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                          />
+                        )}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                         {new Date(delivery.data).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
                         {formatPlatform(delivery.origem)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                         {getMotoboyName(delivery.motoboy_id)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {delivery.endereco ? `${delivery.endereco} (${delivery.bairro})` : '-'}
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {delivery.endereco ? `${delivery.endereco.substring(0, 20)}... (${delivery.bairro})` : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                         R$ {delivery.valor_entrega.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           delivery.status === 'entregue' ? 'bg-green-100 text-green-800' : 
                           delivery.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' : 
@@ -620,11 +765,11 @@ export default function TestPage() {
                           {delivery.status || 'pendente'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                         {delivery.status !== 'entregue' ? (
                           <button
                             onClick={() => handleUpdateDeliveryStatus(delivery.id, 'entregue')}
-                            className="text-green-600 hover:text-green-900 mr-3"
+                            className="text-green-600 hover:text-green-900 mr-2"
                             title="Marcar como entregue"
                           >
                             <Check className="h-4 w-4" />
@@ -632,7 +777,7 @@ export default function TestPage() {
                         ) : (
                           <button
                             onClick={() => handleUpdateDeliveryStatus(delivery.id, 'pendente')}
-                            className="text-yellow-600 hover:text-yellow-900 mr-3"
+                            className="text-yellow-600 hover:text-yellow-900 mr-2"
                             title="Marcar como pendente"
                           >
                             <X className="h-4 w-4" />
@@ -643,7 +788,7 @@ export default function TestPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                       Nenhuma entrega registrada
                     </td>
                   </tr>
