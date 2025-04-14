@@ -264,7 +264,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       return;
     }
     if (needsTroco && (quantiapagaInput === null || quantiapagaInput < totalComTaxa)) {
-      toast.error('Quantia paga insuficiente.');
+      toast.error('Por favor, informe uma quantia válida maior que o valor em dinheiro.');
       return;
     }
     if (!needsTroco) {

@@ -2,13 +2,13 @@
 interface PagamentoMistoModalProps {
   show: boolean;
   totalComTaxa: number;
-  valorCartaoInput: string;
-  valorDinheiroInput: string;
-  valorPixInput: string;
+  valorCartaoInput: string | number | null;
+  valorDinheiroInput: string | number | null;
+  valorPixInput: string | number | null;
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
-  onSaveAndPrint: () => void;
+  onSaveAndPrint?: () => void;
 }
 
 export default function PagamentoMistoModal({
@@ -24,16 +24,16 @@ export default function PagamentoMistoModal({
 }: PagamentoMistoModalProps) {
   if (!show) return null;
   
-  const valorCartao = parseFloat(valorCartaoInput) || 0;
-  const valorDinheiro = parseFloat(valorDinheiroInput) || 0;
-  const valorPix = parseFloat(valorPixInput) || 0;
+  const valorCartao = Number(valorCartaoInput) || 0;
+  const valorDinheiro = Number(valorDinheiroInput) || 0;
+  const valorPix = Number(valorPixInput) || 0;
   const totalPagamento = valorCartao + valorDinheiro + valorPix;
   const diferenca = totalComTaxa - totalPagamento;
 
   const handleConfirmAndSave = () => {
     onConfirm();
-    // Only proceed to save if the payment values match the total
-    if (Math.abs(diferenca) < 0.01) {
+    // Only proceed to save if the payment values match the total and onSaveAndPrint is provided
+    if (Math.abs(diferenca) < 0.01 && onSaveAndPrint) {
       onSaveAndPrint();
     }
   };
@@ -65,7 +65,7 @@ export default function PagamentoMistoModal({
             <input
               id="valorCartao"
               type="number"
-              value={valorCartaoInput}
+              value={valorCartaoInput === null ? '' : valorCartaoInput}
               onChange={(e) => onChange('valorCartaoInput', e.target.value)}
               placeholder="0.00"
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
@@ -85,7 +85,7 @@ export default function PagamentoMistoModal({
             <input
               id="valorDinheiro"
               type="number"
-              value={valorDinheiroInput}
+              value={valorDinheiroInput === null ? '' : valorDinheiroInput}
               onChange={(e) => onChange('valorDinheiroInput', e.target.value)}
               placeholder="0.00"
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
@@ -105,7 +105,7 @@ export default function PagamentoMistoModal({
             <input
               id="valorPix"
               type="number"
-              value={valorPixInput}
+              value={valorPixInput === null ? '' : valorPixInput}
               onChange={(e) => onChange('valorPixInput', e.target.value)}
               placeholder="0.00"
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"

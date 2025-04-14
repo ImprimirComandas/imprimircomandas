@@ -2,7 +2,7 @@
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
-  quantiapagaInput: string | number | null;
+  quantiapagaInput: number | null;
   totalComTaxa: number;
   onClose: () => void;
   onConfirm: () => void;
@@ -89,9 +89,9 @@ export default function TrocoModal({
               min={totalComTaxa}
               aria-describedby="troco-info"
             />
-            {quantiapagaInput && parseFloat(quantiapagaInput.toString()) > totalComTaxa && (
+            {quantiapagaInput !== null && quantiapagaInput > totalComTaxa && (
               <p id="troco-info" className="mt-2 text-sm text-gray-500">
-                Troco: R$ {(parseFloat(quantiapagaInput.toString()) - totalComTaxa).toFixed(2)}
+                Troco: R$ {(quantiapagaInput - totalComTaxa).toFixed(2)}
               </p>
             )}
           </div>
