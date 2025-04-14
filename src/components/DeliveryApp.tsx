@@ -803,4 +803,126 @@ const DeliveryApp = ({ profile }: DeliveryAppProps) => {
     setComandaSelecionada,
     showPaymentConfirmation,
     setShowPaymentConfirmation,
-  } = useComandas
+  } = useComandas();
+
+  const {
+    comanda,
+    pesquisaProduto,
+    produtosFiltrados,
+    editingProduct,
+    setEditingProduct,
+    showTrocoModal,
+    needsTroco,
+    quantiapagaInput,
+    totalComTaxa,
+    showPagamentoMistoModal,
+    valorCartaoInput,
+    valorDinheiroInput,
+    valorPixInput,
+    onBairroChange,
+    salvarProduto,
+    editarProduto,
+    removerProduto,
+    atualizarQuantidadeProduto,
+    onFormaPagamentoChange,
+    onChange,
+    handleTrocoConfirm,
+    closeTrocoModal,
+    handlePagamentoMistoConfirm,
+    closePagamentoMistoModal,
+    salvarComanda,
+    selecionarProdutoCadastrado,
+    startEditingProduct,
+  } = useComandaForm(carregarComandas, setSalvando);
+
+  useEffect(() => {
+    carregarComandas();
+  }, []);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <CadastroProdutoForm
+            onSaveProduto={salvarProduto}
+            onEditProduto={editarProduto}
+            editingProduct={editingProduct}
+            setEditingProduct={setEditingProduct}
+          />
+          
+          <ComandaForm
+            comanda={comanda}
+            pesquisaProduto={pesquisaProduto}
+            produtosFiltrados={produtosFiltrados}
+            salvando={salvando}
+            totalComTaxa={totalComTaxa}
+            onRemoveProduto={removerProduto}
+            onUpdateQuantidade={atualizarQuantidadeProduto}
+            onSaveComanda={salvarComanda}
+            onChange={onChange}
+            onBairroChange={onBairroChange}
+            onFormaPagamentoChange={onFormaPagamentoChange}
+            selecionarProdutoCadastrado={selecionarProdutoCadastrado}
+            startEditingProduct={startEditingProduct}
+          />
+        </div>
+        
+        <div>
+          <TotaisPorStatusPagamento 
+            totalConfirmado={totais.confirmados} 
+            totalPendente={totais.naoConfirmados} 
+          />
+          
+          <ComandasAnterioresModificado
+            comandas={comandasAnteriores}
+            expandedComandas={expandedComandas}
+            carregando={carregando}
+            onToggleExpand={toggleExpandComanda}
+            onReimprimir={reimprimirComanda}
+            onExcluir={excluirComanda}
+            onConfirmarPagamento={(comanda) => {
+              setComandaSelecionada(comanda);
+              setShowPaymentConfirmation(true);
+            }}
+          />
+        </div>
+      </div>
+
+      {showTrocoModal && (
+        <TrocoModal
+          show={showTrocoModal}
+          needsTroco={needsTroco}
+          quantiapagaInput={quantiapagaInput}
+          totalComTaxa={totalComTaxa}
+          onClose={closeTrocoModal}
+          onConfirm={handleTrocoConfirm}
+          onChange={onChange}
+        />
+      )}
+
+      {showPagamentoMistoModal && (
+        <PagamentoMistoModal
+          show={showPagamentoMistoModal}
+          totalComTaxa={totalComTaxa}
+          valorCartaoInput={valorCartaoInput}
+          valorDinheiroInput={valorDinheiroInput}
+          valorPixInput={valorPixInput}
+          onClose={closePagamentoMistoModal}
+          onConfirm={handlePagamentoMistoConfirm}
+          onChange={onChange}
+        />
+      )}
+
+      {showPaymentConfirmation && comandaSelecionada && (
+        <PaymentConfirmationModal
+          show={showPaymentConfirmation}
+          comanda={comandaSelecionada}
+          onClose={() => setShowPaymentConfirmation(false)}
+          onConfirm={confirmarPagamento}
+        />
+      )}
+    </div>
+  );
+};
+
+export default DeliveryApp;
