@@ -1,14 +1,15 @@
 
+import React from 'react';
+
 interface PagamentoMistoModalProps {
   show: boolean;
   totalComTaxa: number;
-  valorCartaoInput: string;
-  valorDinheiroInput: string;
-  valorPixInput: string;
+  valorCartaoInput: number | null;
+  valorDinheiroInput: number | null;
+  valorPixInput: number | null;
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
-  onSaveAndPrint: () => void;
 }
 
 export default function PagamentoMistoModal({
@@ -20,143 +21,87 @@ export default function PagamentoMistoModal({
   onClose,
   onConfirm,
   onChange,
-  onSaveAndPrint,
 }: PagamentoMistoModalProps) {
   if (!show) return null;
   
-  const valorCartao = parseFloat(valorCartaoInput) || 0;
-  const valorDinheiro = parseFloat(valorDinheiroInput) || 0;
-  const valorPix = parseFloat(valorPixInput) || 0;
-  const totalPagamento = valorCartao + valorDinheiro + valorPix;
-  const diferenca = totalComTaxa - totalPagamento;
-
-  const handleConfirmAndSave = () => {
-    onConfirm();
-    // Only proceed to save if the payment values match the total
-    if (Math.abs(diferenca) < 0.01) {
-      onSaveAndPrint();
-    }
-  };
-
+  const totalAtual = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
+  const diferenca = totalComTaxa - totalAtual;
+  
   return (
-    <div
-      className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 ${
-        show ? 'opacity-100' : 'opacity-0'
-      }`}
-      aria-modal="true"
-      role="dialog"
-    >
-      <div
-        className={`bg-white rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg transform transition-all duration-300 ${
-          show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-        }`}
-      >
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-5">
-          Pagamento Misto
-        </h2>
-        <div className="space-y-4 mb-5">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <h2 className="text-lg font-bold mb-4">Pagamento Misto</h2>
+        <div className="space-y-4">
           <div>
-            <label
-              htmlFor="valorCartao"
-              className="block text-sm font-medium text-gray-700 mb-1.5"
-            >
-              Valor no Cartão (R$)
+            <label htmlFor="valorCartaoInput" className="block text-sm font-medium text-gray-700">
+              Valor no Cartão
             </label>
             <input
-              id="valorCartao"
               type="number"
-              value={valorCartaoInput}
+              id="valorCartaoInput"
+              name="valorCartaoInput"
+              value={valorCartaoInput === null ? '' : valorCartaoInput}
               onChange={(e) => onChange('valorCartaoInput', e.target.value)}
-              placeholder="0.00"
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
-              step="0.01"
+              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
               min="0"
-              max={totalComTaxa}
+              step="0.01"
             />
           </div>
-          
           <div>
-            <label
-              htmlFor="valorDinheiro"
-              className="block text-sm font-medium text-gray-700 mb-1.5"
-            >
-              Valor em Dinheiro (R$)
+            <label htmlFor="valorDinheiroInput" className="block text-sm font-medium text-gray-700">
+              Valor em Dinheiro
             </label>
             <input
-              id="valorDinheiro"
               type="number"
-              value={valorDinheiroInput}
+              id="valorDinheiroInput"
+              name="valorDinheiroInput"
+              value={valorDinheiroInput === null ? '' : valorDinheiroInput}
               onChange={(e) => onChange('valorDinheiroInput', e.target.value)}
-              placeholder="0.00"
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
-              step="0.01"
+              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
               min="0"
-              max={totalComTaxa}
+              step="0.01"
             />
           </div>
-          
           <div>
-            <label
-              htmlFor="valorPix"
-              className="block text-sm font-medium text-gray-700 mb-1.5"
-            >
-              Valor no PIX (R$)
+            <label htmlFor="valorPixInput" className="block text-sm font-medium text-gray-700">
+              Valor no PIX
             </label>
             <input
-              id="valorPix"
               type="number"
-              value={valorPixInput}
+              id="valorPixInput"
+              name="valorPixInput"
+              value={valorPixInput === null ? '' : valorPixInput}
               onChange={(e) => onChange('valorPixInput', e.target.value)}
-              placeholder="0.00"
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
-              step="0.01"
+              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
               min="0"
-              max={totalComTaxa}
+              step="0.01"
             />
           </div>
-          
-          <div className="pt-2 border-t border-gray-200">
-            <div className="flex justify-between">
-              <span className="font-medium text-gray-700">Total a pagar:</span>
-              <span className="font-bold text-gray-900">R$ {totalComTaxa.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="font-medium text-gray-700">Total informado:</span>
-              <span className={`font-bold ${Math.abs(diferenca) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-                R$ {totalPagamento.toFixed(2)}
-              </span>
-            </div>
-            {Math.abs(diferenca) >= 0.01 && (
-              <div className="flex justify-between mt-1">
-                <span className="font-medium text-gray-700">Diferença:</span>
-                <span className="font-bold text-red-600">
-                  R$ {diferenca.toFixed(2)}
-                </span>
-              </div>
-            )}
+          <div className="font-semibold text-gray-700">
+            Total a pagar: R$ {totalComTaxa.toFixed(2)}
           </div>
-        </div>
-        
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200"
-            aria-label="Cancelar"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirmAndSave}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              Math.abs(diferenca) >= 0.01
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-            }`}
-            disabled={Math.abs(diferenca) >= 0.01}
-            aria-label="Confirmar"
-          >
-            Confirmar e Salvar
-          </button>
+          <div className={`font-semibold ${Math.abs(diferenca) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+            {Math.abs(diferenca) < 0.01
+              ? 'Valores conferem!'
+              : `Diferença: R$ ${diferenca.toFixed(2)} ${diferenca > 0 ? '(faltando)' : '(excedente)'}`}
+          </div>
+          <div className="flex justify-end space-x-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-md"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md"
+              disabled={Math.abs(diferenca) >= 0.01}
+            >
+              Confirmar
+            </button>
+          </div>
         </div>
       </div>
     </div>

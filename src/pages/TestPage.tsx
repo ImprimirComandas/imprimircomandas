@@ -90,6 +90,16 @@ export default function TestPage() {
           
           // Calculate pending deliveries by motoboy
           calculatePendingDeliveriesByMotoboy(deliveryData || []);
+          
+          // Fetch all comandas for easier search
+          const { data: comandasData, error: comandasError } = await supabase
+            .from('comandas')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+            
+          if (comandasError) throw comandasError;
+          setComandas(comandasData || []);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -121,47 +131,41 @@ export default function TestPage() {
   
   // Search for comanda when order code changes
   useEffect(() => {
-    const searchComanda = async () => {
-      if (!orderCode.trim()) {
-        setMatchedComanda(null);
-        return;
-      }
-      
-      setLoadingComandas(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data, error } = await supabase
-            .from('comandas')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .eq('id', orderCode)
-            .maybeSingle();
-          
-          if (error && error.code !== 'PGRST116') throw error;
-          
-          if (data) {
-            // Convert produtos from JSONB to object if needed
-            const comandaWithProducts = {
-              ...data,
-              produtos: Array.isArray(data.produtos) ? data.produtos : JSON.parse(data.produtos as any)
-            };
-            setMatchedComanda(comandaWithProducts);
-          } else {
-            setMatchedComanda(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error searching for comanda:', error);
-        toast.error('Erro ao buscar comanda');
-        setMatchedComanda(null);
-      } finally {
-        setLoadingComandas(false);
-      }
-    };
+    if (!orderCode.trim()) {
+      setMatchedComanda(null);
+      return;
+    }
     
-    searchComanda();
-  }, [orderCode]);
+    setLoadingComandas(true);
+    
+    // First try to find by exact ID
+    const exactMatch = comandas.find(c => c.id === orderCode);
+    
+    // If no exact match, try to find by last 8 characters of ID (for convenience)
+    const partialMatch = !exactMatch ? 
+      comandas.find(c => c.id && c.id.endsWith(orderCode.slice(-8))) : 
+      null;
+    
+    if (exactMatch) {
+      setMatchedComanda({
+        ...exactMatch,
+        produtos: Array.isArray(exactMatch.produtos) ? 
+          exactMatch.produtos : 
+          JSON.parse(exactMatch.produtos as any)
+      });
+    } else if (partialMatch) {
+      setMatchedComanda({
+        ...partialMatch,
+        produtos: Array.isArray(partialMatch.produtos) ? 
+          partialMatch.produtos : 
+          JSON.parse(partialMatch.produtos as any)
+      });
+    } else {
+      setMatchedComanda(null);
+    }
+    
+    setLoadingComandas(false);
+  }, [orderCode, comandas]);
   
   // Reset motoboy form
   const resetMotoboyForm = () => {
@@ -587,7 +591,7 @@ export default function TestPage() {
                       value={orderCode}
                       onChange={(e) => setOrderCode(e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded-l-md"
-                      placeholder="Código do pedido"
+                      placeholder="Código do pedido ou últimos 8 dígitos"
                     />
                     <div className="bg-gray-200 text-gray-700 p-2 flex items-center justify-center rounded-r-md">
                       {loadingComandas ? (
