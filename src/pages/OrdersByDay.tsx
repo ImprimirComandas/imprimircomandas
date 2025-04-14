@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -14,7 +13,7 @@ export default function OrdersByDay() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [comandas, setComandas] = useState<Comanda[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedComandas, setExpandedComandas] = useState<{ [key: string]: boolean }>({});
+  const [expandedComandas, setExpandedComandas] = useState<{ [key: string]: boolean }>({}); 
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [comandaSelecionada, setComandaSelecionada] = useState<Comanda | null>(null);
 
@@ -45,7 +44,6 @@ export default function OrdersByDay() {
         return;
       }
 
-      // Convert produtos from JSON string to object if needed
       const comandasFormatadas = data?.map(comanda => ({
         ...comanda,
         produtos: Array.isArray(comanda.produtos) ? comanda.produtos : JSON.parse(comanda.produtos as any)
@@ -83,7 +81,6 @@ export default function OrdersByDay() {
 
   const reimprimirComanda = (comanda: Comanda) => {
     try {
-      // Import dynamically to avoid circular dependencies
       import('../utils/printService').then(module => {
         module.imprimirComanda(comanda);
         toast.success('Comanda enviada para impressão');
@@ -242,7 +239,6 @@ export default function OrdersByDay() {
             onReimprimir={reimprimirComanda}
             onExcluir={excluirComanda}
             onToggleExpand={toggleExpandComanda}
-            getUltimos8Digitos={getUltimos8Digitos}
             onConfirmPayment={prepareConfirmPayment}
           />
         )}

@@ -1,6 +1,8 @@
+
 import { FC } from 'react';
 import { Printer, Trash2, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Comanda } from '../types/database';
+import { getUltimos8Digitos as getUltimos8DigitosUtil } from '../utils/printService';
 
 interface ComandasAnterioresProps {
   comandas: Comanda[];
@@ -9,7 +11,7 @@ interface ComandasAnterioresProps {
   onReimprimir: (comanda: Comanda) => void;
   onExcluir: (id: string | undefined) => void;
   onToggleExpand: (id: string) => void;
-  getUltimos8Digitos: (id: string | undefined) => string;
+  getUltimos8Digitos?: (id: string | undefined) => string;
   onConfirmPayment: (comanda: Comanda) => void;
 }
 
@@ -23,6 +25,9 @@ const ComandasAnterioresModificado: FC<ComandasAnterioresProps> = ({
   getUltimos8Digitos,
   onConfirmPayment,
 }) => {
+  // Use the imported util function if the prop is not provided
+  const formatId = getUltimos8Digitos || getUltimos8DigitosUtil;
+
   if (carregando) {
     return (
       <section className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -64,7 +69,7 @@ const ComandasAnterioresModificado: FC<ComandasAnterioresProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <span className="font-medium text-base">
-                    Pedido #{getUltimos8Digitos(comanda.id)}
+                    Pedido #{formatId(comanda.id)}
                   </span>
                   <span
                     className={`px-2 py-1 text-xs rounded ${

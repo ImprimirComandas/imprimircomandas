@@ -6,12 +6,10 @@ import ComandasAnterioresModificado from './ComandasAnterioresModificado';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import TotaisPorStatusPagamento from './TotaisPorStatusPagamento';
 import TotaisPorFormaPagamento from './TotaisPorFormaPagamento';
-// Import TrocoModal
 import TrocoModalComponent from './TrocoModal';
 import type { Profile, Comanda, Produto } from '../types/database';
 import { useComandas } from '../hooks/useComandas';
 
-// Taxas de bairro
 const bairroTaxas = {
   'Jardim Paraíso': 6,
   'Aventureiro': 9,
@@ -19,7 +17,6 @@ const bairroTaxas = {
   'Cubatão': 9,
 };
 
-// CadastroProdutoForm Component
 interface CadastroProdutoFormProps {
   onSaveProduto: (nome: string, valor: string) => Promise<void>;
   onEditProduto: (id: string, nome: string, valor: string) => Promise<void>;
@@ -140,7 +137,6 @@ const CadastroProdutoForm = ({ onSaveProduto, onEditProduto, editingProduct, set
   );
 };
 
-// DeliveryApp Component
 interface DeliveryAppProps {
   profile: Profile | null;
 }
@@ -186,7 +182,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     selecionarProdutoCadastrado
   } = useComandas();
 
-  // State for product entry fields and manual product addition
   const [nomeProduto, setNomeProduto] = useState('');
   const [valorProduto, setValorProduto] = useState('');
   const [quantidadeProduto, setQuantidadeProduto] = useState('1');
@@ -229,7 +224,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     setEditingProduct(produto);
   };
 
-  // Function to handle changes in the product fields
   const handleChange = (field: string, value: any) => {
     if (field === 'nomeProduto') {
       setNomeProduto(value);
@@ -238,12 +232,10 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     } else if (field === 'quantidadeProduto') {
       setQuantidadeProduto(value);
     } else {
-      // Pass other changes to the onChange function from useComandas
       onChange(field, value);
     }
   };
 
-  // Function to add a product manually
   const adicionarProduto = () => {
     if (!nomeProduto || !valorProduto) {
       toast.error('Preencha o nome e valor do produto');
@@ -256,12 +248,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
       quantidade: parseInt(quantidadeProduto) || 1
     };
 
-    // Add to the comanda's produtos array
-    // This assumes the useComandas hook has a method to handle this
-    // If not, you'll need to implement this functionality
     if (removerProduto) {
-      // We can infer that there should be an addProduto method as well
-      // For now, we'll just update the UI state
       setNomeProduto('');
       setValorProduto('');
       setQuantidadeProduto('1');
@@ -273,12 +260,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     <div className="container mx-auto p-4">
       <h1 className="text-xl font-bold mb-4">App de Delivery - {profile?.store_name || 'Seu Restaurante'}</h1>
       
-      {/* Grid para layout responsivo */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* Coluna da esquerda - Form */}
         <div className="space-y-6">
-          {/* Componente para cadastro de produtos */}
           <CadastroProdutoForm
             onSaveProduto={onSaveProduto}
             onEditProduto={onEditProduto}
@@ -286,11 +270,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             setEditingProduct={setEditingProduct}
           />
           
-          {/* Cadastro de Produtos para a comanda */}
           <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
             <h2 className="text-lg font-semibold mb-4">Adicionar Produtos ao Pedido</h2>
             
-            {/* Busca de produtos cadastrados */}
             <div className="mb-4">
               <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
                 Buscar Produto Cadastrado
@@ -340,7 +322,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
               </div>
             </div>
             
-            {/* Formulário de adição manual de produtos */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label htmlFor="nomeProduto" className="block text-sm font-medium text-gray-700">
@@ -394,7 +375,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             </button>
           </div>
           
-          {/* Lista de produtos da comanda */}
           <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
             <h2 className="text-lg font-semibold mb-4">Produtos do Pedido</h2>
             
@@ -427,7 +407,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             )}
           </div>
           
-          {/* Informações de Entrega e Pagamento */}
           <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
             <h2 className="text-lg font-semibold mb-4">Informações de Entrega</h2>
             
@@ -463,7 +442,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 </select>
               </div>
               
-              {/* Taxa de entrega */}
               <div className="flex justify-between text-sm">
                 <span>Taxa de Entrega:</span>
                 <span className="font-semibold">R$ {comanda.taxaentrega.toFixed(2)}</span>
@@ -519,7 +497,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           </div>
         </div>
         
-        {/* Coluna da direita - Comandas anteriores e gráficos */}
         <div className="space-y-6">
           <TotaisPorStatusPagamento
             confirmados={totais.confirmados || 0}
@@ -536,16 +513,14 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             onToggleExpand={toggleExpandComanda}
             onReimprimir={reimprimirComanda}
             onExcluir={excluirComanda}
-            onConfirmarPagamento={(comanda) => {
+            onConfirmPayment={(comanda) => {
               setComandaSelecionada(comanda);
               setShowPaymentConfirmation(true);
             }}
-            onCarregarComandas={carregarComandas}
           />
         </div>
       </div>
       
-      {/* Modal de Confirmação de Pagamento */}
       <PaymentConfirmationModal
         show={showPaymentConfirmation}
         comanda={comandaSelecionada}
@@ -553,7 +528,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
         onConfirm={confirmarPagamento}
       />
       
-      {/* Modal de Troco */}
       <TrocoModalComponent
         show={showTrocoModal}
         needsTroco={needsTroco}
