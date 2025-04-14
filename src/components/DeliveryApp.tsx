@@ -6,7 +6,8 @@ import ComandasAnterioresModificado from './ComandasAnterioresModificado';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import TotaisPorStatusPagamento from './TotaisPorStatusPagamento';
 import type { Profile, Comanda, Produto } from '../types/database';
-import TrocoModal from './TrocoModal';
+// Import TrocoModal with a different name to avoid collision
+import TrocoModalComponent from './TrocoModal';
 
 // Taxas de bairro
 const bairroTaxas = {
@@ -780,32 +781,6 @@ const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (val
   };
 };
 
-// TrocoModal Props Interface
-interface TrocoModalProps {
-  show: boolean;
-  needsTroco: boolean | null;
-  quantiapagaInput: number | null;
-  totalComTaxa: number;
-  onClose: () => void;
-  onConfirm: () => void;
-  onChange: (field: string, value: any) => void;
-  onSaveAndPrint?: () => void;
-}
-
-// TrocoModal Component
-const TrocoModal = ({
-  show,
-  needsTroco,
-  quantiapagaInput,
-  totalComTaxa,
-  onClose,
-  onConfirm,
-  onChange,
-  onSaveAndPrint,
-}: TrocoModalProps) => {
-  if (!show) return
-};
-
 // DeliveryApp Component
 interface DeliveryAppProps {
   profile: Profile | null;
@@ -830,11 +805,12 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     setShowPaymentConfirmation,
   } = useComandas();
 
+  // Create a local variable for useComandaForm
+  const comadaFormProps = useComandaForm(carregarComandas, setSalvando);
+  
+  // Destructure properly to align with what the hook actually returns
   const {
     comanda,
-    nomeProduto,
-    valorProduto,
-    quantidadeProduto,
     pesquisaProduto,
     produtosFiltrados,
     showTrocoModal,
@@ -845,18 +821,17 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     valorCartaoInput,
     valorDinheiroInput,
     valorPixInput,
-    handleBairroChange,
-    adicionarProduto,
+    onChange,
     removerProduto,
-    handleFormaPagamentoChange,
-    handleChange,
+    salvarComanda,
+    selecionarProdutoCadastrado,
+    onBairroChange,
+    onFormaPagamentoChange,
     handleTrocoConfirm,
     closeTrocoModal,
     handlePagamentoMistoConfirm,
-    closePagamentoMistoModal,
-    salvarComanda,
-    selecionarProdutoCadastrado
-  } = useComandaForm(carregarComandas, setSalvando);
+    closePagamentoMistoModal
+  } = comadaFormProps;
 
   const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
 
@@ -928,7 +903,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                   id="pesquisaProduto"
                   type="text"
                   value={pesquisaProduto}
-                  onChange={(e) => handleChange('pesquisaProduto', e.target.value)}
+                  onChange={(e) => onChange('pesquisaProduto', e.target.value)}
                   placeholder="Digite para buscar produtos cadastrados"
                   className="w-full p-2 pl-8 border rounded text-sm"
                 />
@@ -977,8 +952,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 <input
                   id="nomeProduto"
                   type="text"
-                  value={nomeProduto}
-                  onChange={(e) => handleChange('nomeProduto', e.target.value)}
+                  value={comadaFormProps.nomeProduto || ''}
+                  onChange={(e) => comadaFormProps.handleChange && comadaFormProps.handleChange('nomeProduto', e.target.value)}
                   placeholder="Ex: X-Bacon"
                   className="w-full p-2 border rounded text-sm"
                 />
@@ -990,8 +965,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 <input
                   id="valorProduto"
                   type="number"
-                  value={valorProduto}
-                  onChange={(e) => handleChange('valorProduto', e.target.value)}
+                  value={comadaFormProps.valorProduto || ''}
+                  onChange={(e) => comadaFormProps.handleChange && comadaFormProps.handleChange('valorProduto', e.target.value)}
                   placeholder="0.00"
                   className="w-full p-2 border rounded text-sm"
                   step="0.01"
@@ -1005,8 +980,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 <input
                   id="quantidadeProduto"
                   type="number"
-                  value={quantidadeProduto}
-                  onChange={(e) => handleChange('quantidadeProduto', e.target.value)}
+                  value={comadaFormProps.quantidadeProduto || '1'}
+                  onChange={(e) => comadaFormProps.handleChange && comadaFormProps.handleChange('quantidadeProduto', e.target.value)}
                   className="w-full p-2 border rounded text-sm"
                   min="1"
                 />
@@ -1014,7 +989,11 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             </div>
             
             <button
-              onClick={adicionarProduto}
+              onClick={() => {
+                if (comadaFormProps.adicionarProduto) {
+                  comadaFormProps.adicionarProduto();
+                }
+              }}
               className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center justify-center gap-2"
             >
               <Save size={18} />
@@ -1068,7 +1047,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                   id="endereco"
                   type="text"
                   value={comanda.endereco}
-                  onChange={(e) => handleChange('endereco', e.target.value)}
+                  onChange={(e) => onChange('endereco', e.target.value)}
                   placeholder="Rua, número, complemento"
                   className="w-full p-2 border rounded text-sm"
                 />
@@ -1081,7 +1060,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 <select
                   id="bairro"
                   value={comanda.bairro}
-                  onChange={(e) => handleBairroChange(e.target.value)}
+                  onChange={(e) => onBairroChange(e.target.value)}
                   className="w-full p-2 border rounded text-sm"
                 >
                   <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
@@ -1109,7 +1088,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 <select
                   id="formaPagamento"
                   value={comanda.forma_pagamento}
-                  onChange={(e) => handleFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
+                  onChange={(e) => onFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
                   className="w-full p-2 border rounded text-sm"
                 >
                   <option value="">Selecione a forma de pagamento</option>
@@ -1125,7 +1104,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                   type="checkbox"
                   id="pago"
                   checked={comanda.pago}
-                  onChange={(e) => handleChange('pago', e.target.checked)}
+                  onChange={(e) => onChange('pago', e.target.checked)}
                   className="h-4 w-4 text-green-600 border-gray-300 rounded"
                 />
                 <label htmlFor="pago" className="ml-2 text-sm text-gray-700">
@@ -1152,15 +1131,12 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           <TotaisPorStatusPagamento
             confirmados={totais.confirmados}
             naoConfirmados={totais.naoConfirmados}
-            pix={totais.pix}
-            dinheiro={totais.dinheiro}
-            cartao={totais.cartao}
           />
           
           <ComandasAnterioresModificado
             comandas={comandasAnteriores}
             carregando={carregando}
-            expandidas={expandedComandas}
+            expandedComandas={expandedComandas}
             onToggleExpand={toggleExpandComanda}
             onReimprimir={reimprimirComanda}
             onExcluir={excluirComanda}
@@ -1181,15 +1157,15 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
         onConfirm={confirmarPagamento}
       />
       
-      {/* Modal de Troco */}
-      <TrocoModal
+      {/* Modal de Troco - Use the imported component */}
+      <TrocoModalComponent
         show={showTrocoModal}
         needsTroco={needsTroco}
-        quantiapagaInput={quantiapagaInput}
+        quantiapagaInput={quantiapagaInput?.toString() || ''}
         totalComTaxa={totalComTaxa}
         onClose={closeTrocoModal}
         onConfirm={handleTrocoConfirm}
-        onChange={handleChange}
+        onChange={onChange}
       />
     </div>
   );
