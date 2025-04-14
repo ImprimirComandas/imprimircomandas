@@ -1,3 +1,4 @@
+
 import { Search, Edit, Trash2, Save } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
 

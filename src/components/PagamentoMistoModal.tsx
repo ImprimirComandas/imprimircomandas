@@ -2,9 +2,9 @@
 interface PagamentoMistoModalProps {
   show: boolean;
   totalComTaxa: number;
-  valorCartaoInput: string | number | null;
-  valorDinheiroInput: string | number | null;
-  valorPixInput: string | number | null;
+  valorCartaoInput: number | null;
+  valorDinheiroInput: number | null;
+  valorPixInput: number | null;
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
@@ -23,19 +23,16 @@ export default function PagamentoMistoModal({
   onSaveAndPrint,
 }: PagamentoMistoModalProps) {
   if (!show) return null;
-  
-  const valorCartao = Number(valorCartaoInput) || 0;
-  const valorDinheiro = Number(valorDinheiroInput) || 0;
-  const valorPix = Number(valorPixInput) || 0;
-  const totalPagamento = valorCartao + valorDinheiro + valorPix;
-  const diferenca = totalComTaxa - totalPagamento;
+
+  const cartao = valorCartaoInput || 0;
+  const dinheiro = valorDinheiroInput || 0;
+  const pix = valorPixInput || 0;
+  const total = cartao + dinheiro + pix;
+  const diferenca = totalComTaxa - total;
 
   const handleConfirmAndSave = () => {
     onConfirm();
-    // Only proceed to save if the payment values match the total and onSaveAndPrint is provided
-    if (Math.abs(diferenca) < 0.01 && onSaveAndPrint) {
-      onSaveAndPrint();
-    }
+    if (onSaveAndPrint) onSaveAndPrint();
   };
 
   return (
@@ -54,6 +51,10 @@ export default function PagamentoMistoModal({
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-5">
           Pagamento Misto
         </h2>
+        <p className="text-gray-600 mb-5">
+          Total a pagar: <span className="font-semibold">R$ {totalComTaxa.toFixed(2)}</span>
+        </p>
+        
         <div className="space-y-4 mb-5">
           <div>
             <label
@@ -71,7 +72,6 @@ export default function PagamentoMistoModal({
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
               step="0.01"
               min="0"
-              max={totalComTaxa}
             />
           </div>
           
@@ -91,7 +91,6 @@ export default function PagamentoMistoModal({
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
               step="0.01"
               min="0"
-              max={totalComTaxa}
             />
           </div>
           
@@ -111,29 +110,20 @@ export default function PagamentoMistoModal({
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
               step="0.01"
               min="0"
-              max={totalComTaxa}
             />
           </div>
-          
-          <div className="pt-2 border-t border-gray-200">
-            <div className="flex justify-between">
-              <span className="font-medium text-gray-700">Total a pagar:</span>
-              <span className="font-bold text-gray-900">R$ {totalComTaxa.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="font-medium text-gray-700">Total informado:</span>
-              <span className={`font-bold ${Math.abs(diferenca) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-                R$ {totalPagamento.toFixed(2)}
-              </span>
-            </div>
-            {Math.abs(diferenca) >= 0.01 && (
-              <div className="flex justify-between mt-1">
-                <span className="font-medium text-gray-700">Diferença:</span>
-                <span className="font-bold text-red-600">
-                  R$ {diferenca.toFixed(2)}
-                </span>
-              </div>
-            )}
+        </div>
+        
+        <div className="bg-gray-50 p-3 rounded-lg mb-5">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">Total:</span>
+            <span className="font-semibold">R$ {total.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-sm font-medium text-gray-700">Diferença:</span>
+            <span className={`font-semibold ${Math.abs(diferenca) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+              R$ {diferenca.toFixed(2)}
+            </span>
           </div>
         </div>
         
@@ -148,9 +138,9 @@ export default function PagamentoMistoModal({
           <button
             onClick={handleConfirmAndSave}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              Math.abs(diferenca) >= 0.01
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+              Math.abs(diferenca) < 0.01
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
             disabled={Math.abs(diferenca) >= 0.01}
             aria-label="Confirmar"
