@@ -13,7 +13,7 @@ export const getUltimos8Digitos = (id: string | undefined): string => {
  * Fetches store information from Supabase
  */
 const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string | null }> => {
-  let storeName = 'Dom Luiz Bebidas';
+  let storeName = 'Olá mundo';
   let avatarUrl = null;
 
   try {
@@ -188,7 +188,6 @@ const createHeaderSection = (storeName: string, comanda: Comanda): string => `
  */
 const createCustomerSection = (comanda: Comanda): string => `
   <div class="customer-info">
-    <div class="section-title">Dados do Cliente</div>
     <div>Endereço: ${comanda.endereco}</div>
     <div>Bairro: ${comanda.bairro}</div>
   </div>
@@ -202,8 +201,8 @@ const createProductsSection = (comanda: Comanda): string => {
     .map(
       (produto) => `
         <div class="product-row">
+          <div class="col-qtd">${produto.quantidade}</div>
           <div class="col-item">${truncateProductName(produto.nome)}</div>
-          <div class="col-qtd">${produto.quantidade}x</div>
           <div class="col-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
         </div>
       `
@@ -212,12 +211,6 @@ const createProductsSection = (comanda: Comanda): string => {
 
   return `
     <div class="product-table">
-      <div class="section-title">Itens</div>
-      <div class="product-header">
-        <div class="col-item">Item</div>
-        <div class="col-qtd">Qtd</div>
-        <div class="col-valor">Valor</div>
-      </div>
       ${productsHtml}
     </div>
   `;
@@ -260,13 +253,12 @@ const createPaymentSection = (comanda: Comanda): string => {
   if (comanda.quantiapaga && comanda.troco && comanda.quantiapaga > 0) {
     paymentDetails += `
       <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
-      <div>Valor do troco: R$ ${comanda.troco.toFixed(2)}</div>
+      <div class="payment-status"><h2>Troco: R$ ${comanda.troco.toFixed(2)}</h2></div>
     `;
   }
 
   return `
     <div class="payment-section">
-      <div class="section-title">Pagamento</div>
       ${paymentDetails}
     </div>
     <div class="divider"></div>

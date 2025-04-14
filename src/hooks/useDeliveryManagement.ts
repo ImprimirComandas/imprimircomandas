@@ -25,7 +25,14 @@ type Delivery = {
 };
 
 export const useDeliveryManagement = () => {
-  const [profile, setProfile] = useState<any>(null);
+  type Profile = {
+    id: string;
+    name: string;
+    email: string;
+    // Add other fields as needed
+  };
+
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [motoboys, setMotoboys] = useState<Motoboy[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -136,7 +143,7 @@ export const useDeliveryManagement = () => {
         ...comanda,
         produtos: Array.isArray(comanda.produtos) ? 
           comanda.produtos : 
-          JSON.parse(comanda.produtos as any)
+          JSON.parse(comanda.produtos as string)
       }));
       
       setComandas(processedComandas);

@@ -1,210 +1,314 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Comanda, Produto } from '../types/database';
-import { useProdutos } from './useProdutos';
-import { usePagamento } from './usePagamento';
-import bairroTaxas from '../constants/bairroTaxas';
 
-export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
-  // Initialize the comanda state
+export const useComandaForm = (carregarComandas: () => void, setSalvando: (value: boolean) => void) => {
   const [comanda, setComanda] = useState<Comanda>({
     produtos: [],
-    total: 0,
-    forma_pagamento: '',
-    data: new Date().toISOString(),
     endereco: '',
-    bairro: 'Jardim Paraíso',
-    taxaentrega: 6,
+    bairro: '',
+    forma_pagamento: '',
     pago: false,
-    quantiapaga: 0,
-    troco: 0,
-    valor_cartao: 0,
-    valor_dinheiro: 0,
-    valor_pix: 0,
+    total: 0,
+    taxaentrega: 0,
+    troco: null,
+    order_date: new Date().toISOString().split('T')[0], // Changed from 'data'
+    data: new Date().toISOString(), // Added 'data' property
+    pagamento_misto: null,
   });
+  const [pesquisaProduto, setPesquisaProduto] = useState('');
+  const [produtosFiltrados, setProdutosFiltrados] = useState<{ id: string; nome: string; valor: number }[]>([]);
+  const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
+  const [showTrocoModal, setShowTrocoModal] = useState(false);
+  const [needsTroco, setNeedsTroco] = useState<boolean | null>(null);
+  const [quantiapagaInput, setQuantiapagaInput] = useState('');
+  const [showPagamentoMistoModal, setShowPagamentoMistoModal] = useState(false);
+  const [valorCartaoInput, setValorCartaoInput] = useState('');
+  const [valorDinheiroInput, setValorDinheiroInput] = useState('');
+  const [valorPixInput, setValorPixInput] = useState('');
 
   // Calculate total with delivery fee
   const totalComTaxa = comanda.total + comanda.taxaentrega;
 
-  // Use the products hook for managing products
-  const {
-    produtosFiltrados,
-    editingProduct,
-    setEditingProduct,
-    pesquisaProduto,
-    setPesquisaProduto,
-    salvarProduto,
-    editarProduto,
-    startEditingProduct,
-  } = useProdutos();
+  // Search products
+  useEffect(() => {
+    const fetchProdutos = async () => {
+      if (!pesquisaProduto) {
+        setProdutosFiltrados([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('id, nome, valor')
+        .ilike('nome', `%${pesquisaProduto}%`)
+        .limit(10);
+      if (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Erro ao buscar produtos');
+      } else {
+        setProdutosFiltrados(data || []);
+      }
+    };
+    fetchProdutos();
+  }, [pesquisaProduto]);
 
-  // Use the payment hook for managing payment options
-  const pagamento = usePagamento(totalComTaxa);
+  // Update delivery fee based on bairro
+  const onBairroChange = (bairro: string) => {
+    const taxas: { [key: string]: number } = {
+      'Jardim Paraíso': 6,
+      Aventureiro: 9,
+      'Jardim Sofia': 9,
+      Cubatão: 9,
+    };
+    setComanda((prev) => ({
+      ...prev,
+      bairro,
+      taxaentrega: taxas[bairro] || 0,
+    }));
+  };
 
-  // Handle field changes
-  const onChange = (field: string, value: any) => {
-    if (field === 'pesquisaProduto') {
-      setPesquisaProduto(value);
-    } else if (field === 'endereco') {
-      setComanda(prev => ({ ...prev, endereco: value }));
-    } else if (field === 'pago') {
-      setComanda(prev => ({ ...prev, pago: value }));
+  // Handle payment method change
+  const onFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
+    setComanda((prev) => ({
+      ...prev,
+      forma_pagamento: forma,
+      troco: forma === 'dinheiro' ? prev.troco : null,
+      pagamento_misto: forma === 'misto' ? prev.pagamento_misto : null,
+    }));
+    if (forma === 'misto') {
+      setShowPagamentoMistoModal(true);
     } else {
-      // Handle payment-related fields
-      pagamento.onPagamentoChange(field, value);
+      setShowPagamentoMistoModal(false);
+      setValorCartaoInput('');
+      setValorDinheiroInput('');
+      setValorPixInput('');
+    }
+    if (forma !== 'dinheiro') {
+      setNeedsTroco(null);
+      setQuantiapagaInput('');
     }
   };
 
-  // Handle bairro selection and update delivery fee
-  const onBairroChange = (bairro: string) => {
-    const taxa = bairroTaxas[bairro as keyof typeof bairroTaxas] || 0;
-    setComanda(prev => ({ ...prev, bairro, taxaentrega: taxa }));
+  // Handle state changes
+  const onChange = (field: string, value: string | boolean | number | null) => {
+    if (field === 'showTrocoModal') {
+      setShowTrocoModal(!!value);
+    } else if (field === 'needsTroco') {
+      setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
+    } else if (field === 'quantiapagaInput') {
+      setQuantiapagaInput(String(value));
+    } else if (field === 'pesquisaProduto') {
+      setPesquisaProduto(String(value));
+    } else if (field === 'valorCartaoInput') {
+      setValorCartaoInput(String(value));
+    } else if (field === 'valorDinheiroInput') {
+      setValorDinheiroInput(String(value));
+    } else if (field === 'valorPixInput') {
+      setValorPixInput(String(value));
+    } else {
+      setComanda((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
 
-  // Handle payment method selection
-  const onFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
-    setComanda(prev => ({ ...prev, forma_pagamento: forma }));
-    pagamento.onFormaPagamentoChange(forma);
+  // Save product
+  const salvarProduto = async (produto: { nome: string; valor: number }) => {
+    const { data, error } = await supabase
+      .from('produtos')
+      .insert([produto])
+      .select()
+      .single();
+    if (error) {
+      console.error('Error saving product:', error);
+      toast.error('Erro ao salvar produto');
+    } else {
+      toast.success('Produto salvo com sucesso');
+    }
   };
 
-  // Add selected product to comanda
-  const selecionarProdutoCadastrado = (produto: { id: string; nome: string; valor: number }) => {
-    const novoProduto: Produto = { nome: produto.nome, valor: produto.valor, quantidade: 1 };
-    setComanda(prev => ({
-      ...prev,
-      produtos: [...prev.produtos, novoProduto],
-      total: prev.total + produto.valor,
-    }));
-    setPesquisaProduto('');
+  // Edit product
+  const editarProduto = async (produto: { id: string; nome: string; valor: number }) => {
+    const { error } = await supabase
+      .from('produtos')
+      .update({ nome: produto.nome, valor: produto.valor })
+      .eq('id', produto.id);
+    if (error) {
+      console.error('Error editing product:', error);
+      toast.error('Erro ao editar produto');
+    } else {
+      toast.success('Produto editado com sucesso');
+      setEditingProduct(null);
+    }
   };
 
-  // Remove product from comanda
+  // Remove product
   const removerProduto = (index: number) => {
-    const produtoRemovido = comanda.produtos[index];
-    setComanda(prev => ({
-      ...prev,
-      produtos: prev.produtos.filter((_, i) => i !== index),
-      total: prev.total - produtoRemovido.valor * produtoRemovido.quantidade,
-    }));
+    setComanda((prev) => {
+      const newProdutos = [...prev.produtos];
+      newProdutos.splice(index, 1);
+      const newTotal = newProdutos.reduce((sum, p) => sum + p.valor * p.quantidade, 0);
+      return { ...prev, produtos: newProdutos, total: newTotal };
+    });
   };
 
   // Update product quantity
   const atualizarQuantidadeProduto = (index: number, quantidade: number) => {
-    if (quantidade < 1) {
-      toast.error('A quantidade deve ser pelo menos 1.');
-      return;
-    }
-    setComanda(prev => {
-      const novosProdutos = [...prev.produtos];
-      const produtoAntigo = novosProdutos[index];
-      const diferencaQuantidade = quantidade - produtoAntigo.quantidade;
-      novosProdutos[index] = { ...produtoAntigo, quantidade };
-      return {
-        ...prev,
-        produtos: novosProdutos,
-        total: prev.total + diferencaQuantidade * produtoAntigo.valor,
-      };
+    if (quantidade < 1) return;
+    setComanda((prev) => {
+      const newProdutos = [...prev.produtos];
+      newProdutos[index] = { ...newProdutos[index], quantidade };
+      const newTotal = newProdutos.reduce((sum, p) => sum + p.valor * p.quantidade, 0);
+      return { ...prev, produtos: newProdutos, total: newTotal };
     });
   };
 
-  // Save comanda to database
+  // Select registered product
+  const selecionarProdutoCadastrado = (produto: { id: string; nome: string; valor: number }) => {
+    setComanda((prev) => {
+      const newProdutos = [...prev.produtos, { ...produto, quantidade: 1 }];
+      const newTotal = newProdutos.reduce((sum, p) => sum + p.valor * p.quantidade, 0);
+      return { ...prev, produtos: newProdutos, total: newTotal };
+    });
+    setPesquisaProduto('');
+  };
+
+  // Start editing product
+  const startEditingProduct = (produto: { id: string; nome: string; valor: number }) => {
+    setEditingProduct(produto);
+  };
+
+  // Handle troco confirmation
+  const handleTrocoConfirm = () => {
+    if (needsTroco === true && quantiapagaInput) {
+      const parsedQuantiapaga = parseFloat(quantiapagaInput);
+      if (isNaN(parsedQuantiapaga) || parsedQuantiapaga < totalComTaxa) {
+        toast.error('Quantia paga inválida ou insuficiente');
+        return;
+      }
+      const troco = parsedQuantiapaga - totalComTaxa;
+      setComanda((prev) => ({ ...prev, troco }));
+    } else if (needsTroco === false) {
+      setComanda((prev) => ({ ...prev, troco: 0 }));
+    }
+    setShowTrocoModal(false);
+  };
+
+  // Close troco modal
+  const closeTrocoModal = () => {
+    setShowTrocoModal(false);
+    setNeedsTroco(null);
+    setQuantiapagaInput('');
+  };
+
+  // Handle mixed payment confirmation
+  const handlePagamentoMistoConfirm = (paymentDetails: { cartao: number; dinheiro: number; pix: number; troco: number | null }) => {
+    const { cartao, dinheiro, pix, troco } = paymentDetails;
+    const totalPaid = cartao + dinheiro + pix;
+    if (totalPaid < totalComTaxa) {
+      toast.error('Soma dos valores insuficiente');
+      return;
+    }
+    setComanda((prev) => ({
+      ...prev,
+      pagamento_misto: { cartao, dinheiro, pix },
+      troco,
+    }));
+    setShowPagamentoMistoModal(false);
+    setValorCartaoInput('');
+    setValorDinheiroInput('');
+    setValorPixInput('');
+  };
+
+  // Close mixed payment modal
+  const closePagamentoMistoModal = () => {
+    setShowPagamentoMistoModal(false);
+    setValorCartaoInput('');
+    setValorDinheiroInput('');
+    setValorPixInput('');
+  };
+
+  // Save comanda
   const salvarComanda = async () => {
-    // Validate comanda fields
-    if (comanda.produtos.length === 0) {
-      toast.error('Adicione pelo menos um produto.');
+    // Validate comanda
+    if (!comanda.produtos.length) {
+      toast.error('Adicione pelo menos um produto');
+      return;
+    }
+    if (!comanda.endereco.trim()) {
+      toast.error('Informe o endereço de entrega');
+      return;
+    }
+    if (!comanda.bairro) {
+      toast.error('Selecione um bairro');
       return;
     }
     if (!comanda.forma_pagamento) {
-      toast.error('Selecione a forma de pagamento.');
+      toast.error('Selecione uma forma de pagamento');
       return;
     }
-    if (!comanda.endereco || !comanda.bairro) {
-      toast.error('Preencha o endereço e o bairro.');
+    if (!comanda.order_date) {
+      toast.error('Informe a data do pedido');
       return;
     }
-
-    // Handle payment validation
-    if (comanda.forma_pagamento === 'dinheiro' && pagamento.needsTroco === null) {
-      pagamento.setShowTrocoModal(true);
+    if (comanda.forma_pagamento === 'dinheiro' && needsTroco === null) {
+      setShowTrocoModal(true);
       return;
     }
-
-    if (comanda.forma_pagamento === 'dinheiro' && pagamento.needsTroco 
-        && (pagamento.quantiapagaInput === null || pagamento.quantiapagaInput <= totalComTaxa)) {
-      toast.error('Informe uma quantia válida para o troco (maior que o total).');
+    if (comanda.forma_pagamento === 'misto' && !comanda.pagamento_misto) {
+      toast.error('Confirme os valores do pagamento misto');
+      setShowPagamentoMistoModal(true);
       return;
-    }
-
-    if (comanda.forma_pagamento === 'misto') {
-      const totalValores = (pagamento.valorCartaoInput || 0) + 
-                          (pagamento.valorDinheiroInput || 0) + 
-                          (pagamento.valorPixInput || 0);
-      if (Math.abs(totalValores - totalComTaxa) > 0.01) {
-        pagamento.setShowPagamentoMistoModal(true);
-        return;
-      }
     }
 
     setSalvando(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Não autorizado');
 
-      const novaComanda = {
-        user_id: session.user.id,
-        produtos: comanda.produtos,
-        total: totalComTaxa,
-        forma_pagamento: comanda.forma_pagamento,
-        data: new Date().toISOString(),
-        endereco: comanda.endereco,
-        bairro: comanda.bairro,
-        taxaentrega: comanda.taxaentrega,
-        pago: comanda.pago,
-        quantiapaga: pagamento.needsTroco ? pagamento.quantiapagaInput || 0 : totalComTaxa,
-        troco: pagamento.needsTroco && pagamento.quantiapagaInput ? pagamento.quantiapagaInput - totalComTaxa : 0,
-        valor_cartao: pagamento.valorCartaoInput || 0,
-        valor_dinheiro: pagamento.valorDinheiroInput || 0,
-        valor_pix: pagamento.valorPixInput || 0,
-      };
+    // Prepare comanda for Supabase
+    const comandaToSave = {
+      produtos: comanda.produtos.map(({ id, ...rest }) => rest),
+      endereco: comanda.endereco,
+      bairro: comanda.bairro,
+      forma_pagamento: comanda.forma_pagamento,
+      pago: comanda.pago,
+      total: comanda.total,
+      taxaentrega: comanda.taxaentrega,
+      troco: comanda.troco ?? null,
+      order_date: comanda.order_date, // Changed from 'data'
+      pagamento_misto: comanda.pagamento_misto ?? null,
+    };
 
-      const { data, error } = await supabase.from('comandas').insert([novaComanda]).select().single();
-      if (error) throw error;
+    console.log('Saving comanda:', comandaToSave);
 
-      // Print the comanda
-      await import('../utils/printService').then(module => {
-        module.imprimirComanda({ ...novaComanda, id: data.id });
-        toast.success('Comanda salva e enviada para impressão!');
-      }).catch(() => {
-        toast.error('Comanda salva, mas erro ao imprimir.');
-      });
+    const { error } = await supabase.from('comandas').insert([comandaToSave]);
 
-      // Reset form
+    if (error) {
+      console.error('Supabase error:', error);
+      toast.error(`Erro ao salvar comanda: ${error.message}`);
+    } else {
+      toast.success('Comanda salva com sucesso');
       setComanda({
-        produtos: [],
-        total: 0,
-        forma_pagamento: '',
-        data: new Date().toISOString(),
-        endereco: '',
-        bairro: 'Jardim Paraíso',
-        taxaentrega: 6,
-        pago: false,
-        quantiapaga: 0,
-        troco: 0,
-        valor_cartao: 0,
-        valor_dinheiro: 0,
-        valor_pix: 0,
-      });
-      pagamento.resetPagamento();
-      setPesquisaProduto('');
-      await carregarComandas();
-    } catch (error: any) {
-      console.error('Erro ao salvar comanda:', error);
-      toast.error(`Erro ao salvar comanda: ${error.message || 'Desconhecido'}`);
-    } finally {
-      setSalvando(false);
+              produtos: [],
+              endereco: '',
+              bairro: '',
+              forma_pagamento: '',
+              pago: false,
+              total: 0,
+              taxaentrega: 0,
+              troco: null,
+              order_date: new Date().toISOString().split('T')[0],
+              data: new Date().toISOString(), // Added 'data' property
+              pagamento_misto: null,
+            });
+      setNeedsTroco(null);
+      setQuantiapagaInput('');
+      setValorCartaoInput('');
+      setValorDinheiroInput('');
+      setValorPixInput('');
+      carregarComandas();
     }
+    setSalvando(false);
   };
 
   return {
@@ -213,6 +317,13 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     produtosFiltrados,
     editingProduct,
     setEditingProduct,
+    showTrocoModal,
+    needsTroco,
+    quantiapagaInput,
+    showPagamentoMistoModal,
+    valorCartaoInput,
+    valorDinheiroInput,
+    valorPixInput,
     totalComTaxa,
     onBairroChange,
     salvarProduto,
@@ -221,9 +332,12 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     atualizarQuantidadeProduto,
     onFormaPagamentoChange,
     onChange,
+    handleTrocoConfirm,
+    closeTrocoModal,
+    handlePagamentoMistoConfirm,
+    closePagamentoMistoModal,
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
-    ...pagamento
   };
 };

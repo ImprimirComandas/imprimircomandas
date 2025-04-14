@@ -44,20 +44,25 @@ export default function DeliveriesList({
           </div>
           <div className="flex items-center">
             {motoboys.length > 0 && (
-              <select
-                className="mr-2 p-2 border border-blue-300 rounded-md text-sm"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    assignSelectedDeliveriesToMotoboy(e.target.value);
-                  }
-                }}
-                value=""
-              >
-                <option value="">Atribuir para...</option>
-                {motoboys.map(motoboy => (
-                  <option key={motoboy.id} value={motoboy.id}>{motoboy.nome}</option>
-                ))}
-              </select>
+              <div>
+                <label htmlFor="assign-motoboy" className="sr-only">Atribuir para motoboy</label>
+                <select
+                  id="assign-motoboy"
+                  className="mr-2 p-2 border border-blue-300 rounded-md text-sm"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      assignSelectedDeliveriesToMotoboy(e.target.value);
+                    }
+                  }}
+                  value=""
+                  title="Selecione um motoboy para atribuir"
+                >
+                  <option value="">Atribuir para...</option>
+                  {motoboys.map(motoboy => (
+                    <option key={motoboy.id} value={motoboy.id}>{motoboy.nome}</option>
+                  ))}
+                </select>
+              </div>
             )}
             <button
               onClick={() => toggleDeliverySelection('clear')}
@@ -84,6 +89,7 @@ export default function DeliveriesList({
                   }
                 }}
                 className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                title="Selecionar todas as entregas pendentes"
               />
             </th>
             <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
@@ -106,6 +112,7 @@ export default function DeliveriesList({
                       checked={selectedDeliveries.includes(delivery.id)}
                       onChange={() => toggleDeliverySelection(delivery.id)}
                       className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                      title="Selecionar entrega"
                     />
                   )}
                 </td>

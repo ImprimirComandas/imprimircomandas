@@ -1,126 +1,152 @@
-
-import React from 'react';
-import { Check, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 import type { Comanda } from '../types/database';
 
-interface DeliveryFormProps {
-  orderCode: string;
-  setOrderCode: (value: string) => void;
-  selectedPlatform: string;
-  setSelectedPlatform: (value: string) => void;
-  selectedMotoboy: string;
-  setSelectedMotoboy: (value: string) => void;
-  deliveryValue: string;
-  setDeliveryValue: (value: string) => void;
-  matchedComanda: Comanda | null;
-  loadingComandas: boolean;
-  motoboys: { id: string; nome: string }[];
-  pendingDeliveriesByMotoboy: {[key: string]: number};
-  onSubmit: (e: React.FormEvent) => void;
-}
+export const useDeliveryForm = () => {
+  const [orderCodes, setOrderCodes] = useState<string[]>(['']);
+  const [matchedComandas, setMatchedComandas] = useState<(Comanda | null)[]>([null]);
+  const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [selectedMotoboy, setSelectedMotoboy] = useState('');
+  const [deliveryValue, setDeliveryValue] = useState('');
+  const [motoboys, setMotoboys] = useState<{ id: string; nome: string }[]>([]);
+  const [pendingDeliveriesByMotoboy, setPendingDeliveriesByMotoboy] = useState<{ [key: string]: number }>({});
+  const [loadingComandas, setLoadingComandas] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-export default function DeliveryForm({
-  orderCode,
-  setOrderCode,
-  selectedPlatform,
-  setSelectedPlatform,
-  selectedMotoboy, 
-  setSelectedMotoboy,
-  deliveryValue,
-  setDeliveryValue,
-  matchedComanda,
-  loadingComandas,
-  motoboys,
-  pendingDeliveriesByMotoboy,
-  onSubmit
-}: DeliveryFormProps) {
-  return (
-    <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-md mb-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Código do Pedido</label>
-          <div className="flex">
-            <input
-              type="text"
-              value={orderCode}
-              onChange={(e) => setOrderCode(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-l-md"
-              placeholder="Código do pedido ou últimos 8 dígitos"
-            />
-            <div className="bg-gray-200 text-gray-700 p-2 flex items-center justify-center rounded-r-md">
-              {loadingComandas ? (
-                <div className="animate-spin h-5 w-5 border-t-2 border-b-2 border-indigo-500 rounded-full"></div>
-              ) : (
-                <Search className="h-5 w-5" />
-              )}
-            </div>
-          </div>
-          {matchedComanda && (
-            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-800">
-                <Check className="inline h-4 w-4 mr-1" />
-                Comanda encontrada - {new Date(matchedComanda.data).toLocaleDateString()}
-              </p>
-              <p className="text-sm text-green-800">
-                Total: R$ {matchedComanda.total.toFixed(2)} | {matchedComanda.bairro}
-              </p>
-              <p className="text-sm text-green-800">
-                Endereço: {matchedComanda.endereco}
-              </p>
-            </div>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Plataforma*</label>
-          <select
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          >
-            <option value="whatsapp">WhatsApp</option>
-            <option value="ifood">iFood</option>
-            <option value="zedelivery">Zé Delivery</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Motoboy*</label>
-          <select
-            value={selectedMotoboy}
-            onChange={(e) => setSelectedMotoboy(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          >
-            <option value="">Selecione um motoboy</option>
-            {motoboys.map((motoboy) => (
-              <option key={motoboy.id} value={motoboy.id}>
-                {motoboy.nome} ({pendingDeliveriesByMotoboy[motoboy.id] || 0} entregas pendentes)
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Valor da Entrega</label>
-          <input
-            type="number"
-            value={deliveryValue}
-            onChange={(e) => setDeliveryValue(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            placeholder="0.00"
-            step="0.01"
-            min="0"
-          />
-        </div>
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-        >
-          Registrar Entrega
-        </button>
-      </div>
-    </form>
-  );
-}
+  // Fetch motoboys
+  useEffect(() => {
+    const fetchMotoboys = async () => {
+      const { data, error } = await supabase.from('motoboys').select('id, nome');
+      if (error) {
+        console.error('Error fetching motoboys:', error);
+        toast.error('Erro ao carregar motoboys');
+      } else {
+        setMotoboys(data || []);
+      }
+    };
+    fetchMotoboys();
+  }, []);
+
+  // Fetch pending deliveries
+  useEffect(() => {
+    const fetchPendingDeliveries = async () => {
+      const { data, error } = await supabase
+        .from('delivery')
+        .select('motoboy_id')
+        .eq('status', 'pending');
+      if (error) {
+        console.error('Error fetching pending deliveries:', error);
+        toast.error('Erro ao carregar entregas pendentes');
+      } else {
+        const counts = data.reduce((acc, { motoboy_id }) => {
+          acc[motoboy_id] = (acc[motoboy_id] || 0) + 1;
+          return acc;
+        }, {} as { [key: string]: number });
+        setPendingDeliveriesByMotoboy(counts);
+      }
+    };
+    fetchPendingDeliveries();
+  }, []);
+
+  // Search comandas
+  useEffect(() => {
+    const fetchComandas = async () => {
+      if (orderCodes.every((code) => !code.trim())) {
+        setMatchedComandas(orderCodes.map(() => null));
+        return;
+      }
+      setLoadingComandas(true);
+      const newMatchedComandas = await Promise.all(
+        orderCodes.map(async (code) => {
+          if (!code.trim()) return null;
+          const { data, error } = await supabase
+            .from('comandas')
+            .select('*')
+            .eq('id', code)
+            .single();
+          if (error) {
+            console.error(`Error fetching comanda ${code}:`, error);
+            return null;
+          }
+          return data as Comanda;
+        })
+      );
+      setMatchedComandas(newMatchedComandas);
+      setLoadingComandas(false);
+    };
+    fetchComandas();
+  }, [orderCodes]);
+
+  // Add new order code input
+  const addOrderCode = () => {
+    setOrderCodes([...orderCodes, '']);
+    setMatchedComandas([...matchedComandas, null]);
+  };
+
+  // Remove order code input
+  const removeOrderCode = (index: number) => {
+    if (orderCodes.length > 1) {
+      setOrderCodes(orderCodes.filter((_, i) => i !== index));
+      setMatchedComandas(matchedComandas.filter((_, i) => i !== index));
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlatform || !selectedMotoboy) {
+      toast.error('Por favor, selecione a plataforma e o motoboy');
+      return;
+    }
+    if (matchedComandas.every((c) => !c)) {
+      toast.error('Adicione pelo menos um pedido válido');
+      return;
+    }
+    setLoading(true);
+    const validComandaIds = matchedComandas
+      .map((c, i) => (c ? c.id : null))
+      .filter((id): id is string => !!id);
+    const deliveryData = {
+      comanda_ids: validComandaIds,
+      platform: selectedPlatform,
+      motoboy_id: selectedMotoboy,
+      delivery_value: parseFloat(deliveryValue) || 0,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    };
+    console.log('Saving delivery:', deliveryData);
+    const { error } = await supabase.from('delivery').insert([deliveryData]);
+    if (error) {
+      console.error('Error saving delivery:', error);
+      toast.error(`Erro ao registrar entrega: ${error.message}`);
+    } else {
+      toast.success('Entrega(s) registrada(s) com sucesso');
+      setOrderCodes(['']);
+      setMatchedComandas([null]);
+      setSelectedPlatform('');
+      setSelectedMotoboy('');
+      setDeliveryValue('');
+    }
+    setLoading(false);
+  };
+
+  return {
+    orderCodes,
+    setOrderCodes,
+    addOrderCode,
+    removeOrderCode,
+    selectedPlatform,
+    setSelectedPlatform,
+    selectedMotoboy,
+    setSelectedMotoboy,
+    deliveryValue,
+    setDeliveryValue,
+    matchedComandas,
+    loadingComandas,
+    motoboys,
+    pendingDeliveriesByMotoboy,
+    loading,
+    handleSubmit,
+  };
+};
