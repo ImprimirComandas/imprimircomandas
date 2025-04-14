@@ -1,23 +1,22 @@
-import { Save, Trash2, Search, Edit } from 'lucide-react';
+
+import { useState } from 'react';
+import { PlusCircle, Save, Trash2, Search, Edit } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
 
 interface ComandaFormProps {
   comanda: Comanda;
   pesquisaProduto: string;
-  produtosFiltrados: { id: string; nome: string; valor: number }[];
+  produtosFiltrados: {id: string, nome: string, valor: number}[];
   salvando: boolean;
   totalComTaxa: number;
-  needsTroco: boolean | null;
-  quantiapagaInput: string;
-  showTrocoModal: boolean;
   onRemoveProduto: (index: number) => void;
   onUpdateQuantidade: (index: number, quantidade: number) => void;
   onSaveComanda: () => void;
-  onChange: (field: string, value: string | number | boolean | null) => void;
+  onChange: (field: string, value: any) => void;
   onBairroChange: (bairro: string) => void;
   onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void;
-  selecionarProdutoCadastrado: (produto: { id: string; nome: string; valor: number }) => void;
-  startEditingProduct: (produto: { id: string; nome: string; valor: number }) => void;
+  selecionarProdutoCadastrado: (produto: {id: string, nome: string, valor: number}) => void;
+  startEditingProduct: (produto: {id: string, nome: string, valor: number}) => void;
 }
 
 export default function ComandaForm({
@@ -26,9 +25,6 @@ export default function ComandaForm({
   produtosFiltrados,
   salvando,
   totalComTaxa,
-  needsTroco,
-  quantiapagaInput,
-  showTrocoModal,
   onRemoveProduto,
   onUpdateQuantidade,
   onSaveComanda,
@@ -38,53 +34,9 @@ export default function ComandaForm({
   selecionarProdutoCadastrado,
   startEditingProduct,
 }: ComandaFormProps) {
-  const troco =
-    needsTroco && quantiapagaInput && parseFloat(quantiapagaInput) >= totalComTaxa
-      ? parseFloat(quantiapagaInput) - totalComTaxa
-      : null;
-
-  const handleSaveComanda = () => {
-    if (!comanda.produtos.length) {
-      alert('Por favor, adicione pelo menos um produto.');
-      return;
-    }
-    if (!comanda.endereco.trim()) {
-      alert('Por favor, informe o endereço de entrega.');
-      return;
-    }
-    if (!comanda.bairro) {
-      alert('Por favor, selecione um bairro.');
-      return;
-    }
-    if (!comanda.forma_pagamento) {
-      alert('Por favor, selecione uma forma de pagamento.');
-      return;
-    }
-    if (!comanda.order_date) {
-      alert('Por favor, informe a data do pedido.');
-      return;
-    }
-    if (comanda.forma_pagamento === 'dinheiro' && needsTroco === null) {
-      onChange('showTrocoModal', true);
-      return;
-    }
-    onSaveComanda();
-  };
-
-  const handleFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
-    onFormaPagamentoChange(forma);
-    if (forma === 'dinheiro') {
-      onChange('showTrocoModal', true);
-    } else {
-      onChange('needsTroco', null);
-      onChange('quantiapagaInput', '');
-      onChange('troco', null);
-    }
-  };
-
   return (
-      <>
-        <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+      {/* Busca de Produtos */}
       <div className="mb-4">
         <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
           Buscar Produto
@@ -102,7 +54,10 @@ export default function ComandaForm({
           {pesquisaProduto && produtosFiltrados.length > 0 && (
             <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
               {produtosFiltrados.map((produto) => (
-                <div key={produto.id} className="p-2 hover:bg-gray-100 flex justify-between items-center">
+                <div
+                  key={produto.id}
+                  className="p-2 hover:bg-gray-100 flex justify-between items-center"
+                >
                   <div
                     className="flex-1 cursor-pointer"
                     onClick={() => selecionarProdutoCadastrado(produto)}
@@ -128,6 +83,7 @@ export default function ComandaForm({
         </div>
       </div>
 
+      {/* Lista de Produtos */}
       <div className="mb-6">
         <h2 className="text-base md:text-lg font-semibold mb-3">Produtos</h2>
         <div className="space-y-2">
@@ -141,7 +97,6 @@ export default function ComandaForm({
                   onChange={(e) => onUpdateQuantidade(index, Number(e.target.value))}
                   className="w-16 p-1 border rounded text-sm"
                   min="1"
-                  placeholder="Quantidade"
                 />
                 <span>R$ {(produto.valor * produto.quantidade).toFixed(2)}</span>
                 <button
@@ -157,6 +112,7 @@ export default function ComandaForm({
         </div>
       </div>
 
+      {/* Endereço */}
       <div className="mb-4">
         <label htmlFor="endereco" className="block text-sm font-medium text-gray-700">
           Endereço de Entrega
@@ -172,6 +128,7 @@ export default function ComandaForm({
         />
       </div>
 
+      {/* Bairro */}
       <div className="mb-4">
         <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
           Bairro
@@ -183,7 +140,6 @@ export default function ComandaForm({
           className="w-full p-2 border rounded text-sm"
           required
         >
-          <option value="">Selecione um bairro</option>
           <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
           <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
           <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
@@ -191,20 +147,7 @@ export default function ComandaForm({
         </select>
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="order_date" className="block text-sm font-medium text-gray-700">
-          Data do Pedido
-        </label>
-        <input
-          id="order_date"
-          type="date"
-          value={comanda.order_date}
-          onChange={(e) => onChange('order_date', e.target.value)}
-          className="w-full p-2 border rounded text-sm"
-          required
-        />
-      </div>
-
+      {/* Total, Forma de Pagamento e Status de Pagamento */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-base font-semibold">Subtotal:</h2>
@@ -214,34 +157,6 @@ export default function ComandaForm({
           <h3 className="text-base">Taxa de Entrega:</h3>
           <span className="text-base font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
         </div>
-        {comanda.forma_pagamento === 'dinheiro' && troco !== null && (
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-base">Troco:</h3>
-            <span className="text-base font-bold">R$ {troco.toFixed(2)}</span>
-          </div>
-        )}
-        {comanda.forma_pagamento === 'misto' && comanda.pagamento_misto && (
-          <div className="space-y-1 mb-2">
-            <div className="flex justify-between items-center">
-              <h3 className="text-base">Cartão:</h3>
-              <span className="text-base">R$ {comanda.pagamento_misto.cartao.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <h3 className="text-base">Dinheiro:</h3>
-              <span className="text-base">R$ {comanda.pagamento_misto.dinheiro.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <h3 className="text-base">PIX:</h3>
-              <span className="text-base">R$ {comanda.pagamento_misto.pix.toFixed(2)}</span>
-            </div>
-            {comanda.troco !== null && (
-              <div className="flex justify-between items-center">
-                <h3 className="text-base">Troco:</h3>
-                <span className="text-base font-bold">R$ {comanda.troco.toFixed(2)}</span>
-              </div>
-            )}
-          </div>
-        )}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-base">Total com Taxa:</h2>
           <span className="text-base font-bold">R$ {totalComTaxa.toFixed(2)}</span>
@@ -255,7 +170,7 @@ export default function ComandaForm({
             <select
               id="formaPagamento"
               value={comanda.forma_pagamento}
-              onChange={(e) => handleFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
+              onChange={(e) => onFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
               className="w-full p-2 border rounded text-sm"
               required
             >
@@ -267,13 +182,13 @@ export default function ComandaForm({
             </select>
           </div>
 
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="pago"
               checked={comanda.pago}
               onChange={(e) => onChange('pago', e.target.checked)}
               className="h-4 w-4 text-green-600 border-gray-300 rounded"
-              title="Marcar como pago"
             />
             <label htmlFor="pago" className="text-sm font-medium text-gray-700">
               Pedido Pago
@@ -282,9 +197,10 @@ export default function ComandaForm({
         </div>
       </div>
 
+      {/* Botão de Ação */}
       <div className="flex justify-end">
         <button
-          onClick={handleSaveComanda}
+          onClick={onSaveComanda}
           disabled={salvando}
           className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-2 text-sm ${
             salvando ? 'opacity-50 cursor-not-allowed' : ''
@@ -294,6 +210,6 @@ export default function ComandaForm({
           {salvando ? 'Salvando...' : 'Salvar e Imprimir'}
         </button>
       </div>
-    </>
+    </div>
   );
 }

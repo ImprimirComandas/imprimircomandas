@@ -37,27 +37,3 @@ export interface Comanda {
   valor_dinheiro?: number;
   valor_pix?: number;
 }
-export interface Produto {
-  id?: string;
-  nome: string;
-  valor: number;
-  quantidade: number;
-}
-
-export interface Comanda {
-  id?: string;
-  produtos: Produto[];
-  endereco: string;
-  bairro: string;
-  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '';
-  pago: boolean;
-  total: number;
-  taxaentrega: number;
-  troco?: number | null;
-  order_date: string; // Changed from 'data'
-  pagamento_misto?: { cartao: number; dinheiro: number; pix: number } | null;
-}
-
-export interface Profile {
-  id: string;
-}
