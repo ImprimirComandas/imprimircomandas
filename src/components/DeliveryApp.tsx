@@ -6,6 +6,7 @@ import ComandasAnterioresModificado from './ComandasAnterioresModificado';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import TotaisPorStatusPagamento from './TotaisPorStatusPagamento';
 import type { Profile, Comanda, Produto } from '../types/database';
+import TrocoModal from './TrocoModal';
 
 // Taxas de bairro
 const bairroTaxas = {
@@ -803,3 +804,393 @@ const TrocoModal = ({
   onSaveAndPrint,
 }: TrocoModalProps) => {
   if (!show) return
+};
+
+// DeliveryApp Component
+interface DeliveryAppProps {
+  profile: Profile | null;
+}
+
+export default function DeliveryApp({ profile }: DeliveryAppProps) {
+  const {
+    comandasAnteriores,
+    carregando,
+    expandedComandas,
+    salvando,
+    setSalvando,
+    reimprimirComanda,
+    excluirComanda,
+    toggleExpandComanda,
+    carregarComandas,
+    totais,
+    confirmarPagamento,
+    comandaSelecionada,
+    setComandaSelecionada,
+    showPaymentConfirmation,
+    setShowPaymentConfirmation,
+  } = useComandas();
+
+  const {
+    comanda,
+    nomeProduto,
+    valorProduto,
+    quantidadeProduto,
+    pesquisaProduto,
+    produtosFiltrados,
+    showTrocoModal,
+    needsTroco,
+    quantiapagaInput,
+    totalComTaxa,
+    showPagamentoMistoModal,
+    valorCartaoInput,
+    valorDinheiroInput,
+    valorPixInput,
+    handleBairroChange,
+    adicionarProduto,
+    removerProduto,
+    handleFormaPagamentoChange,
+    handleChange,
+    handleTrocoConfirm,
+    closeTrocoModal,
+    handlePagamentoMistoConfirm,
+    closePagamentoMistoModal,
+    salvarComanda,
+    selecionarProdutoCadastrado
+  } = useComandaForm(carregarComandas, setSalvando);
+
+  const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
+
+  const onSaveProduto = async (nome: string, valor: string) => {
+    try {
+      const valorNum = Number(valor);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autorizado');
+      const { data, error } = await supabase
+        .from('produtos')
+        .insert([{ nome, valor: valorNum, user_id: session.user.id }])
+        .select('id, nome, valor');
+      if (error) throw error;
+      if (data && data[0]) {
+        toast.success('Produto cadastrado com sucesso!');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar produto.');
+    }
+  };
+
+  const onEditProduto = async (id: string, nome: string, valor: string) => {
+    try {
+      const valorNum = Number(valor);
+      const { error } = await supabase
+        .from('produtos')
+        .update({ nome, valor: valorNum })
+        .eq('id', id);
+      if (error) throw error;
+      toast.success('Produto atualizado com sucesso!');
+      setEditingProduct(null);
+    } catch (error) {
+      toast.error('Erro ao atualizar produto.');
+    }
+  };
+
+  const startEditingProduct = (produto: { id: string; nome: string; valor: number }) => {
+    setEditingProduct(produto);
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-xl font-bold mb-4">App de Delivery - {profile?.store_name || 'Seu Restaurante'}</h1>
+      
+      {/* Grid para layout responsivo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Coluna da esquerda - Form */}
+        <div className="space-y-6">
+          {/* Componente para cadastro de produtos */}
+          <CadastroProdutoForm
+            onSaveProduto={onSaveProduto}
+            onEditProduto={onEditProduto}
+            editingProduct={editingProduct}
+            setEditingProduct={setEditingProduct}
+          />
+          
+          {/* Cadastro de Produtos para a comanda */}
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
+            <h2 className="text-lg font-semibold mb-4">Adicionar Produtos ao Pedido</h2>
+            
+            {/* Busca de produtos cadastrados */}
+            <div className="mb-4">
+              <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
+                Buscar Produto Cadastrado
+              </label>
+              <div className="relative">
+                <input
+                  id="pesquisaProduto"
+                  type="text"
+                  value={pesquisaProduto}
+                  onChange={(e) => handleChange('pesquisaProduto', e.target.value)}
+                  placeholder="Digite para buscar produtos cadastrados"
+                  className="w-full p-2 pl-8 border rounded text-sm"
+                />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                
+                {pesquisaProduto && produtosFiltrados.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    {produtosFiltrados.map((produto) => (
+                      <div
+                        key={produto.id}
+                        className="p-2 hover:bg-gray-100 flex justify-between items-center cursor-pointer"
+                        onClick={() => selecionarProdutoCadastrado(produto)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{produto.nome}</div>
+                          <div className="text-sm text-gray-600">R$ {produto.valor.toFixed(2)}</div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditingProduct(produto);
+                          }}
+                          className="text-blue-600 hover:text-blue-900 ml-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {pesquisaProduto && produtosFiltrados.length === 0 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
+                    Nenhum produto encontrado
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Formulário de adição manual de produtos */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label htmlFor="nomeProduto" className="block text-sm font-medium text-gray-700">
+                  Nome do Produto
+                </label>
+                <input
+                  id="nomeProduto"
+                  type="text"
+                  value={nomeProduto}
+                  onChange={(e) => handleChange('nomeProduto', e.target.value)}
+                  placeholder="Ex: X-Bacon"
+                  className="w-full p-2 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="valorProduto" className="block text-sm font-medium text-gray-700">
+                  Valor (R$)
+                </label>
+                <input
+                  id="valorProduto"
+                  type="number"
+                  value={valorProduto}
+                  onChange={(e) => handleChange('valorProduto', e.target.value)}
+                  placeholder="0.00"
+                  className="w-full p-2 border rounded text-sm"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label htmlFor="quantidadeProduto" className="block text-sm font-medium text-gray-700">
+                  Quantidade
+                </label>
+                <input
+                  id="quantidadeProduto"
+                  type="number"
+                  value={quantidadeProduto}
+                  onChange={(e) => handleChange('quantidadeProduto', e.target.value)}
+                  className="w-full p-2 border rounded text-sm"
+                  min="1"
+                />
+              </div>
+            </div>
+            
+            <button
+              onClick={adicionarProduto}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center justify-center gap-2"
+            >
+              <Save size={18} />
+              Adicionar Produto ao Pedido
+            </button>
+          </div>
+          
+          {/* Lista de produtos da comanda */}
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
+            <h2 className="text-lg font-semibold mb-4">Produtos do Pedido</h2>
+            
+            {comanda.produtos.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Nenhum produto adicionado ainda.</p>
+            ) : (
+              <div className="space-y-2">
+                {comanda.produtos.map((produto, index) => (
+                  <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
+                    <span className="flex-1">{produto.nome}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">Qtd: {produto.quantidade}</span>
+                      <span>R$ {(produto.valor * produto.quantidade).toFixed(2)}</span>
+                      <button
+                        type="button"
+                        onClick={() => removerProduto(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="flex justify-between items-center mt-4 font-semibold">
+                  <span>Subtotal:</span>
+                  <span>R$ {comanda.total.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Informações de Entrega e Pagamento */}
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">Informações de Entrega</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="endereco" className="block text-sm font-medium text-gray-700">
+                  Endereço de Entrega
+                </label>
+                <input
+                  id="endereco"
+                  type="text"
+                  value={comanda.endereco}
+                  onChange={(e) => handleChange('endereco', e.target.value)}
+                  placeholder="Rua, número, complemento"
+                  className="w-full p-2 border rounded text-sm"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
+                  Bairro
+                </label>
+                <select
+                  id="bairro"
+                  value={comanda.bairro}
+                  onChange={(e) => handleBairroChange(e.target.value)}
+                  className="w-full p-2 border rounded text-sm"
+                >
+                  <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
+                  <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
+                  <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
+                  <option value="Cubatão">Cubatão (R$ 9,00)</option>
+                </select>
+              </div>
+              
+              {/* Taxa de entrega */}
+              <div className="flex justify-between text-sm">
+                <span>Taxa de Entrega:</span>
+                <span className="font-semibold">R$ {comanda.taxaentrega.toFixed(2)}</span>
+              </div>
+              
+              <div className="flex justify-between text-base font-semibold">
+                <span>Total com Taxa:</span>
+                <span>R$ {totalComTaxa.toFixed(2)}</span>
+              </div>
+              
+              <div>
+                <label htmlFor="formaPagamento" className="block text-sm font-medium text-gray-700">
+                  Forma de Pagamento
+                </label>
+                <select
+                  id="formaPagamento"
+                  value={comanda.forma_pagamento}
+                  onChange={(e) => handleFormaPagamentoChange(e.target.value as 'pix' | 'dinheiro' | 'cartao' | 'misto' | '')}
+                  className="w-full p-2 border rounded text-sm"
+                >
+                  <option value="">Selecione a forma de pagamento</option>
+                  <option value="pix">PIX</option>
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="cartao">Cartão</option>
+                  <option value="misto">Pagamento Misto</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="pago"
+                  checked={comanda.pago}
+                  onChange={(e) => handleChange('pago', e.target.checked)}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                />
+                <label htmlFor="pago" className="ml-2 text-sm text-gray-700">
+                  Pedido Pago
+                </label>
+              </div>
+              
+              <button
+                onClick={salvarComanda}
+                disabled={salvando}
+                className={`w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center justify-center gap-2 ${
+                  salvando ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Save size={18} />
+                {salvando ? 'Salvando...' : 'Salvar e Imprimir'}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Coluna da direita - Comandas anteriores e gráficos */}
+        <div className="space-y-6">
+          <TotaisPorStatusPagamento
+            confirmados={totais.confirmados}
+            naoConfirmados={totais.naoConfirmados}
+            pix={totais.pix}
+            dinheiro={totais.dinheiro}
+            cartao={totais.cartao}
+          />
+          
+          <ComandasAnterioresModificado
+            comandas={comandasAnteriores}
+            carregando={carregando}
+            expandidas={expandedComandas}
+            onToggleExpand={toggleExpandComanda}
+            onReimprimir={reimprimirComanda}
+            onExcluir={excluirComanda}
+            onConfirmarPagamento={(comanda) => {
+              setComandaSelecionada(comanda);
+              setShowPaymentConfirmation(true);
+            }}
+            onCarregarComandas={carregarComandas}
+          />
+        </div>
+      </div>
+      
+      {/* Modal de Confirmação de Pagamento */}
+      <PaymentConfirmationModal
+        show={showPaymentConfirmation}
+        comanda={comandaSelecionada}
+        onClose={() => setShowPaymentConfirmation(false)}
+        onConfirm={confirmarPagamento}
+      />
+      
+      {/* Modal de Troco */}
+      <TrocoModal
+        show={showTrocoModal}
+        needsTroco={needsTroco}
+        quantiapagaInput={quantiapagaInput}
+        totalComTaxa={totalComTaxa}
+        onClose={closeTrocoModal}
+        onConfirm={handleTrocoConfirm}
+        onChange={handleChange}
+      />
+    </div>
+  );
+}
