@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;

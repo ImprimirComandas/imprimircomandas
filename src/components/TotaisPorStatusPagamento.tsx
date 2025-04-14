@@ -6,9 +6,9 @@ interface TotaisPorStatusPagamentoProps {
 }
 
 export default function TotaisPorStatusPagamento({ 
-  confirmados, 
-  naoConfirmados, 
-  total 
+  confirmados = 0, 
+  naoConfirmados = 0, 
+  total = 0
 }: TotaisPorStatusPagamentoProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
