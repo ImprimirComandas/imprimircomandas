@@ -7,6 +7,7 @@ import PaymentConfirmationModal from './PaymentConfirmationModal';
 import TotaisPorStatusPagamento from './TotaisPorStatusPagamento';
 import type { Profile, Comanda, Produto } from '../types/database';
 import TrocoModal from './TrocoModal';
+import PagamentoMistoModal from './PagamentoMistoModal';
 
 // Taxas de bairro
 const bairroTaxas = {
@@ -780,25 +781,26 @@ const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (val
   };
 };
 
-// PagamentoMistoModal Props Interface
-interface PagamentoMistoModalProps {
-  show: boolean;
-  totalComTaxa: number;
-  valorCartaoInput: number | null;
-  valorDinheiroInput: number | null;
-  valorPixInput: number | null;
-  onClose: () => void;
-  onConfirm: () => void;
-  onChange: (field: string, value: any) => void;
+// DeliveryApp Component
+interface DeliveryAppProps {
+  profile: Profile | null;
 }
 
-// PagamentoMistoModal Component
-const PagamentoMistoModal = ({
-  show,
-  totalComTaxa,
-  valorCartaoInput,
-  valorDinheiroInput,
-  valorPixInput,
-  onClose,
-  onConfirm,
-  onChange
+const DeliveryApp = ({ profile }: DeliveryAppProps) => {
+  const {
+    comandasAnteriores,
+    carregando,
+    expandedComandas,
+    salvando,
+    setSalvando,
+    reimprimirComanda,
+    excluirComanda,
+    toggleExpandComanda,
+    carregarComandas,
+    totais,
+    confirmarPagamento,
+    comandaSelecionada,
+    setComandaSelecionada,
+    showPaymentConfirmation,
+    setShowPaymentConfirmation,
+  } = useComandas
