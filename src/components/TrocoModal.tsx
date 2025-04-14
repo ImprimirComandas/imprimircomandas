@@ -7,7 +7,7 @@ interface TrocoModalProps {
   onClose: () => void;
   onConfirm: () => void;
   onChange: (field: string, value: any) => void;
-  onSaveAndPrint: () => void;
+  onSaveAndPrint?: () => void;
 }
 
 export default function TrocoModal({
@@ -24,7 +24,9 @@ export default function TrocoModal({
 
   const handleConfirmAndSave = () => {
     onConfirm();
-    onSaveAndPrint();
+    if (onSaveAndPrint) {
+      onSaveAndPrint();
+    }
   };
 
   return (
