@@ -869,8 +869,9 @@ const DeliveryApp = ({ profile }: DeliveryAppProps) => {
         
         <div>
           <TotaisPorStatusPagamento 
-            totalConfirmado={totais.confirmados} 
-            totalPendente={totais.naoConfirmados} 
+            confirmados={totais.confirmados} 
+            naoConfirmados={totais.naoConfirmados} 
+            total={totais.geral} 
           />
           
           <ComandasAnterioresModificado
@@ -880,7 +881,12 @@ const DeliveryApp = ({ profile }: DeliveryAppProps) => {
             onToggleExpand={toggleExpandComanda}
             onReimprimir={reimprimirComanda}
             onExcluir={excluirComanda}
-            onConfirmarPagamento={(comanda) => {
+            getUltimos8Digitos={(id) => {
+              // Import dynamically to avoid circular dependencies
+              if (!id) return '';
+              return id.substring(Math.max(0, id.length - 8));
+            }}
+            onConfirmPayment={(comanda) => {
               setComandaSelecionada(comanda);
               setShowPaymentConfirmation(true);
             }}
