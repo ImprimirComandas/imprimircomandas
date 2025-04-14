@@ -24,6 +24,9 @@ export type Database = {
           total: number
           troco: number | null
           user_id: string
+          valor_cartao: number | null
+          valor_dinheiro: number | null
+          valor_pix: number | null
         }
         Insert: {
           bairro: string
@@ -39,6 +42,9 @@ export type Database = {
           total: number
           troco?: number | null
           user_id: string
+          valor_cartao?: number | null
+          valor_dinheiro?: number | null
+          valor_pix?: number | null
         }
         Update: {
           bairro?: string
@@ -54,11 +60,102 @@ export type Database = {
           total?: number
           troco?: number | null
           user_id?: string
+          valor_cartao?: number | null
+          valor_dinheiro?: number | null
+          valor_pix?: number | null
+        }
+        Relationships: []
+      }
+      entregas: {
+        Row: {
+          bairro: string
+          comanda_id: string | null
+          created_at: string | null
+          data: string | null
+          endereco: string
+          id: string
+          motoboy_id: string
+          origem: string
+          status: string | null
+          user_id: string
+          valor_entrega: number
+        }
+        Insert: {
+          bairro: string
+          comanda_id?: string | null
+          created_at?: string | null
+          data?: string | null
+          endereco: string
+          id?: string
+          motoboy_id: string
+          origem: string
+          status?: string | null
+          user_id: string
+          valor_entrega?: number
+        }
+        Update: {
+          bairro?: string
+          comanda_id?: string | null
+          created_at?: string | null
+          data?: string | null
+          endereco?: string
+          id?: string
+          motoboy_id?: string
+          origem?: string
+          status?: string | null
+          user_id?: string
+          valor_entrega?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entregas_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_motoboy_id_fkey"
+            columns: ["motoboy_id"]
+            isOneToOne: false
+            referencedRelation: "motoboys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motoboys: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          placa: string | null
+          status: string | null
+          telefone: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          placa?: string | null
+          status?: string | null
+          telefone?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          placa?: string | null
+          status?: string | null
+          telefone?: string | null
+          user_id?: string
         }
         Relationships: []
       }
       produtos: {
         Row: {
+          categoria: string | null
           created_at: string | null
           id: string
           nome: string
@@ -66,6 +163,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          categoria?: string | null
           created_at?: string | null
           id?: string
           nome: string
@@ -73,6 +171,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          categoria?: string | null
           created_at?: string | null
           id?: string
           nome?: string
