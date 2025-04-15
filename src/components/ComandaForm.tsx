@@ -12,7 +12,7 @@ interface ComandaFormProps {
   onRemoveProduto: (index: number) => void;
   onUpdateQuantidade: (index: number, quantidade: number) => void;
   onSaveComanda: () => void;
-  onChange: (field: string, value: any) => void;
+  onChange: (field: string, value: string | number | boolean) => void;
   onBairroChange: (bairro: string) => void;
   onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void;
   selecionarProdutoCadastrado: (produto: {id: string, nome: string, valor: number}) => void;
@@ -105,6 +105,8 @@ export default function ComandaForm({
                   onChange={(e) => onUpdateQuantidade(index, Number(e.target.value))}
                   className="w-16 p-1 border rounded text-sm"
                   min="1"
+                  placeholder="Quantidade"
+                  title="Quantidade do produto"
                 />
                 <span>R$ {(produto.valor * produto.quantidade).toFixed(2)}</span>
                 <button

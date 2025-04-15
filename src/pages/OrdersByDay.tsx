@@ -1,27 +1,157 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-import type { Comanda } from '../types/database';
-import ComandasAnterioresModificado from '../components/ComandasAnterioresModificado';
-import TotaisPorFormaPagamento from '../components/TotaisPorFormaPagamento';
-import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
+import { format, parseISO, startOfDay, endOfDay, subDays, addDays } from 'date-fns';
+import { Search, X, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { getUltimos8Digitos } from '../utils/printService';
+import type { Comanda } from '../types/database';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+
+// Componente para cada comanda
+const OrderCard = ({
+  comanda,
+  onTogglePayment,
+  onReprint,
+  onDelete,
+}: {
+  comanda: Comanda;
+  onTogglePayment: (comanda: Comanda) => void;
+  onReprint: (comanda: Comanda) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Função para garantir que produtos seja um array válido
+  const getProdutos = () => {
+    try {
+      if (Array.isArray(comanda.produtos)) {
+        return comanda.produtos;
+      }
+      if (typeof comanda.produtos === 'string') {
+        return JSON.parse(comanda.produtos);
+      }
+      return [];
+    } catch (error) {
+      console.error('Erro ao processar produtos:', error);
+      return [];
+    }
+  };
+
+  const produtos = getProdutos();
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-white rounded-xl shadow-lg p-5 mb-4 hover:shadow-xl transition-all duration-300"
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800">Pedido #{comanda.id.slice(-6)}</h3>
+          <p className="text-sm text-gray-500">
+            {comanda.created_at ? format(parseISO(comanda.created_at), 'HH:mm') : 'Data indisponível'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              comanda.pago ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+            }`}
+          >
+            {comanda.pago ? 'Pago' : 'Pendente'}
+          </span>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            {isExpanded ? 'Ocultar' : 'Ver Detalhes'}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-4"
+          >
+            <div className="border-t pt-4">
+              {produtos.length > 0 ? (
+                produtos.map((produto: { nome: string; quantidade: number; preco: number }, index: number) => (
+                  <div key={index} className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>
+                      {(produto.nome || 'Produto desconhecido')} (x{(produto.quantidade || 1)})
+                    </span>
+                    <span>R$ {((produto.preco || 0) * (produto.quantidade || 1)).toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">Nenhum produto registrado</p>
+              )}
+              <div className="mt-3 font-bold text-gray-800 text-lg">
+                Total: R$ {(comanda.total || 0).toFixed(2)}
+              </div>
+              <div className="mt-1 text-sm text-gray-500">
+                Pagamento: {comanda.forma_pagamento || 'Não especificado'}
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3 flex-wrap">
+              <button
+                onClick={() => onTogglePayment(comanda)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  comanda.pago ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+                } text-white transition-colors duration-200`}
+              >
+                {comanda.pago ? <XCircle size={18} /> : <CheckCircle size={18} />}
+                {comanda.pago ? 'Desmarcar' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => onReprint(comanda)}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+              >
+                Reimprimir
+              </button>
+              <button
+                onClick={() => onDelete(comanda.id)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors duration-200"
+              >
+                Excluir
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 export default function OrdersByDay() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [comandas, setComandas] = useState<Comanda[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedComandas, setExpandedComandas] = useState<{ [key: string]: boolean }>({}); 
-  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
-  const [comandaSelecionada, setComandaSelecionada] = useState<Comanda | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending'>('all');
 
-  const fetchOrdersByDate = async (date: Date) => {
+  // Buscar comandas para o dia selecionado
+  const fetchOrdersByDate = useCallback(async (date: Date) => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast.error('Usuário não autenticado');
         return;
@@ -29,7 +159,7 @@ export default function OrdersByDay() {
 
       const startDate = startOfDay(date).toISOString();
       const endDate = endOfDay(date).toISOString();
-      
+
       const { data, error } = await supabase
         .from('comandas')
         .select('*')
@@ -39,60 +169,113 @@ export default function OrdersByDay() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao carregar comandas:', error);
         toast.error('Erro ao carregar pedidos');
         return;
       }
 
       const comandasFormatadas = data?.map(comanda => ({
         ...comanda,
-        produtos: Array.isArray(comanda.produtos) ? comanda.produtos : JSON.parse(comanda.produtos as any)
+        produtos: Array.isArray(comanda.produtos)
+          ? comanda.produtos
+          : typeof comanda.produtos === 'string'
+          ? JSON.parse(comanda.produtos)
+          : [],
       })) || [];
 
       setComandas(comandasFormatadas);
     } catch (error) {
-      console.error('Erro ao carregar comandas do dia:', error);
-      toast.error('Erro ao carregar pedidos do dia');
+      console.error('Erro ao carregar comandas:', error);
+      toast.error('Erro ao carregar pedidos');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Buscar comandas para o gráfico (últimos 7 dias)
+  const fetchOrdersForChart = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        return [];
+      }
+
+      const endDate = endOfDay(selectedDate).toISOString();
+      const startDate = startOfDay(subDays(selectedDate, 6)).toISOString(); // Últimos 7 dias
+
+      const { data, error } = await supabase
+        .from('comandas')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+      if (error) {
+        console.error('Erro ao carregar dados do gráfico:', error);
+        return [];
+      }
+
+      return data?.map(comanda => ({
+        ...comanda,
+        produtos: Array.isArray(comanda.produtos)
+          ? comanda.produtos
+          : typeof comanda.produtos === 'string'
+          ? JSON.parse(comanda.produtos)
+          : [],
+      })) || [];
+    } catch (error) {
+      console.error('Erro ao carregar comandas para o gráfico:', error);
+      return [];
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     fetchOrdersByDate(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate, fetchOrdersByDate]);
 
+  // Manipulação de data
   const changeDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    if (direction === 'prev') {
-      newDate.setDate(newDate.getDate() - 1);
-    } else {
-      newDate.setDate(newDate.getDate() + 1);
+    setSelectedDate(prev => (direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1)));
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = new Date(e.target.value);
+    if (!isNaN(newDate.getTime())) {
+      setSelectedDate(newDate);
     }
-    setSelectedDate(newDate);
   };
 
-  const toggleExpandComanda = (id: string) => {
-    setExpandedComandas(prev => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const reimprimirComanda = (comanda: Comanda) => {
+  // Ações
+  const togglePayment = async (comanda: Comanda) => {
     try {
-      import('../utils/printService').then(module => {
-        module.imprimirComanda(comanda);
-        toast.success('Comanda enviada para impressão');
-      });
+      const { error } = await supabase
+        .from('comandas')
+        .update({ pago: !comanda.pago })
+        .eq('id', comanda.id);
+
+      if (error) {
+        toast.error('Erro ao atualizar pagamento');
+        return;
+      }
+
+      fetchOrdersByDate(selectedDate);
+      toast.success(`Pagamento ${!comanda.pago ? 'confirmado' : 'desmarcado'}!`);
     } catch (error) {
-      console.error('Erro ao reimprimir comanda:', error);
+      toast.error('Erro ao atualizar pagamento');
+    }
+  };
+
+  const reprintOrder = async (comanda: Comanda) => {
+    try {
+      const { imprimirComanda } = await import('../utils/printService');
+      imprimirComanda(comanda);
+      toast.success('Comanda enviada para impressão');
+    } catch (error) {
       toast.error('Erro ao reimprimir comanda');
     }
   };
 
-  const excluirComanda = async (id: string | undefined) => {
-    if (!id) return;
+  const deleteOrder = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
 
     try {
@@ -102,181 +285,317 @@ export default function OrdersByDay() {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir comanda:', error);
-        toast.error('Erro ao excluir o pedido');
+        toast.error('Erro ao excluir pedido');
         return;
       }
 
       fetchOrdersByDate(selectedDate);
-      setExpandedComandas(prev => {
-        const newExpanded = { ...prev };
-        delete newExpanded[id];
-        return newExpanded;
-      });
       toast.success('Pedido excluído com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir comanda:', error);
-      toast.error('Erro ao excluir o pedido');
+      toast.error('Erro ao excluir pedido');
     }
   };
 
-  const prepareConfirmPayment = (comanda: Comanda) => {
-    setComandaSelecionada(comanda);
-    setShowPaymentConfirmation(true);
-  };
+  // Filtragem
+  const filteredComandas = useMemo(() => {
+    return comandas.filter(comanda => {
+      const matchesSearch = searchTerm
+        ? comanda.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (comanda.produtos || []).some((p: { nome: string }) =>
+            (p.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : true;
 
-  const confirmarPagamento = async () => {
-    if (!comandaSelecionada || !comandaSelecionada.id) return;
-    
-    try {
-      const { error } = await supabase
-        .from('comandas')
-        .update({ pago: !comandaSelecionada.pago })
-        .eq('id', comandaSelecionada.id);
+      const matchesStatus =
+        filterStatus === 'all' ? true : filterStatus === 'paid' ? comanda.pago : !comanda.pago;
 
-      if (error) {
-        console.error('Erro ao atualizar status de pagamento:', error);
-        toast.error('Erro ao atualizar status de pagamento');
-        return;
-      }
+      return matchesSearch && matchesStatus;
+    });
+  }, [comandas, searchTerm, filterStatus]);
 
-      await fetchOrdersByDate(selectedDate);
-      setShowPaymentConfirmation(false);
-      
-      const novoStatus = !comandaSelecionada.pago ? 'PAGO' : 'NÃO PAGO';
-      toast.success(`Pedido marcado como ${novoStatus} com sucesso!`);
-    } catch (error) {
-      console.error('Erro ao confirmar pagamento:', error);
-      toast.error('Erro ao atualizar status de pagamento');
-    }
-  };
-
-  const calcularTotais = () => {
-    const totais = {
+  // Totais
+  const totais = useMemo(() => {
+    const result = {
       pix: 0,
       dinheiro: 0,
       cartao: 0,
       geral: 0,
       confirmados: 0,
-      naoConfirmados: 0
+      naoConfirmados: 0,
     };
-
-    comandas.forEach(comanda => {
-      if (comanda.pago) {
-        totais.confirmados += comanda.total;
-      } else {
-        totais.naoConfirmados += comanda.total;
-      }
-      
-      totais.geral += comanda.total;
-      
-      if (comanda.forma_pagamento === 'pix') {
-        totais.pix += comanda.total;
-      } else if (comanda.forma_pagamento === 'dinheiro') {
-        totais.dinheiro += comanda.total;
-      } else if (comanda.forma_pagamento === 'cartao') {
-        totais.cartao += comanda.total;
-      }
+    filteredComandas.forEach(comanda => {
+      const total = comanda.total || 0;
+      if (comanda.pago) result.confirmados += total;
+      else result.naoConfirmados += total;
+      result.geral += total;
+      if (comanda.forma_pagamento === 'pix') result.pix += total;
+      else if (comanda.forma_pagamento === 'dinheiro') result.dinheiro += total;
+      else if (comanda.forma_pagamento === 'cartao') result.cartao += total;
     });
+    return result;
+  }, [filteredComandas]);
 
-    return totais;
+  // Dados para o gráfico de linha
+  const [chartData, setChartData] = useState<{ name: string; Pedidos: number; Valor: number; date: string }[]>([]);
+
+  useEffect(() => {
+    const loadChartData = async () => {
+      const orders = await fetchOrdersForChart();
+      const data = Array.from({ length: 7 }, (_, i) => {
+        const date = subDays(selectedDate, 6 - i); // De 6 dias atrás até hoje
+        const ordersForDay = orders.filter(order => {
+          const orderDate = parseISO(order.created_at);
+          return (
+            orderDate >= startOfDay(date) && orderDate <= endOfDay(date)
+          );
+        });
+        return {
+          name: format(date, 'dd/MM'),
+          Pedidos: ordersForDay.length,
+          Valor: ordersForDay.reduce((sum, order) => sum + (order.total || 0), 0),
+          date: date.toISOString(), // Para clique
+        };
+      });
+      setChartData(data);
+    };
+    loadChartData();
+  }, [selectedDate, fetchOrdersForChart]);
+
+  // Função para mudar a data ao clicar no gráfico
+  const handlePointClick = (data: { activePayload?: { payload: { date: string } }[] }) => {
+    if (data && data.activePayload && data.activePayload[0]) {
+      const clickedDate = new Date(data.activePayload[0].payload.date);
+      setSelectedDate(clickedDate);
+    }
   };
 
-  const totais = calcularTotais();
-
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Pedidos por Dia</h1>
-          
-          <div className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
-            <button 
-              onClick={() => changeDate('prev')} 
-              className="p-2 rounded-full hover:bg-gray-100"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <Calendar size={20} className="text-blue-600" />
-              <span className="text-lg font-medium">
-                {format(selectedDate, 'dd/MM/yyyy')}
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Cabeçalho */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-10"
+        >
+          <h1 className="text-4xl font-extrabold text-gray-900 text-center sm:text-left">
+            Controle de Pedidos
+          </h1>
+          <p className="mt-2 text-gray-600 text-center sm:text-left">
+            Gerencie seus pedidos diários de forma simples e eficiente
+          </p>
+        </motion.div>
+
+        {/* Filtros e Busca */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white rounded-2xl shadow-xl p-6 mb-8"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Navegação de Data */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => changeDate('prev')}
+                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
+                aria-label="Dia anterior"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <input
+                type="date"
+                value={format(selectedDate, 'yyyy-MM-dd')}
+                onChange={handleDateChange}
+                placeholder="Select a date"
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              <button
+                onClick={() => changeDate('next')}
+                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
+                aria-label="Próximo dia"
+              >
+                <ChevronRight size={20} />
+              </button>
             </div>
-            
-            <button 
-              onClick={() => changeDate('next')} 
-              className="p-2 rounded-full hover:bg-gray-100"
+
+            {/* Busca */}
+            <div className="relative w-full sm:w-auto">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <input
+                type="text"
+                placeholder="Buscar pedido ou produto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-64 pl-10 pr-10 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filtros de Status */}
+          <div className="mt-4 flex gap-2 justify-center sm:justify-start">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                filterStatus === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              } transition-colors duration-200`}
             >
-              <ChevronRight size={24} />
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterStatus('paid')}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                filterStatus === 'paid'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              } transition-colors duration-200`}
+            >
+              Pagos
+            </button>
+            <button
+              onClick={() => setFilterStatus('pending')}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                filterStatus === 'pending'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              } transition-colors duration-200`}
+            >
+              Pendentes
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        <TotaisPorStatusPagamento 
-          confirmados={totais.confirmados} 
-          naoConfirmados={totais.naoConfirmados} 
-          total={totais.geral} 
-        />
-        
-        <TotaisPorFormaPagamento totais={totais} />
-        
-        {loading ? (
-          <div className="bg-white rounded-lg shadow-md p-6 flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+        {/* Gráfico de Linha */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-white rounded-2xl shadow-xl p-6 mb-8"
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Crescimento dos Pedidos (Últimos 7 Dias)
+          </h2>
+          {chartData.length > 0 && chartData.some(d => d.Pedidos > 0 || d.Valor > 0) ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                  onClick={handlePointClick}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="name" stroke="#374151" />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="#34D399"
+                    label={{ value: 'Pedidos', angle: -90, position: 'insideLeft', offset: -10 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#3B82F6"
+                    label={{ value: 'Valor (R$)', angle: 90, position: 'insideRight', offset: -10 }}
+                  />
+                  <Tooltip
+                    formatter={(value: number, name: string) =>
+                      name === 'Pedidos' ? `${value} pedidos` : `R$ ${value.toFixed(2)}`
+                    }
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="Pedidos"
+                    stroke="#34D399"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="Valor"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="text-gray-600 text-center">Nenhum dado disponível para o gráfico.</p>
+          )}
+        </motion.div>
+
+        {/* Totais em Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
+        >
+          <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-xl p-6 text-white shadow-lg">
+            <p className="text-sm font-medium">Pagos</p>
+            <p className="text-2xl font-bold">R$ {totais.confirmados.toFixed(2)}</p>
           </div>
-        ) : comandas.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <AlertCircle size={48} className="mx-auto text-gray-400 mb-2" />
-            <p className="text-gray-600">Nenhum pedido encontrado para esta data</p>
+          <div className="bg-gradient-to-r from-red-400 to-red-600 rounded-xl p-6 text-white shadow-lg">
+            <p className="text-sm font-medium">Pendentes</p>
+            <p className="text-2xl font-bold">R$ {totais.naoConfirmados.toFixed(2)}</p>
           </div>
-        ) : (
-          <ComandasAnterioresModificado 
-            comandas={comandas}
-            expandedComandas={expandedComandas}
-            carregando={loading}
-            onReimprimir={reimprimirComanda}
-            onExcluir={excluirComanda}
-            onToggleExpand={toggleExpandComanda}
-            onConfirmPayment={prepareConfirmPayment}
-          />
-        )}
-      </div>
-      
-      <PaymentConfirmationModal
-        show={showPaymentConfirmation}
-        comanda={comandaSelecionada}
-        onClose={() => setShowPaymentConfirmation(false)}
-        onConfirm={confirmarPagamento}
-      />
-    </div>
-  );
-}
+          <div className="bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+            <p className="text-sm font-medium">Total</p>
+            <p className="text-2xl font-bold">R$ {totais.geral.toFixed(2)}</p>
+          </div>
+        </motion.div>
 
-interface TotaisPorStatusPagamentoProps {
-  confirmados: number;
-  naoConfirmados: number;
-  total: number;
-}
-
-function TotaisPorStatusPagamento({ confirmados, naoConfirmados, total }: TotaisPorStatusPagamentoProps) {
-  return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
-      <h2 className="text-lg md:text-xl font-bold mb-4">Status de Pagamentos</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-green-50 p-3 rounded border border-green-200">
-          <p className="text-sm font-medium text-green-800">Confirmados</p>
-          <p className="text-lg font-bold text-green-900">R$ {confirmados.toFixed(2)}</p>
-        </div>
-        <div className="bg-red-50 p-3 rounded border border-red-200">
-          <p className="text-sm font-medium text-red-800">Não Confirmados</p>
-          <p className="text-lg font-bold text-red-900">R$ {naoConfirmados.toFixed(2)}</p>
-        </div>
-        <div className="bg-gray-50 p-3 rounded">
-          <p className="text-sm font-medium text-gray-600">Total</p>
-          <p className="text-lg font-bold text-gray-900">R$ {total.toFixed(2)}</p>
-        </div>
+        {/* Lista de Comandas */}
+        <motion.div layout>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
+            </div>
+          ) : filteredComandas.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white rounded-xl shadow-lg p-8 text-center"
+            >
+              <p className="text-gray-600 text-lg font-medium">
+                Nenhum pedido encontrado para esta data.
+              </p>
+            </motion.div>
+          ) : (
+            filteredComandas.map(comanda => (
+              <OrderCard
+                key={comanda.id}
+                comanda={comanda}
+                onTogglePayment={togglePayment}
+                onReprint={reprintOrder}
+                onDelete={deleteOrder}
+              />
+            ))
+          )}
+        </motion.div>
       </div>
     </div>
   );

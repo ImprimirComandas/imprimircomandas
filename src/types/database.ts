@@ -53,3 +53,19 @@ export interface ShopSession {
   end_time: string | null;
   created_at: string;
 }
+export interface Comanda {
+  id?: string;
+  produtos: Produto[];
+  endereco: string;
+  bairro: string;
+  taxaentrega: number;
+  total: number;
+  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '';
+  pago: boolean;
+  pagamentoMisto?: {
+    cartao: number;
+    dinheiro: number;
+    pix: number;
+    troco: number;
+  } | null;
+}

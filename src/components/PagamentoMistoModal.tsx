@@ -9,7 +9,7 @@ interface PagamentoMistoModalProps {
   valorPixInput: number | null;
   onClose: () => void;
   onConfirm: () => void;
-  onChange: (field: string, value: any) => void;
+  onChange: (field: string, value: string | number) => void;
 }
 
 export default function PagamentoMistoModal({

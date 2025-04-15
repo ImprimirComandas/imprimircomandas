@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Profile } from '../types/database';
 import * as XLSX from 'xlsx';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Product {
   id: string;
@@ -48,7 +49,7 @@ export function Products() {
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Erro ao carregar perfil:', error);
     }
   };
 
@@ -61,14 +62,14 @@ export function Products() {
           .select('categoria')
           .eq('user_id', session.user.id)
           .not('categoria', 'is', null);
-        
+
         if (error) throw error;
-        
+
         const uniqueCategories = [...new Set(data?.map(item => item.categoria))] as string[];
         setCategories(uniqueCategories.sort());
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias');
     }
   };
@@ -77,7 +78,7 @@ export function Products() {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session) {
         let query = supabase
           .from('produtos')
@@ -85,21 +86,21 @@ export function Products() {
           .eq('user_id', session.user.id)
           .order('nome')
           .range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1);
-        
+
         if (selectedCategory !== 'Todas') {
           query = query.eq('categoria', selectedCategory);
         }
-        
+
         const { data, error } = await query;
-        
+
         if (error) throw error;
-        
+
         setProducts(prev => reset ? (data || []) : [...prev, ...(data || [])]);
         setHasMore((data || []).length === pageSize);
         setPage(pageNumber);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('Erro ao carregar produtos:', error);
       toast.error('Erro ao carregar produtos');
     } finally {
       setLoading(false);
@@ -131,7 +132,7 @@ export function Products() {
     try {
       setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast.error('Usuário não autenticado');
         return;
@@ -141,7 +142,7 @@ export function Products() {
         nome: productName,
         valor: parseFloat(parsedValue.toFixed(2)),
         categoria: productCategory || null,
-        user_id: session.user.id
+        user_id: session.user.id,
       };
 
       const { data, error } = await supabase
@@ -150,7 +151,7 @@ export function Products() {
         .select();
 
       if (error) throw error;
-      
+
       toast.success('Produto adicionado/atualizado com sucesso!');
       setProducts(prev => {
         const updated = prev.filter(p => p.nome !== productName);
@@ -163,7 +164,7 @@ export function Products() {
       setProductValue('');
       setProductCategory('');
     } catch (error) {
-      console.error('Error adding product:', error);
+      console.error('Erro ao adicionar produto:', error);
       toast.error(`Erro ao adicionar produto: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setSaving(false);
@@ -180,13 +181,12 @@ export function Products() {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       toast.success('Produto excluído com sucesso!');
       setProducts(prev => prev.filter(p => p.id !== id));
-      // Atualizar categorias se necessário
       fetchCategories();
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Erro ao excluir produto:', error);
       toast.error('Erro ao excluir produto');
     }
   };
@@ -201,7 +201,7 @@ export function Products() {
     try {
       setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast.error('Usuário não autenticado');
         return;
@@ -213,7 +213,7 @@ export function Products() {
         .eq('user_id', session.user.id);
 
       if (error) throw error;
-      
+
       toast.success('Todos os produtos foram excluídos com sucesso!');
       setProducts([]);
       setCategories([]);
@@ -221,7 +221,7 @@ export function Products() {
       setPage(1);
       setHasMore(false);
     } catch (error) {
-      console.error('Error deleting all products:', error);
+      console.error('Erro ao excluir todos os produtos:', error);
       toast.error('Erro ao excluir produtos');
     } finally {
       setSaving(false);
@@ -256,7 +256,7 @@ export function Products() {
 
     try {
       setSaving(true);
-      
+
       const updatedProduct = {
         nome: productName,
         valor: parseFloat(parsedValue.toFixed(2)),
@@ -269,15 +269,19 @@ export function Products() {
         .eq('id', editingProduct.id);
 
       if (error) throw error;
-      
+
       toast.success('Produto atualizado com sucesso!');
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...updatedProduct } : p).sort((a, b) => a.nome.localeCompare(b.nome)));
+      setProducts(prev =>
+        prev
+          .map(p => (p.id === editingProduct.id ? { ...p, ...updatedProduct } : p))
+          .sort((a, b) => a.nome.localeCompare(b.nome))
+      );
       if (productCategory && !categories.includes(productCategory)) {
         setCategories(prev => [...prev, productCategory].sort());
       }
       cancelEditing();
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error('Erro ao atualizar produto:', error);
       toast.error(`Erro ao atualizar produto: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setSaving(false);
@@ -292,16 +296,15 @@ export function Products() {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { 
+      const workbook = XLSX.read(arrayBuffer, {
         type: 'array',
         cellText: true,
         cellDates: false,
       });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+      const jsonData = XLSX.utils.sheet_to_json<string[][]>(firstSheet, { header: 1 });
 
-      // Extrair cabeçalhos
-      const headers = jsonData[0].map((h: any) => h?.toString().toLowerCase().trim());
+      const headers = jsonData[0].map((h: unknown) => (typeof h === 'string' ? h.toLowerCase().trim() : ''));
       let nameColumn: number | null = null;
       let priceColumn: number | null = null;
       let categoryColumn: number | null = null;
@@ -319,7 +322,6 @@ export function Products() {
         return;
       }
 
-      // Extrair e validar produtos
       const extractedProducts: { nome: string; valor: number; categoria: string | null }[] = [];
       const invalidProducts: string[] = [];
 
@@ -358,26 +360,25 @@ export function Products() {
         toast.warning(`Alguns produtos foram ignorados devido a valores inválidos:\n${invalidProducts.join('\n')}`);
       }
 
-      // Remover duplicatas, mantendo a última entrada
       const uniqueProductsMap = new Map<string, typeof extractedProducts[0]>();
       extractedProducts.forEach(product => {
         uniqueProductsMap.set(product.nome, product);
       });
       const uniqueProducts = Array.from(uniqueProductsMap.values());
-      
+
       if (uniqueProducts.length < extractedProducts.length) {
         toast.warning(`Foram encontradas ${extractedProducts.length - uniqueProducts.length} entradas duplicadas no arquivo. Apenas a última entrada para cada nome foi mantida.`);
       }
 
-      // Confirmar com o usuário
-      const confirmMessage = `Foram encontrados ${uniqueProducts.length} produtos válidos:\n${uniqueProducts.map(p => `- ${p.nome} (${p.categoria || 'Sem categoria'}): R$${p.valor.toFixed(2)}`).join('\n')}\n\nDeseja adicioná-los ao banco de dados? Produtos com nomes iguais serão atualizados.`;
+      const confirmMessage = `Foram encontrados ${uniqueProducts.length} produtos válidos:\n${uniqueProducts
+        .map(p => `- ${p.nome} (${p.categoria || 'Sem categoria'}): R$${p.valor.toFixed(2)}`)
+        .join('\n')}\n\nDeseja adicioná-los ao banco de dados? Produtos com nomes iguais serão atualizados.`;
       if (!confirm(confirmMessage)) {
         setUploadedFile(null);
         event.target.value = '';
         return;
       }
 
-      // Adicionar ou atualizar produtos
       try {
         setSaving(true);
         const { data: { session } } = await supabase.auth.getSession();
@@ -401,9 +402,9 @@ export function Products() {
 
         toast.success(`${uniqueProducts.length} produtos adicionados/atualizados com sucesso!`);
         fetchProducts(1, true);
-        fetchCategories(); // Atualizar categorias após upload
+        fetchCategories();
       } catch (error) {
-        console.error('Error upserting products:', error);
+        console.error('Erro ao processar produtos:', error);
         toast.error(`Erro ao processar produtos: ${error.message || 'Erro desconhecido'}`);
       } finally {
         setSaving(false);
@@ -411,78 +412,92 @@ export function Products() {
         event.target.value = '';
       }
     } catch (error) {
-      console.error('Error reading file:', error);
+      console.error('Erro ao ler arquivo:', error);
       toast.error('Erro ao processar o arquivo. Verifique se é XLS, XLSX ou CSV válido.');
       setUploadedFile(null);
       event.target.value = '';
     }
   };
 
-  // Filtrar produtos para exibição
   const filteredProducts = products
-    .filter(product => 
+    .filter(product =>
       !editSearchTerm || product.nome.toLowerCase().includes(editSearchTerm.toLowerCase())
     )
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-medium mb-4">
-              {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
-            </h2>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-2">
-                <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do Produto
-                </label>
-                <input
-                  id="product-name"
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="Ex: Água Mineral 500ml"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="product-value" className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor (R$)
-                </label>
-                <input
-                  id="product-value"
-                  type="number"
-                  value={productValue}
-                  onChange={(e) => setProductValue(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Cabeçalho */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-10"
+        >
+          <h1 className="text-4xl font-extrabold text-gray-900 text-center sm:text-left">
+            Gerenciamento de Produtos
+          </h1>
+          <p className="mt-2 text-gray-600 text-center sm:text-left">
+            Adicione, edite e organize seus produtos com facilidade
+          </p>
+        </motion.div>
 
-              <div className="sm:col-span-3">
-                <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Categoria (opcional)
-                </label>
-                <input
-                  id="product-category"
-                  type="text"
-                  value={productCategory}
-                  onChange={(e) => setProductCategory(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="Ex: Bebidas"
-                />
-              </div>
+        {/* Formulário de Adição/Edição */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white rounded-2xl shadow-xl p-6 mb-8"
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+            {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
+          </h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
+                Nome do Produto
+              </label>
+              <input
+                id="product-name"
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ex: Água Mineral 500ml"
+              />
             </div>
-
-            <div className="mt-4">
+            <div>
+              <label htmlFor="product-value" className="block text-sm font-medium text-gray-700 mb-1">
+                Valor (R$)
+              </label>
+              <input
+                id="product-value"
+                type="number"
+                value={productValue}
+                onChange={(e) => setProductValue(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
+                Categoria (opcional)
+              </label>
+              <input
+                id="product-category"
+                type="text"
+                value={productCategory}
+                onChange={(e) => setProductCategory(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ex: Bebidas"
+              />
+            </div>
+            <div className="sm:col-span-2">
               <label htmlFor="product-file" className="block text-sm font-medium text-gray-700 mb-1">
-                Importar Produtos de Arquivo (XLS, XLSX ou CSV)
+                Importar Produtos (XLS, XLSX, CSV)
               </label>
               <input
                 id="product-file"
@@ -490,12 +505,7 @@ export function Products() {
                 accept=".xls,.xlsx,.csv"
                 onChange={handleFileUpload}
                 disabled={saving}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
               />
               {uploadedFile && (
                 <p className="mt-2 text-sm text-gray-600">
@@ -503,124 +513,158 @@ export function Products() {
                 </p>
               )}
             </div>
-            
-            <div className="mt-4 flex justify-between items-center">
+          </div>
+          <div className="mt-6 flex justify-between items-center">
+            <button
+              onClick={deleteAllProducts}
+              disabled={saving || products.length === 0}
+              className="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Apagar Todos
+            </button>
+            <div className="flex gap-3">
+              {editingProduct && (
+                <button
+                  onClick={cancelEditing}
+                  disabled={saving}
+                  className="flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </button>
+              )}
               <button
-                type="button"
-                onClick={deleteAllProducts}
-                disabled={saving || products.length === 0}
-                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                onClick={editingProduct ? saveEdit : addProduct}
+                disabled={saving}
+                className="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
               >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Apagar Todos os Produtos
-              </button>
-              
-              <div className="flex space-x-3">
-                {editingProduct && (
-                  <button
-                    type="button"
-                    onClick={cancelEditing}
-                    disabled={saving}
-                    className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                {saving ? (
+                  <svg
+                    className="animate-spin h-4 w-4 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {saving ? 'Salvando...' : editingProduct ? 'Salvar Edição' : 'Adicionar Produto'}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Lista de Produtos */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-white rounded-2xl shadow-xl p-6"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h2 className="text-xl font-semibold text-gray-800">Produtos Cadastrados</h2>
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="w-full sm:w-48">
+                <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-1">
+                  Categoria
+                </label>
+                <select
+                  id="category-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                >
+                  <option value="Todas">Todas</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  value={editSearchTerm}
+                  onChange={(e) => setEditSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Buscar produto..."
+                />
+                {editSearchTerm && (
+                  <button
+                    onClick={() => setEditSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={16} />
                   </button>
                 )}
-                
-                <button
-                  type="button"
-                  onClick={editingProduct ? saveEdit : addProduct}
-                  disabled={saving}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  {saving ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Salvando...
-                    </span>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      {editingProduct ? 'Salvar Edição' : 'Adicionar Produto'}
-                    </>
-                  )}
-                </button>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-              <h2 className="text-lg font-medium">Produtos Cadastrados</h2>
-              
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="flex-1 sm:flex-initial">
-                  <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoria
-                  </label>
-                  <select
-                    id="category-select"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  >
-                    <option value="Todas">Todas</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="relative flex-1 sm:flex-initial">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={editSearchTerm}
-                    onChange={(e) => setEditSearchTerm(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2"
-                    placeholder="Buscar produto..."
-                  />
-                </div>
-              </div>
+
+          {loading && products.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
             </div>
-            
-            {loading && products.length === 0 ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="bg-gray-50 p-4 rounded-md text-center">
-                <p className="text-gray-500">Nenhum produto encontrado.</p>
-              </div>
-            ) : (
-              <div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nome
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Categoria
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Valor
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+          ) : filteredProducts.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-gray-50 p-8 rounded-lg text-center"
+            >
+              <p className="text-gray-600 text-lg font-medium">
+                Nenhum produto encontrado.
+              </p>
+            </motion.div>
+          ) : (
+            <div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nome
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoria
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Valor
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <AnimatePresence>
                       {filteredProducts.map(product => (
-                        <tr key={product.id}>
+                        <motion.tr
+                          key={product.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {product.nome}
                           </td>
@@ -631,53 +675,69 @@ export function Products() {
                             R$ {product.valor.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <div className="flex justify-end space-x-2">
+                            <div className="flex justify-end gap-2">
                               <button
                                 onClick={() => startEditing(product)}
-                                className="text-blue-600 hover:text-blue-900"
                                 disabled={editingProduct !== null}
+                                className="p-2 rounded-full text-blue-600 hover:bg-blue-100 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors duration-200"
                               >
                                 <Edit className="h-5 w-5" />
                               </button>
                               <button
                                 onClick={() => deleteProduct(product.id)}
-                                className="text-red-600 hover:text-red-900"
                                 disabled={editingProduct !== null}
+                                className="p-2 rounded-full text-red-600 hover:bg-red-100 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors duration-200"
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                {hasMore && (
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={loadMoreProducts}
-                      disabled={loading}
-                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      {loading ? (
-                        <span className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Carregando...
-                        </span>
-                      ) : (
-                        'Carregar Mais'
-                      )}
-                    </button>
-                  </div>
-                )}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
-        </div>
+              {hasMore && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={loadMoreProducts}
+                    disabled={loading}
+                    className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    {loading ? (
+                      <span className="flex items-center">
+                        <svg
+                          className="animate-spin h-4 w-4 mr-2 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Carregando...
+                      </span>
+                    ) : (
+                      'Carregar Mais'
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );
