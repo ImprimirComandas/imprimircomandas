@@ -3,11 +3,19 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { MapPin, Truck, Search, Save } from 'lucide-react';
-import type { Comanda } from '../types/database';
 
 interface Motoboy {
   id: string;
   nome: string;
+}
+
+interface Comanda {
+  id?: string;
+  endereco?: string;
+  bairro?: string;
+  taxaentrega?: number;
+  produtos?: any[];
+  total?: number;
 }
 
 interface Entrega {
@@ -126,9 +134,9 @@ export default function DeliveryForm() {
     setEntrega(prev => ({
       ...prev,
       comanda_id: comanda.id,
-      endereco: comanda.endereco,
-      bairro: comanda.bairro,
-      valor_entrega: comanda.taxaentrega
+      endereco: comanda.endereco || '',
+      bairro: comanda.bairro || '',
+      valor_entrega: comanda.taxaentrega || 0
     }));
     setShowComandaSearch(false);
     setComandaId(comanda.id || '');
@@ -189,6 +197,7 @@ export default function DeliveryForm() {
         valor_entrega: 0
       });
       setComandaId('');
+      setShowComandaSearch(false);
       
     } catch (error: any) {
       console.error('Error saving delivery:', error);
@@ -229,7 +238,7 @@ export default function DeliveryForm() {
                   >
                     <div>ID: {comanda.id?.slice(-8)}</div>
                     <div className="text-sm text-gray-600">{comanda.endereco}</div>
-                    <div className="text-sm text-gray-600">{comanda.bairro} - R$ {comanda.taxaentrega.toFixed(2)}</div>
+                    <div className="text-sm text-gray-600">{comanda.bairro} - R$ {comanda.taxaentrega?.toFixed(2)}</div>
                   </div>
                 ))}
               </div>

@@ -76,7 +76,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
 
   const produtosFiltrados = produtosCadastrados.filter(p =>
     p.nome.toLowerCase().includes(pesquisaProduto.toLowerCase()) ||
-    (p.numero !== undefined && p.numero !== null && p.numero.toString().includes(pesquisaProduto))
+    (p.numero !== undefined && p.numero !== null && p.numero.toString() && p.numero.toString().includes(pesquisaProduto))
   );
 
   const totalComTaxa = comanda.total + comanda.taxaentrega;
