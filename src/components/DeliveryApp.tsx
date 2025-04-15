@@ -52,6 +52,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     valorDinheiroInput,
     valorPixInput,
     onBairroChange,
+    bairrosDisponiveis,
     salvarProduto,
     editarProduto,
     removerProduto,
@@ -90,6 +91,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
               produtosFiltrados={produtosFiltrados}
               salvando={salvando}
               totalComTaxa={totalComTaxa}
+              bairrosDisponiveis={bairrosDisponiveis}
               onRemoveProduto={removerProduto}
               onUpdateQuantidade={atualizarQuantidadeProduto}
               onSaveComanda={salvarComanda}

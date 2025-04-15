@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -34,14 +33,12 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   const [bairroTaxas, setBairroTaxas] = useState<Record<string, number>>(defaultBairroTaxas);
   const [bairrosDisponiveis, setBairrosDisponiveis] = useState<string[]>(Object.keys(defaultBairroTaxas));
 
-  // Fetch bairros e taxas
   useEffect(() => {
     const fetchBairroTaxas = async () => {
       const taxas = await getBairroTaxas();
       setBairroTaxas(taxas);
       setBairrosDisponiveis(Object.keys(taxas));
       
-      // Set default bairro if available
       if (Object.keys(taxas).length > 0) {
         const firstBairro = Object.keys(taxas)[0];
         setComanda(prev => ({
@@ -55,7 +52,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     fetchBairroTaxas();
   }, []);
 
-  // Fetch products from Supabase
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
@@ -105,7 +101,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setComanda(prev => ({ ...prev, forma_pagamento: forma }));
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
-      setNeedsTroco(null); // Reset needsTroco when opening modal
+      setNeedsTroco(null);
     } else if (forma === 'misto') {
       setShowPagamentoMistoModal(true);
     } else {
@@ -235,7 +231,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
-        total: comanda.total, // Total of products without delivery fee
+        total: comanda.total,
         forma_pagamento: comanda.forma_pagamento,
         data: new Date().toISOString(),
         endereco: comanda.endereco,
@@ -252,7 +248,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const { data, error } = await supabase.from('comandas').insert([novaComanda]).select().single();
       if (error) throw error;
 
-      // Print the comanda
       await import('../utils/printService').then(module => {
         module.imprimirComanda({ ...novaComanda, id: data.id });
         toast.success('Comanda salva e enviada para impressão!');
@@ -260,15 +255,14 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         toast.error('Comanda salva, mas erro ao imprimir.');
       });
 
-      // Reset form
       setComanda({
         produtos: [],
         total: 0,
         forma_pagamento: '',
         data: new Date().toISOString(),
         endereco: '',
-        bairro: comanda.bairro, // Keep the same bairro
-        taxaentrega: comanda.taxaentrega, // Keep the same taxa
+        bairro: comanda.bairro,
+        taxaentrega: comanda.taxaentrega,
         pago: false,
         quantiapaga: 0,
         troco: 0,
@@ -317,7 +311,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     if (Math.abs(totalValores - totalComTaxa) < 0.01) {
       setShowPagamentoMistoModal(false);
       
-      // If there's a cash payment component, check if change is needed
       if ((valorDinheiroInput || 0) > 0 && needsTroco === null) {
         setShowTrocoModal(true);
       }
