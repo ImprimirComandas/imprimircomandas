@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bairros_taxas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          taxa: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          taxa?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          taxa?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       comandas: {
         Row: {
           bairro: string
@@ -203,6 +227,7 @@ export type Database = {
           created_at: string | null
           id: string
           nome: string
+          numero: number | null
           user_id: string
           valor: number
         }
@@ -211,6 +236,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           nome: string
+          numero?: number | null
           user_id: string
           valor: number
         }
@@ -219,6 +245,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           nome?: string
+          numero?: number | null
           user_id?: string
           valor?: number
         }
@@ -251,6 +278,30 @@ export type Database = {
           phone?: string | null
           store_name?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shop_sessions: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          user_id?: string
         }
         Relationships: []
       }

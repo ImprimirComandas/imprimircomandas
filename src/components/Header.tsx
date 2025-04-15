@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, ShoppingBag, Settings, LogOut, Calendar, FlaskConical, MapPin, DoorOpen, DoorClosed } from 'lucide-react';
 import type { Profile } from '../types/database';
@@ -16,6 +16,31 @@ interface HeaderProps {
 export default function Header({ profile, onSignOut, showProfileMenu, setShowProfileMenu }: HeaderProps) {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check current shop status when component mounts
+  useEffect(() => {
+    const checkShopStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await supabase
+          .from('shop_sessions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .is('end_time', null)
+          .order('start_time', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+        setIsShopOpen(data && data.length > 0);
+      } catch (error) {
+        console.error('Erro ao verificar status da loja:', error);
+      }
+    };
+
+    checkShopStatus();
+  }, []);
 
   const toggleShopStatus = async () => {
     try {
@@ -69,31 +94,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
       setIsLoading(false);
     }
   };
-
-  // Check current shop status when component mounts
-  useState(() => {
-    const checkShopStatus = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data, error } = await supabase
-          .from('shop_sessions')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .is('end_time', null)
-          .order('start_time', { ascending: false })
-          .limit(1);
-
-        if (error) throw error;
-        setIsShopOpen(data && data.length > 0);
-      } catch (error) {
-        console.error('Erro ao verificar status da loja:', error);
-      }
-    };
-
-    checkShopStatus();
-  });
 
   return (
     <header className="bg-blue-600 text-white shadow-md">
