@@ -17,8 +17,6 @@ export type Database = {
           endereco: string
           forma_pagamento: string
           id: string
-          order_date: string
-          pagamento_misto: Json | null
           pago: boolean | null
           produtos: Json
           quantiapaga: number | null
@@ -37,8 +35,6 @@ export type Database = {
           endereco: string
           forma_pagamento: string
           id?: string
-          order_date?: string
-          pagamento_misto?: Json | null
           pago?: boolean | null
           produtos: Json
           quantiapaga?: number | null
@@ -57,8 +53,6 @@ export type Database = {
           endereco?: string
           forma_pagamento?: string
           id?: string
-          order_date?: string
-          pagamento_misto?: Json | null
           pago?: boolean | null
           produtos?: Json
           quantiapaga?: number | null
@@ -71,44 +65,6 @@ export type Database = {
           valor_pix?: number | null
         }
         Relationships: []
-      }
-      delivery: {
-        Row: {
-          comanda_ids: string[]
-          created_at: string | null
-          delivery_value: number
-          id: string
-          motoboy_id: string
-          platform: string
-          status: string
-        }
-        Insert: {
-          comanda_ids: string[]
-          created_at?: string | null
-          delivery_value?: number
-          id?: string
-          motoboy_id: string
-          platform: string
-          status?: string
-        }
-        Update: {
-          comanda_ids?: string[]
-          created_at?: string | null
-          delivery_value?: number
-          id?: string
-          motoboy_id?: string
-          platform?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "delivery_motoboy_id_fkey"
-            columns: ["motoboy_id"]
-            isOneToOne: false
-            referencedRelation: "motoboys"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       entregas: {
         Row: {

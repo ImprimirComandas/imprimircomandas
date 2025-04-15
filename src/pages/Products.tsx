@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Save, Trash2, Search, Edit, X, AlertTriangle, Download } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Search, Edit, X, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Profile } from '../types/database';
@@ -10,7 +10,6 @@ interface Product {
   nome: string;
   valor: number;
   categoria?: string | null;
-  numero?: number | null;
 }
 
 export function Products() {
@@ -22,7 +21,6 @@ export function Products() {
   const [productName, setProductName] = useState('');
   const [productValue, setProductValue] = useState('');
   const [productCategory, setProductCategory] = useState('');
-  const [productNumber, setProductNumber] = useState('');
   const [editSearchTerm, setEditSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -83,9 +81,8 @@ export function Products() {
       if (session) {
         let query = supabase
           .from('produtos')
-          .select('id, nome, valor, categoria, numero')
+          .select('id, nome, valor, categoria')
           .eq('user_id', session.user.id)
-          .order('numero', { ascending: true, nullsFirst: false })
           .order('nome')
           .range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1);
         
@@ -119,32 +116,6 @@ export function Products() {
     }
   };
 
-  const getNextProductNumber = async (): Promise<number> => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) return 1;
-
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('numero')
-        .eq('user_id', session.user.id)
-        .order('numero', { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
-      
-      if (data && data.length > 0 && data[0].numero) {
-        return (data[0].numero + 1);
-      }
-      
-      return 1;
-    } catch (error) {
-      console.error('Error getting next product number:', error);
-      return 1;
-    }
-  };
-
   const addProduct = async () => {
     if (!productName || !productValue) {
       toast.error('Por favor, preencha o nome e o valor do produto');
@@ -155,11 +126,6 @@ export function Products() {
     if (isNaN(parsedValue) || parsedValue <= 0 || parsedValue > 9999999999.99) {
       toast.error('O valor do produto deve ser um número positivo até R$9.999.999.999,99');
       return;
-    }
-
-    let numero = parseInt(productNumber);
-    if (isNaN(numero) || numero <= 0) {
-      numero = await getNextProductNumber();
     }
 
     try {
@@ -175,7 +141,6 @@ export function Products() {
         nome: productName,
         valor: parseFloat(parsedValue.toFixed(2)),
         categoria: productCategory || null,
-        numero: numero,
         user_id: session.user.id
       };
 
@@ -189,12 +154,7 @@ export function Products() {
       toast.success('Produto adicionado/atualizado com sucesso!');
       setProducts(prev => {
         const updated = prev.filter(p => p.nome !== productName);
-        return [...(data || []), ...updated].sort((a, b) => {
-          if (a.numero && b.numero) return a.numero - b.numero;
-          if (a.numero) return -1;
-          if (b.numero) return 1;
-          return a.nome.localeCompare(b.nome);
-        });
+        return [...(data || []), ...updated].sort((a, b) => a.nome.localeCompare(b.nome));
       });
       if (productCategory && !categories.includes(productCategory)) {
         setCategories(prev => [...prev, productCategory].sort());
@@ -202,7 +162,6 @@ export function Products() {
       setProductName('');
       setProductValue('');
       setProductCategory('');
-      setProductNumber('');
     } catch (error) {
       console.error('Error adding product:', error);
       toast.error(`Erro ao adicionar produto: ${error.message || 'Erro desconhecido'}`);
@@ -224,6 +183,7 @@ export function Products() {
       
       toast.success('Produto excluído com sucesso!');
       setProducts(prev => prev.filter(p => p.id !== id));
+      // Atualizar categorias se necessário
       fetchCategories();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -273,7 +233,6 @@ export function Products() {
     setProductName(product.nome);
     setProductValue(product.valor.toString());
     setProductCategory(product.categoria || '');
-    setProductNumber(product.numero ? product.numero.toString() : '');
   };
 
   const cancelEditing = () => {
@@ -281,7 +240,6 @@ export function Products() {
     setProductName('');
     setProductValue('');
     setProductCategory('');
-    setProductNumber('');
   };
 
   const saveEdit = async () => {
@@ -296,15 +254,6 @@ export function Products() {
       return;
     }
 
-    let numero: number | null = null;
-    if (productNumber) {
-      numero = parseInt(productNumber);
-      if (isNaN(numero) || numero <= 0) {
-        toast.error('O número do produto deve ser um valor positivo');
-        return;
-      }
-    }
-
     try {
       setSaving(true);
       
@@ -312,7 +261,6 @@ export function Products() {
         nome: productName,
         valor: parseFloat(parsedValue.toFixed(2)),
         categoria: productCategory || null,
-        numero: numero,
       };
 
       const { error } = await supabase
@@ -323,12 +271,7 @@ export function Products() {
       if (error) throw error;
       
       toast.success('Produto atualizado com sucesso!');
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...updatedProduct } : p).sort((a, b) => {
-        if (a.numero && b.numero) return a.numero - b.numero;
-        if (a.numero) return -1;
-        if (b.numero) return 1;
-        return a.nome.localeCompare(b.nome);
-      }));
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...updatedProduct } : p).sort((a, b) => a.nome.localeCompare(b.nome)));
       if (productCategory && !categories.includes(productCategory)) {
         setCategories(prev => [...prev, productCategory].sort());
       }
@@ -357,17 +300,16 @@ export function Products() {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
 
+      // Extrair cabeçalhos
       const headers = jsonData[0].map((h: any) => h?.toString().toLowerCase().trim());
       let nameColumn: number | null = null;
       let priceColumn: number | null = null;
       let categoryColumn: number | null = null;
-      let numberColumn: number | null = null;
 
       headers.forEach((header: string, index: number) => {
         if (['nome', 'produto', 'item'].includes(header)) nameColumn = index;
         if (['preço', 'valor', 'preco', 'custo'].includes(header)) priceColumn = index;
         if (['categoria', 'tipo', 'grupo'].includes(header)) categoryColumn = index;
-        if (['numero', 'núm', 'num', 'código', 'codigo', 'referência', 'referencia'].includes(header)) numberColumn = index;
       });
 
       if (nameColumn === null || priceColumn === null) {
@@ -377,9 +319,9 @@ export function Products() {
         return;
       }
 
-      const extractedProducts: { nome: string; valor: number; categoria: string | null; numero: number | null }[] = [];
+      // Extrair e validar produtos
+      const extractedProducts: { nome: string; valor: number; categoria: string | null }[] = [];
       const invalidProducts: string[] = [];
-      let nextNumber = await getNextProductNumber();
 
       jsonData.slice(1).forEach((row, index) => {
         if (!row[nameColumn] || row[priceColumn] == null) return;
@@ -401,22 +343,8 @@ export function Products() {
         }
 
         const categoria = categoryColumn !== null && row[categoryColumn] ? row[categoryColumn].toString().trim() : null;
-        
-        let numero: number | null = null;
-        if (numberColumn !== null && row[numberColumn] != null) {
-          try {
-            numero = parseInt(row[numberColumn].toString().trim());
-            if (isNaN(numero) || numero <= 0) {
-              numero = nextNumber++;
-            }
-          } catch {
-            numero = nextNumber++;
-          }
-        } else {
-          numero = nextNumber++;
-        }
 
-        extractedProducts.push({ nome, valor: price, categoria, numero });
+        extractedProducts.push({ nome, valor: price, categoria });
       });
 
       if (extractedProducts.length === 0) {
@@ -430,6 +358,7 @@ export function Products() {
         toast.warning(`Alguns produtos foram ignorados devido a valores inválidos:\n${invalidProducts.join('\n')}`);
       }
 
+      // Remover duplicatas, mantendo a última entrada
       const uniqueProductsMap = new Map<string, typeof extractedProducts[0]>();
       extractedProducts.forEach(product => {
         uniqueProductsMap.set(product.nome, product);
@@ -440,13 +369,15 @@ export function Products() {
         toast.warning(`Foram encontradas ${extractedProducts.length - uniqueProducts.length} entradas duplicadas no arquivo. Apenas a última entrada para cada nome foi mantida.`);
       }
 
-      const confirmMessage = `Foram encontrados ${uniqueProducts.length} produtos válidos:\n${uniqueProducts.map(p => `- ${p.numero || "S/N"} - ${p.nome} (${p.categoria || 'Sem categoria'}): R$${p.valor.toFixed(2)}`).join('\n')}\n\nDeseja adicioná-los ao banco de dados? Produtos com nomes iguais serão atualizados.`;
+      // Confirmar com o usuário
+      const confirmMessage = `Foram encontrados ${uniqueProducts.length} produtos válidos:\n${uniqueProducts.map(p => `- ${p.nome} (${p.categoria || 'Sem categoria'}): R$${p.valor.toFixed(2)}`).join('\n')}\n\nDeseja adicioná-los ao banco de dados? Produtos com nomes iguais serão atualizados.`;
       if (!confirm(confirmMessage)) {
         setUploadedFile(null);
         event.target.value = '';
         return;
       }
 
+      // Adicionar ou atualizar produtos
       try {
         setSaving(true);
         const { data: { session } } = await supabase.auth.getSession();
@@ -459,7 +390,6 @@ export function Products() {
           nome: product.nome,
           valor: product.valor,
           categoria: product.categoria,
-          numero: product.numero,
           user_id: session.user.id,
         }));
 
@@ -471,7 +401,7 @@ export function Products() {
 
         toast.success(`${uniqueProducts.length} produtos adicionados/atualizados com sucesso!`);
         fetchProducts(1, true);
-        fetchCategories();
+        fetchCategories(); // Atualizar categorias após upload
       } catch (error) {
         console.error('Error upserting products:', error);
         toast.error(`Erro ao processar produtos: ${error.message || 'Erro desconhecido'}`);
@@ -488,82 +418,12 @@ export function Products() {
     }
   };
 
-  const exportProducts = async () => {
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error('Usuário não autenticado');
-        return;
-      }
-
-      let query = supabase
-        .from('produtos')
-        .select('id, nome, valor, categoria, numero')
-        .eq('user_id', session.user.id)
-        .order('numero', { ascending: true, nullsFirst: false })
-        .order('nome');
-      
-      if (selectedCategory !== 'Todas') {
-        query = query.eq('categoria', selectedCategory);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        toast.error('Não há produtos para exportar');
-        return;
-      }
-
-      const worksheetData = [
-        ['Número', 'Nome', 'Valor', 'Categoria']
-      ];
-
-      data.forEach(product => {
-        worksheetData.push([
-          product.numero || '', 
-          product.nome, 
-          product.valor, 
-          product.categoria || ''
-        ]);
-      });
-
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos');
-      
-      worksheet['!cols'] = [
-        { wch: 10 },
-        { wch: 40 },
-        { wch: 15 },
-        { wch: 20 }
-      ];
-
-      const filename = `produtos_${new Date().toISOString().slice(0,10)}.xlsx`;
-      XLSX.writeFile(workbook, filename);
-      
-      toast.success(`${data.length} produtos exportados com sucesso!`);
-    } catch (error) {
-      console.error('Error exporting products:', error);
-      toast.error('Erro ao exportar produtos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Filtrar produtos para exibição
   const filteredProducts = products
     .filter(product => 
       !editSearchTerm || product.nome.toLowerCase().includes(editSearchTerm.toLowerCase())
     )
-    .sort((a, b) => {
-      if (a.numero && b.numero) return a.numero - b.numero;
-      if (a.numero) return -1;
-      if (b.numero) return 1;
-      return a.nome.localeCompare(b.nome);
-    });
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 sm:py-12">
@@ -574,22 +434,7 @@ export function Products() {
               {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
             </h2>
             
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <div className="sm:col-span-1">
-                <label htmlFor="product-number" className="block text-sm font-medium text-gray-700 mb-1">
-                  Número
-                </label>
-                <input
-                  id="product-number"
-                  type="number"
-                  value={productNumber}
-                  onChange={(e) => setProductNumber(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="Nº"
-                  min="1"
-                />
-              </div>
-              
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
                   Nome do Produto
@@ -620,7 +465,7 @@ export function Products() {
                 />
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="sm:col-span-3">
                 <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
                   Categoria (opcional)
                 </label>
@@ -660,27 +505,15 @@ export function Products() {
             </div>
             
             <div className="mt-4 flex justify-between items-center">
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={deleteAllProducts}
-                  disabled={saving || products.length === 0}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Apagar Todos
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={exportProducts}
-                  disabled={saving || products.length === 0}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={deleteAllProducts}
+                disabled={saving || products.length === 0}
+                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Apagar Todos os Produtos
+              </button>
               
               <div className="flex space-x-3">
                 {editingProduct && (
@@ -771,9 +604,6 @@ export function Products() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nº
-                        </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Nome
                         </th>
@@ -791,9 +621,6 @@ export function Products() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredProducts.map(product => (
                         <tr key={product.id}>
-                          <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-center">
-                            {product.numero || '-'}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {product.nome}
                           </td>
