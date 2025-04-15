@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Store, ShoppingBag, Settings, LogOut, Calendar, FlaskConical, MapPin, DoorOpen, DoorClosed } from 'lucide-react';
+import { Store, ShoppingBag, Settings, LogOut, Calendar, MapPin, DoorOpen, DoorClosed } from 'lucide-react';
 import type { Profile } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -148,8 +148,8 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
                 to="/test" 
                 className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
               >
-                <FlaskConical className="h-5 w-5 mr-1" />
-                <span>Test</span>
+                <Store className="h-5 w-5 mr-1" />
+                <span>Delivery</span>
               </Link>
               <Link 
                 to="/store-settings" 
