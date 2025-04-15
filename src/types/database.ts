@@ -17,6 +17,7 @@ export interface Produto {
   nome: string;
   valor: number;
   quantidade: number;
+  numero?: number;
 }
 
 export interface Comanda {
@@ -36,4 +37,19 @@ export interface Comanda {
   valor_cartao?: number;
   valor_dinheiro?: number;
   valor_pix?: number;
+}
+
+export interface BairroTaxa {
+  id: string;
+  nome: string;
+  taxa: number;
+  user_id: string;
+}
+
+export interface ShopSession {
+  id: string;
+  user_id: string;
+  start_time: string;
+  end_time: string | null;
+  created_at: string;
 }

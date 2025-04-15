@@ -1,14 +1,14 @@
 
-import { useState } from 'react';
 import { PlusCircle, Save, Trash2, Search, Edit } from 'lucide-react';
 import type { Comanda, Produto } from '../types/database';
 
 interface ComandaFormProps {
   comanda: Comanda;
   pesquisaProduto: string;
-  produtosFiltrados: {id: string, nome: string, valor: number}[];
+  produtosFiltrados: {id: string, nome: string, valor: number, numero?: number}[];
   salvando: boolean;
   totalComTaxa: number;
+  bairrosDisponiveis: string[];
   onRemoveProduto: (index: number) => void;
   onUpdateQuantidade: (index: number, quantidade: number) => void;
   onSaveComanda: () => void;
@@ -25,6 +25,7 @@ export default function ComandaForm({
   produtosFiltrados,
   salvando,
   totalComTaxa,
+  bairrosDisponiveis,
   onRemoveProduto,
   onUpdateQuantidade,
   onSaveComanda,
@@ -39,7 +40,7 @@ export default function ComandaForm({
       {/* Busca de Produtos */}
       <div className="mb-4">
         <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
-          Buscar Produto
+          Buscar Produto (nome ou número)
         </label>
         <div className="relative">
           <input
@@ -62,7 +63,14 @@ export default function ComandaForm({
                     className="flex-1 cursor-pointer"
                     onClick={() => selecionarProdutoCadastrado(produto)}
                   >
-                    <div className="font-medium">{produto.nome}</div>
+                    <div className="font-medium">
+                      {produto.numero !== undefined && (
+                        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2 py-0.5 rounded">
+                          #{produto.numero}
+                        </span>
+                      )}
+                      {produto.nome}
+                    </div>
                     <div className="text-sm text-gray-600">R$ {produto.valor.toFixed(2)}</div>
                   </div>
                   <button
@@ -140,10 +148,11 @@ export default function ComandaForm({
           className="w-full p-2 border rounded text-sm"
           required
         >
-          <option value="Jardim Paraíso">Jardim Paraíso (R$ 6,00)</option>
-          <option value="Aventureiro">Aventureiro (R$ 9,00)</option>
-          <option value="Jardim Sofia">Jardim Sofia (R$ 9,00)</option>
-          <option value="Cubatão">Cubatão (R$ 9,00)</option>
+          {bairrosDisponiveis.map(bairro => (
+            <option key={bairro} value={bairro}>
+              {bairro} (R$ {comanda.bairro === bairro ? comanda.taxaentrega.toFixed(2) : '...'})
+            </option>
+          ))}
         </select>
       </div>
 

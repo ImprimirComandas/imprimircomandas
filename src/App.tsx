@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
@@ -7,7 +8,8 @@ import type { Profile } from './types/database';
 import { Products } from './pages/Products';
 import StoreSettings from './pages/StoreSettings';
 import OrdersByDay from './pages/OrdersByDay';
-import TestPage from './pages/TestPage'; // Importação
+import TestPage from './pages/TestPage';
+import DeliveryRates from './pages/DeliveryRates';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
@@ -89,6 +91,7 @@ function App() {
             <Route path="/store-settings" element={<StoreSettings />} />
             <Route path="/orders-by-day" element={<OrdersByDay />} />
             <Route path="/test" element={<TestPage />} />
+            <Route path="/delivery-rates" element={<DeliveryRates />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </>

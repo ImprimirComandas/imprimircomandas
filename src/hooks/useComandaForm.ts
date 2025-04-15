@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Comanda, Produto } from '../types/database';
-import bairroTaxas from '../constants/bairroTaxas';
+import defaultBairroTaxas, { getBairroTaxas } from '../constants/bairroTaxas';
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
   const [comanda, setComanda] = useState<Comanda>({
@@ -22,7 +22,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     valor_pix: 0,
   });
   const [pesquisaProduto, setPesquisaProduto] = useState('');
-  const [produtosCadastrados, setProdutosCadastrados] = useState<{ id: string; nome: string; valor: number }[]>([]);
+  const [produtosCadastrados, setProdutosCadastrados] = useState<{ id: string; nome: string; valor: number; numero?: number }[]>([]);
   const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
   const [showTrocoModal, setShowTrocoModal] = useState(false);
   const [needsTroco, setNeedsTroco] = useState<boolean | null>(null);
@@ -31,6 +31,29 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   const [valorCartaoInput, setValorCartaoInput] = useState<number | null>(null);
   const [valorDinheiroInput, setValorDinheiroInput] = useState<number | null>(null);
   const [valorPixInput, setValorPixInput] = useState<number | null>(null);
+  const [bairroTaxas, setBairroTaxas] = useState<Record<string, number>>(defaultBairroTaxas);
+  const [bairrosDisponiveis, setBairrosDisponiveis] = useState<string[]>(Object.keys(defaultBairroTaxas));
+
+  // Fetch bairros e taxas
+  useEffect(() => {
+    const fetchBairroTaxas = async () => {
+      const taxas = await getBairroTaxas();
+      setBairroTaxas(taxas);
+      setBairrosDisponiveis(Object.keys(taxas));
+      
+      // Set default bairro if available
+      if (Object.keys(taxas).length > 0) {
+        const firstBairro = Object.keys(taxas)[0];
+        setComanda(prev => ({
+          ...prev,
+          bairro: firstBairro,
+          taxaentrega: taxas[firstBairro]
+        }));
+      }
+    };
+    
+    fetchBairroTaxas();
+  }, []);
 
   // Fetch products from Supabase
   useEffect(() => {
@@ -41,7 +64,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         
         const { data, error } = await supabase
           .from('produtos')
-          .select('id, nome, valor')
+          .select('id, nome, valor, numero')
           .eq('user_id', session.user.id)
           .order('nome');
           
@@ -56,7 +79,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   }, []);
 
   const produtosFiltrados = produtosCadastrados.filter(p =>
-    p.nome.toLowerCase().includes(pesquisaProduto.toLowerCase())
+    p.nome.toLowerCase().includes(pesquisaProduto.toLowerCase()) ||
+    (p.numero !== undefined && p.numero.toString().includes(pesquisaProduto))
   );
 
   const totalComTaxa = comanda.total + comanda.taxaentrega;
@@ -73,7 +97,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   };
 
   const onBairroChange = (bairro: string) => {
-    const taxa = bairroTaxas[bairro as keyof typeof bairroTaxas] || 0;
+    const taxa = bairroTaxas[bairro] || 0;
     setComanda(prev => ({ ...prev, bairro, taxaentrega: taxa }));
   };
 
@@ -101,7 +125,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const { data, error } = await supabase
         .from('produtos')
         .insert([{ nome, valor: valorNum, user_id: session.user.id }])
-        .select('id, nome, valor');
+        .select('id, nome, valor, numero');
         
       if (error) throw error;
       if (data && data[0]) {
@@ -124,7 +148,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       if (error) throw error;
       setProdutosCadastrados(prev =>
         prev
-          .map(p => (p.id === id ? { id, nome, valor: valorNum } : p))
+          .map(p => (p.id === id ? { ...p, nome, valor: valorNum } : p))
           .sort((a, b) => a.nome.localeCompare(b.nome))
       );
     } catch (error) {
@@ -211,7 +235,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
-        total: totalComTaxa,
+        total: comanda.total, // Total of products without delivery fee
         forma_pagamento: comanda.forma_pagamento,
         data: new Date().toISOString(),
         endereco: comanda.endereco,
@@ -243,8 +267,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         forma_pagamento: '',
         data: new Date().toISOString(),
         endereco: '',
-        bairro: 'Jardim Paraíso',
-        taxaentrega: 6,
+        bairro: comanda.bairro, // Keep the same bairro
+        taxaentrega: comanda.taxaentrega, // Keep the same taxa
         pago: false,
         quantiapaga: 0,
         troco: 0,
@@ -324,6 +348,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     valorCartaoInput,
     valorDinheiroInput,
     valorPixInput,
+    bairrosDisponiveis,
     onBairroChange,
     salvarProduto,
     editarProduto,
