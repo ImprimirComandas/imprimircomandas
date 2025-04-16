@@ -67,7 +67,7 @@ export default function ComandaForm({
                     onClick={() => selecionarProdutoCadastrado(produto)}
                   >
                     <div className="font-medium">
-                      {produto.numero !== undefined && produto.numero !== null && (
+                      {produto.numero !== undefined && (
                         <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2 py-0.5 rounded">
                           #{produto.numero}
                         </span>
@@ -153,7 +153,6 @@ export default function ComandaForm({
           className="w-full p-2 border rounded text-sm"
           required
         >
-          <option value="">Selecione um bairro</option>
           {bairrosDisponiveis.map(bairro => (
             <option key={bairro} value={bairro}>
               {bairro} (R$ {comanda.bairro === bairro ? comanda.taxaentrega.toFixed(2) : '...'})
@@ -172,9 +171,9 @@ export default function ComandaForm({
           <h3 className="text-base">Taxa de Entrega:</h3>
           <span className="text-base font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between items-center mb-4 bg-green-50 p-2 rounded">
-          <h2 className="text-base font-semibold">Total com Taxa:</h2>
-          <span className="text-lg font-bold text-green-700">R$ {totalComTaxa.toFixed(2)}</span>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-base">Total com Taxa:</h2>
+          <span className="text-base font-bold">R$ {totalComTaxa.toFixed(2)}</span>
         </div>
 
         <div className="space-y-4">

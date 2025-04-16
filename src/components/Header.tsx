@@ -1,13 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Store, ShoppingBag, Settings, LogOut, Calendar, MapPin, DoorOpen, DoorClosed, Menu, X, Clock } from 'lucide-react';
+import { Store, ShoppingBag, Settings, LogOut, Calendar, MapPin, DoorOpen, DoorClosed, Menu, X } from 'lucide-react';
 import type { Profile } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface HeaderProps {
   profile: Profile | null;
@@ -20,9 +17,8 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
-  const [openDuration, setOpenDuration] = useState<string>('');
 
+  // Verificar status da loja ao montar o componente
   useEffect(() => {
     const checkShopStatus = async () => {
       try {
@@ -38,23 +34,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
           .limit(1);
 
         if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setIsShopOpen(true);
-          setSessionStartTime(data[0].start_time);
-          
-          // Update the duration every minute
-          updateOpenDuration(data[0].start_time);
-          const intervalId = setInterval(() => {
-            updateOpenDuration(data[0].start_time);
-          }, 60000); // Every minute
-          
-          return () => clearInterval(intervalId);
-        } else {
-          setIsShopOpen(false);
-          setSessionStartTime(null);
-          setOpenDuration('');
-        }
+        setIsShopOpen(data && data.length > 0);
       } catch (error) {
         console.error('Erro ao verificar status da loja:', error);
       }
@@ -62,20 +42,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
 
     checkShopStatus();
   }, []);
-  
-  // Function to update the open duration string
-  const updateOpenDuration = (startTimeStr: string) => {
-    try {
-      const duration = formatDistanceToNow(new Date(startTimeStr), { 
-        locale: ptBR, 
-        addSuffix: false
-      });
-      setOpenDuration(duration);
-    } catch (error) {
-      console.error('Error calculating duration:', error);
-      setOpenDuration('');
-    }
-  };
 
   const toggleShopStatus = async () => {
     try {
@@ -104,41 +70,31 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             .eq('id', sessions[0].id);
 
           if (updateError) throw updateError;
-          
-          const duration = formatDistanceToNow(new Date(sessions[0].start_time), { 
-            locale: ptBR, 
-            addSuffix: false
-          });
-          
-          toast.success(`Loja fechada com sucesso! Tempo aberta: ${duration}`);
-          setSessionStartTime(null);
-          setOpenDuration('');
+          toast.success('Loja fechada com sucesso');
         }
       } else {
-        const startTime = new Date().toISOString();
         const { error } = await supabase
           .from('shop_sessions')
           .insert([
             {
               user_id: session.user.id,
-              start_time: startTime,
+              start_time: new Date().toISOString(),
               end_time: null,
             },
           ]);
 
         if (error) throw error;
         toast.success('Loja aberta com sucesso');
-        setSessionStartTime(startTime);
-        updateOpenDuration(startTime);
       }
 
       setIsShopOpen(!isShopOpen);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(`Erro ao alterar status da loja: ${error.message}`);
       } else {
         toast.error('Erro ao alterar status da loja');
       }
+      toast.error(`Erro ao alterar status da loja: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -156,6 +112,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
     <header className="bg-blue-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <Store className="h-8 w-8 mr-2" />
@@ -165,6 +122,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             </Link>
           </div>
 
+          {/* Navegação Desktop */}
           <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={toggleShopStatus}
@@ -176,22 +134,11 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isShopOpen ? (
-                <>
-                  <DoorOpen className="h-5 w-5 mr-1" />
-                  <span>Loja Aberta</span>
-                  {openDuration && (
-                    <div className="ml-2 flex items-center text-xs bg-green-700 px-2 py-0.5 rounded">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {openDuration}
-                    </div>
-                  )}
-                </>
+                <DoorOpen className="h-5 w-5 mr-1" />
               ) : (
-                <>
-                  <DoorClosed className="h-5 w-5 mr-1" />
-                  <span>Loja Fechada</span>
-                </>
+                <DoorClosed className="h-5 w-5 mr-1" />
               )}
+              <span>{isShopOpen ? 'Loja Aberta' : 'Loja Fechada'}</span>
             </button>
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
@@ -203,6 +150,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
                 <span>{label}</span>
               </Link>
             ))}
+            {/* Perfil */}
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -247,6 +195,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             </div>
           </div>
 
+          {/* Botão Menu Mobile */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -262,6 +211,7 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
         </div>
       </div>
 
+      {/* Menu Mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -282,24 +232,11 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isShopOpen ? (
-                  <>
-                    <DoorOpen className="h-5 w-5 mr-2" />
-                    <div>
-                      <span>Loja Aberta</span>
-                      {openDuration && (
-                        <div className="mt-1 flex items-center text-xs bg-green-700 px-2 py-0.5 rounded w-max">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {openDuration}
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  <DoorOpen className="h-5 w-5 mr-2" />
                 ) : (
-                  <>
-                    <DoorClosed className="h-5 w-5 mr-2" />
-                    <span>Loja Fechada</span>
-                  </>
+                  <DoorClosed className="h-5 w-5 mr-2" />
                 )}
+                <span>{isShopOpen ? 'Loja Aberta' : 'Loja Fechada'}</span>
               </button>
               {navLinks.map(({ to, label, icon: Icon }) => (
                 <Link

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { MapPin, Truck, Search, Save, AlertTriangle } from 'lucide-react';
+import { MapPin, Truck, Search, Save } from 'lucide-react';
 
 interface Motoboy {
   id: string;
@@ -35,7 +35,6 @@ export default function DeliveryForm() {
   const [comandaId, setComandaId] = useState('');
   const [comandaSearchResults, setComandaSearchResults] = useState<Comanda[]>([]);
   const [showComandaSearch, setShowComandaSearch] = useState(false);
-  const [existingDelivery, setExistingDelivery] = useState<boolean>(false);
   const [entrega, setEntrega] = useState<Entrega>({
     motoboy_id: '',
     endereco: '',
@@ -95,32 +94,6 @@ export default function DeliveryForm() {
     }
   };
 
-  // Check if delivery already exists for this comanda
-  const checkExistingDelivery = async (comandaId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('entregas')
-        .select('*')
-        .eq('comanda_id', comandaId);
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setExistingDelivery(true);
-        toast.error('Este pedido já está cadastrado para entrega', {
-          description: `Entregador: ${data[0].motoboy_id}, Bairro: ${data[0].bairro}`
-        });
-        return true;
-      } else {
-        setExistingDelivery(false);
-        return false;
-      }
-    } catch (error: any) {
-      console.error('Error checking existing delivery:', error);
-      return false;
-    }
-  };
-
   // Search comanda by ID
   const searchComanda = async () => {
     if (!comandaId.trim()) {
@@ -142,13 +115,7 @@ export default function DeliveryForm() {
       if (error) throw error;
       
       if (!data || data.length === 0) {
-        toast.info('Pedido não encontrado no sistema. Você pode registrar como entrega de outra plataforma.');
-        return;
-      }
-      
-      // Check if delivery already exists
-      const exists = await checkExistingDelivery(data[0].id);
-      if (exists) {
+        toast.error('Pedido não encontrado');
         return;
       }
       
@@ -164,14 +131,12 @@ export default function DeliveryForm() {
 
   // Select comanda from search results
   const selectComanda = (comanda: Comanda) => {
-    // Calculate the total with tax (this is the correct delivery value)
-    const totalComTaxa = (comanda.total || 0) + (comanda.taxaentrega || 0);
-    
     setEntrega(prev => ({
       ...prev,
       comanda_id: comanda.id,
+      endereco: comanda.endereco || '',
       bairro: comanda.bairro || '',
-      valor_entrega: totalComTaxa
+      valor_entrega: comanda.taxaentrega || 0
     }));
     setShowComandaSearch(false);
     setComandaId(comanda.id || '');
@@ -195,17 +160,9 @@ export default function DeliveryForm() {
       return;
     }
     
-    if (!entrega.bairro) {
-      toast.error('Selecione o bairro');
+    if (!entrega.endereco || !entrega.bairro) {
+      toast.error('Preencha o endereço e o bairro');
       return;
-    }
-    
-    if (entrega.comanda_id) {
-      // Check again if delivery already exists for this comanda
-      const exists = await checkExistingDelivery(entrega.comanda_id);
-      if (exists) {
-        return;
-      }
     }
     
     setLoading(true);
@@ -280,12 +237,8 @@ export default function DeliveryForm() {
                     className="p-2 hover:bg-gray-100 cursor-pointer"
                   >
                     <div>ID: {comanda.id?.slice(-8)}</div>
-                    <div className="text-sm text-gray-600">{comanda.bairro}</div>
-                    <div className="text-sm text-gray-600">
-                      Subtotal: R$ {comanda.total?.toFixed(2)} | 
-                      Taxa: R$ {comanda.taxaentrega?.toFixed(2)} | 
-                      Total: R$ {((comanda.total || 0) + (comanda.taxaentrega || 0)).toFixed(2)}
-                    </div>
+                    <div className="text-sm text-gray-600">{comanda.endereco}</div>
+                    <div className="text-sm text-gray-600">{comanda.bairro} - R$ {comanda.taxaentrega?.toFixed(2)}</div>
                   </div>
                 ))}
               </div>
@@ -301,20 +254,6 @@ export default function DeliveryForm() {
           </button>
         </div>
       </div>
-      
-      {existingDelivery && (
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md flex items-start">
-          <AlertTriangle className="text-yellow-500 mr-2 h-5 w-5 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-yellow-800">
-              Este pedido já está cadastrado para entrega
-            </p>
-            <p className="text-xs text-yellow-700">
-              Verifique na lista de entregas ou cadastre como uma nova entrega de outra plataforma.
-            </p>
-          </div>
-        </div>
-      )}
       
       <form onSubmit={saveDelivery}>
         {/* Motoboy Selection */}
@@ -339,26 +278,19 @@ export default function DeliveryForm() {
           </select>
         </div>
         
-        {/* Origin */}
+        {/* Address */}
         <div className="mb-4">
-          <label htmlFor="origem" className="block text-sm font-medium text-gray-700 mb-1">
-            Origem
+          <label htmlFor="endereco" className="block text-sm font-medium text-gray-700 mb-1">
+            Endereço
           </label>
-          <select
-            id="origem"
-            name="origem"
-            value={entrega.origem}
+          <textarea
+            id="endereco"
+            name="endereco"
+            value={entrega.endereco}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-md"
             required
-          >
-            <option value="app">Aplicativo</option>
-            <option value="telefone">Telefone</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="ifood">iFood</option>
-            <option value="ze-delivery">Zé Delivery</option>
-            <option value="outros">Outros</option>
-          </select>
+          />
         </div>
         
         {/* Neighborhood */}
@@ -383,10 +315,31 @@ export default function DeliveryForm() {
           </select>
         </div>
         
+        {/* Origin */}
+        <div className="mb-4">
+          <label htmlFor="origem" className="block text-sm font-medium text-gray-700 mb-1">
+            Origem
+          </label>
+          <select
+            id="origem"
+            name="origem"
+            value={entrega.origem}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          >
+            <option value="app">Aplicativo</option>
+            <option value="telefone">Telefone</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="ifood">iFood</option>
+            <option value="outros">Outros</option>
+          </select>
+        </div>
+        
         {/* Delivery Value */}
         <div className="mb-6">
           <label htmlFor="valor_entrega" className="block text-sm font-medium text-gray-700 mb-1">
-            Valor Total do Pedido (R$)
+            Valor da Entrega (R$)
           </label>
           <input
             type="number"
