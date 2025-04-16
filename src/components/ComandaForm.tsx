@@ -35,6 +35,9 @@ export default function ComandaForm({
   selecionarProdutoCadastrado,
   startEditingProduct,
 }: ComandaFormProps) {
+  // Calcular subtotal como soma dos produtos
+  const subtotal = comanda.produtos.reduce((sum, produto) => sum + (produto.valor * produto.quantidade), 0);
+  
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
       {/* Busca de Produtos */}
@@ -162,7 +165,7 @@ export default function ComandaForm({
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-base font-semibold">Subtotal:</h2>
-          <span className="text-lg font-bold">R$ {comanda.total.toFixed(2)}</span>
+          <span className="text-lg font-bold">R$ {subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-base">Taxa de Entrega:</h3>

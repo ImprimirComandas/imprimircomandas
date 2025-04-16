@@ -219,11 +219,15 @@ const createProductsSection = (comanda: Comanda): string => {
 /**
  * Creates the totals section
  */
-const createTotalsSection = (comanda: Comanda): string => `
+const createTotalsSection = (comanda: Comanda): string => {
+  // Calcular o subtotal corretamente como soma dos produtos
+  const subtotal = comanda.produtos.reduce((sum, produto) => sum + (produto.valor * produto.quantidade), 0);
+  
+  return `
   <div class="totals-section">
     <div class="total-row">
       <span>Subtotal:</span>
-      <span>R$ ${(comanda.total - comanda.taxaentrega).toFixed(2)}</span>
+      <span>R$ ${subtotal.toFixed(2)}</span>
     </div>
     <div class="total-row">
       <span>Taxa de Entrega:</span>
@@ -231,10 +235,11 @@ const createTotalsSection = (comanda: Comanda): string => `
     </div>
     <div class="total-row total">
       <span>Total:</span>
-      <span>R$ ${comanda.total.toFixed(2)}</span>
+      <span>R$ ${(subtotal + comanda.taxaentrega).toFixed(2)}</span>
     </div>
   </div>
 `;
+};
 
 /**
  * Creates the payment details section, including troco and mixed payments

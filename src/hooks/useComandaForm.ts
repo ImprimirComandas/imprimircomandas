@@ -79,7 +79,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     (p.numero !== undefined && p.numero !== null && p.numero.toString() && p.numero.toString().includes(pesquisaProduto))
   );
 
-  const totalComTaxa = comanda.total + comanda.taxaentrega;
+  const subtotal = comanda.produtos.reduce((sum, item) => sum + (item.valor * item.quantidade), 0);
+  const totalComTaxa = subtotal + comanda.taxaentrega;
 
   const onChange = (field: string, value: any) => {
     if (field === 'pesquisaProduto') setPesquisaProduto(value);
@@ -155,21 +156,31 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
 
   const selecionarProdutoCadastrado = (produto: { id: string; nome: string; valor: number }) => {
     const novoProduto: Produto = { nome: produto.nome, valor: produto.valor, quantidade: 1 };
-    setComanda(prev => ({
-      ...prev,
-      produtos: [...prev.produtos, novoProduto],
-      total: prev.total + produto.valor,
-    }));
+    setComanda(prev => {
+      const novoTotal = prev.produtos.reduce(
+        (sum, item) => sum + item.valor * item.quantidade, 
+        0
+      ) + produto.valor;
+      
+      return {
+        ...prev,
+        produtos: [...prev.produtos, novoProduto],
+        total: novoTotal,
+      };
+    });
     setPesquisaProduto('');
   };
 
   const removerProduto = (index: number) => {
     const produtoRemovido = comanda.produtos[index];
-    setComanda(prev => ({
-      ...prev,
-      produtos: prev.produtos.filter((_, i) => i !== index),
-      total: prev.total - produtoRemovido.valor * produtoRemovido.quantidade,
-    }));
+    setComanda(prev => {
+      const novoTotal = prev.total - produtoRemovido.valor * produtoRemovido.quantidade;
+      return {
+        ...prev,
+        produtos: prev.produtos.filter((_, i) => i !== index),
+        total: novoTotal,
+      };
+    });
   };
 
   const atualizarQuantidadeProduto = (index: number, quantidade: number) => {
@@ -182,10 +193,13 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const produtoAntigo = novosProdutos[index];
       const diferencaQuantidade = quantidade - produtoAntigo.quantidade;
       novosProdutos[index] = { ...produtoAntigo, quantidade };
+      
+      const novoTotal = prev.total + diferencaQuantidade * produtoAntigo.valor;
+      
       return {
         ...prev,
         produtos: novosProdutos,
-        total: prev.total + diferencaQuantidade * produtoAntigo.valor,
+        total: novoTotal,
       };
     });
   };
@@ -228,10 +242,12 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autorizado');
 
+      const subtotal = comanda.produtos.reduce((sum, item) => sum + (item.valor * item.quantidade), 0);
+      
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
-        total: comanda.total,
+        total: subtotal + comanda.taxaentrega,
         forma_pagamento: comanda.forma_pagamento,
         data: new Date().toISOString(),
         endereco: comanda.endereco,
