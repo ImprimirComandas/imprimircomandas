@@ -168,12 +168,12 @@ export default function ComandaForm({
           <span className="text-lg font-bold">R$ {subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-base">Taxa de Entrega:</h3>
+          <h3 className="text-base">Entrega:</h3>
           <span className="text-base font-bold">R$ {comanda.taxaentrega.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-base">Total com Taxa:</h2>
-          <span className="text-base font-bold">R$ {totalComTaxa.toFixed(2)}</span>
+        <div className="flex justify-between items-center mb-4 bg-green-50 p-2 rounded">
+          <h2 className="text-base  font-semibold">Total:</h2>
+          <span className="text-lg font-bold text-green-700">R$ {totalComTaxa.toFixed(2)}</span>
         </div>
 
         <div className="space-y-4">
