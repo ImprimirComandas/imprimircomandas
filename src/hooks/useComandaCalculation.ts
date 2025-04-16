@@ -14,7 +14,7 @@ export function useComandaCalculation() {
     pago: false,
   });
 
-  // Calculate the total with delivery tax
+  // Calculate the total with delivery tax - this is the correct total that should be used for payment
   const totalComTaxa = comanda.total + comanda.taxaentrega;
 
   // Add a product to the order

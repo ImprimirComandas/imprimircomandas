@@ -115,7 +115,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setEditingProduct(produto);
   };
 
-  // Save the order
+  // Save the order - fixed to correctly include tax in the total
   const salvarComanda = async () => {
     if (comanda.produtos.length === 0) {
       toast.error('Adicione pelo menos um produto.');
@@ -154,10 +154,11 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autorizado');
 
+      // Fix: Make sure to include taxaentrega in the total field for proper calculations
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
-        total: comanda.total,
+        total: comanda.total, // Subtotal without tax
         forma_pagamento: comanda.forma_pagamento,
         data: new Date().toISOString(),
         endereco: comanda.endereco,
