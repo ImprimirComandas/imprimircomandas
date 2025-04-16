@@ -37,6 +37,12 @@ export interface Comanda {
   valor_cartao?: number;
   valor_dinheiro?: number;
   valor_pix?: number;
+  pagamentoMisto?: {
+    cartao: number;
+    dinheiro: number;
+    pix: number;
+    troco: number;
+  } | null;
 }
 
 export interface BairroTaxa {
@@ -53,19 +59,17 @@ export interface ShopSession {
   end_time: string | null;
   created_at: string;
 }
-export interface Comanda {
-  id?: string;
-  produtos: Produto[];
-  endereco: string;
-  bairro: string;
-  taxaentrega: number;
+
+export interface DeliveryStats {
   total: number;
-  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '';
-  pago: boolean;
-  pagamentoMisto?: {
-    cartao: number;
-    dinheiro: number;
-    pix: number;
-    troco: number;
-  } | null;
+  porMotoboy: {
+    [key: string]: {
+      count: number;
+      nome: string;
+      valor: number;
+    };
+  };
+  porBairro: {
+    [key: string]: number;
+  };
 }

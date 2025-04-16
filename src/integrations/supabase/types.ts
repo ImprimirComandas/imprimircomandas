@@ -258,6 +258,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          show_values: boolean | null
           store_name: string | null
           updated_at: string | null
         }
@@ -267,6 +268,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          show_values?: boolean | null
           store_name?: string | null
           updated_at?: string | null
         }
@@ -276,6 +278,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          show_values?: boolean | null
           store_name?: string | null
           updated_at?: string | null
         }

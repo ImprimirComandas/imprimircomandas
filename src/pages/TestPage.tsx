@@ -1,6 +1,6 @@
 
 import DeliveryManagement from '../components/DeliveryManagement';
 
-export default function TestPage() {
+export default function DeliveryPage() {
   return <DeliveryManagement />;
 }

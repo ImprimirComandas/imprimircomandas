@@ -1,38 +1,63 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import type { Comanda, Produto } from '../types/database';
+import type { Produto } from '../types/database';
 import defaultBairroTaxas, { getBairroTaxas } from '../constants/bairroTaxas';
+import { useComandaCalculation } from './useComandaCalculation';
+import { useProdutoSearch } from './useProdutoSearch';
+import { usePaymentHandling } from './usePaymentHandling';
+import { useEffect } from 'react';
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
-  const [comanda, setComanda] = useState<Comanda>({
-    produtos: [],
-    total: 0,
-    forma_pagamento: '',
-    data: new Date().toISOString(),
-    endereco: '',
-    bairro: 'Jardim Paraíso',
-    taxaentrega: 6,
-    pago: false,
-    quantiapaga: 0,
-    troco: 0,
-    valor_cartao: 0,
-    valor_dinheiro: 0,
-    valor_pix: 0,
-  });
-  const [pesquisaProduto, setPesquisaProduto] = useState('');
-  const [produtosCadastrados, setProdutosCadastrados] = useState<{ id: string; nome: string; valor: number; numero?: number }[]>([]);
-  const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
-  const [showTrocoModal, setShowTrocoModal] = useState(false);
-  const [needsTroco, setNeedsTroco] = useState<boolean | null>(null);
-  const [quantiapagaInput, setQuantiapagaInput] = useState<number | null>(null);
-  const [showPagamentoMistoModal, setShowPagamentoMistoModal] = useState(false);
-  const [valorCartaoInput, setValorCartaoInput] = useState<number | null>(null);
-  const [valorDinheiroInput, setValorDinheiroInput] = useState<number | null>(null);
-  const [valorPixInput, setValorPixInput] = useState<number | null>(null);
+  const {
+    comanda,
+    setComanda,
+    totalComTaxa,
+    adicionarProduto,
+    removerProduto,
+    atualizarQuantidadeProduto,
+    atualizarBairroTaxa,
+    resetarComanda,
+  } = useComandaCalculation();
+
+  const {
+    pesquisaProduto,
+    setPesquisaProduto,
+    produtosFiltrados,
+    editingProduct,
+    setEditingProduct,
+    salvarProduto,
+    editarProduto,
+  } = useProdutoSearch();
+
+  const {
+    showTrocoModal,
+    setShowTrocoModal,
+    needsTroco,
+    setNeedsTroco,
+    quantiapagaInput,
+    setQuantiapagaInput,
+    showPagamentoMistoModal,
+    setShowPagamentoMistoModal,
+    valorCartaoInput,
+    setValorCartaoInput,
+    valorDinheiroInput,
+    setValorDinheiroInput,
+    valorPixInput,
+    setValorPixInput,
+    handleFormaPagamentoChange,
+    handleInputChange,
+    handleTrocoConfirm,
+    closeTrocoModal,
+    handlePagamentoMistoConfirm,
+    closePagamentoMistoModal,
+  } = usePaymentHandling(totalComTaxa);
+
   const [bairroTaxas, setBairroTaxas] = useState<Record<string, number>>(defaultBairroTaxas);
   const [bairrosDisponiveis, setBairrosDisponiveis] = useState<string[]>(Object.keys(defaultBairroTaxas));
 
+  // Fetch neighborhood taxes
   useEffect(() => {
     const fetchBairroTaxas = async () => {
       const taxas = await getBairroTaxas();
@@ -41,17 +66,14 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       
       if (Object.keys(taxas).length > 0) {
         const firstBairro = Object.keys(taxas)[0];
-        setComanda(prev => ({
-          ...prev,
-          bairro: firstBairro,
-          taxaentrega: taxas[firstBairro]
-        }));
+        atualizarBairroTaxa(firstBairro, taxas[firstBairro]);
       }
     };
     
     fetchBairroTaxas();
   }, []);
 
+<<<<<<< HEAD
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
@@ -82,23 +104,30 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   const subtotal = comanda.produtos.reduce((sum, item) => sum + (item.valor * item.quantidade), 0);
   const totalComTaxa = subtotal + comanda.taxaentrega;
 
+=======
+  // Handle generic input changes
+>>>>>>> 5b824500faecf066b2616fcedc782c6eb778fba6
   const onChange = (field: string, value: any) => {
-    if (field === 'pesquisaProduto') setPesquisaProduto(value);
-    else if (field === 'endereco') setComanda(prev => ({ ...prev, endereco: value }));
-    else if (field === 'pago') setComanda(prev => ({ ...prev, pago: value }));
-    else if (field === 'quantiapagaInput') setQuantiapagaInput(value ? Number(value) : null);
-    else if (field === 'needsTroco') setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
-    else if (field === 'valorCartaoInput') setValorCartaoInput(value ? Number(value) : null);
-    else if (field === 'valorDinheiroInput') setValorDinheiroInput(value ? Number(value) : null);
-    else if (field === 'valorPixInput') setValorPixInput(value ? Number(value) : null);
+    if (field === 'pesquisaProduto') {
+      setPesquisaProduto(value);
+    } else if (field === 'endereco') {
+      setComanda(prev => ({ ...prev, endereco: value }));
+    } else if (field === 'pago') {
+      setComanda(prev => ({ ...prev, pago: value }));
+    } else {
+      handleInputChange(field, value);
+    }
   };
 
+  // Handle neighborhood change
   const onBairroChange = (bairro: string) => {
     const taxa = bairroTaxas[bairro] || 0;
-    setComanda(prev => ({ ...prev, bairro, taxaentrega: taxa }));
+    atualizarBairroTaxa(bairro, taxa);
   };
 
+  // Handle payment method change
   const onFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
+<<<<<<< HEAD
     setComanda(prev => ({ ...prev, forma_pagamento: forma }));
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
@@ -201,13 +230,30 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         produtos: novosProdutos,
         total: novoTotal,
       };
+=======
+    const resetFormaPagamento = () => {
+      setComanda(prev => ({ ...prev, forma_pagamento: '' }));
+    };
+    
+    handleFormaPagamentoChange(forma, (newForma) => {
+      setComanda(prev => ({ ...prev, forma_pagamento: newForma }));
+>>>>>>> 5b824500faecf066b2616fcedc782c6eb778fba6
     });
   };
 
+  // Select a product from the catalog
+  const selecionarProdutoCadastrado = (produto: { id: string; nome: string; valor: number }) => {
+    const novoProduto: Produto = { nome: produto.nome, valor: produto.valor, quantidade: 1 };
+    adicionarProduto(novoProduto);
+    setPesquisaProduto('');
+  };
+
+  // Start editing a product
   const startEditingProduct = (produto: { id: string; nome: string; valor: number }) => {
     setEditingProduct(produto);
   };
 
+  // Save the order - fixed to correctly include tax in the total
   const salvarComanda = async () => {
     if (comanda.produtos.length === 0) {
       toast.error('Adicione pelo menos um produto.');
@@ -221,6 +267,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       toast.error('Preencha o endereço e o bairro.');
       return;
     }
+    
+    // Handle money payment with change
     if (comanda.forma_pagamento === 'dinheiro' && needsTroco === null) {
       setShowTrocoModal(true);
       return;
@@ -229,6 +277,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       toast.error('Informe uma quantia válida para o troco (maior que o total).');
       return;
     }
+    
+    // Handle mixed payment
     if (comanda.forma_pagamento === 'misto') {
       const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
       if (Math.abs(totalValores - totalComTaxa) > 0.01) {
@@ -242,17 +292,25 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Não autorizado');
 
+<<<<<<< HEAD
       const subtotal = comanda.produtos.reduce((sum, item) => sum + (item.valor * item.quantidade), 0);
       
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
         total: subtotal + comanda.taxaentrega,
+=======
+      // Fix: Make sure to include taxaentrega in the total field for proper calculations
+      const novaComanda = {
+        user_id: session.user.id,
+        produtos: comanda.produtos,
+        total: comanda.total, // Subtotal without tax
+>>>>>>> 5b824500faecf066b2616fcedc782c6eb778fba6
         forma_pagamento: comanda.forma_pagamento,
         data: new Date().toISOString(),
         endereco: comanda.endereco,
         bairro: comanda.bairro,
-        taxaentrega: comanda.taxaentrega,
+        taxaentrega: comanda.taxaentrega, // Send as separate field
         pago: comanda.pago,
         quantiapaga: needsTroco ? quantiapagaInput || 0 : totalComTaxa,
         troco: needsTroco && quantiapagaInput ? quantiapagaInput - totalComTaxa : 0,
@@ -265,27 +323,23 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       if (error) throw error;
 
       await import('../utils/printService').then(module => {
-        module.imprimirComanda({ ...novaComanda, id: data.id });
+        // Pass the correct total with tax to the print service
+        module.imprimirComanda({ 
+          ...novaComanda, 
+          id: data.id,
+          // Make sure the print service receives the right total information
+          total: novaComanda.total, // Subtotal
+          taxaentrega: novaComanda.taxaentrega, // Tax amount
+          // Calculate the display total with tax for printing
+          totalComTaxa: novaComanda.total + novaComanda.taxaentrega
+        });
         toast.success('Comanda salva e enviada para impressão!');
       }).catch(() => {
         toast.error('Comanda salva, mas erro ao imprimir.');
       });
 
-      setComanda({
-        produtos: [],
-        total: 0,
-        forma_pagamento: '',
-        data: new Date().toISOString(),
-        endereco: '',
-        bairro: comanda.bairro,
-        taxaentrega: comanda.taxaentrega,
-        pago: false,
-        quantiapaga: 0,
-        troco: 0,
-        valor_cartao: 0,
-        valor_dinheiro: 0,
-        valor_pix: 0,
-      });
+      // Reset the form
+      resetarComanda(comanda.bairro, comanda.taxaentrega);
       setQuantiapagaInput(null);
       setValorCartaoInput(null);
       setValorDinheiroInput(null);
@@ -301,46 +355,36 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     }
   };
 
-  const handleTrocoConfirm = () => {
-    if (needsTroco === null) {
-      toast.error('Selecione se precisa de troco.');
-      return;
-    }
-    if (needsTroco && (quantiapagaInput === null || quantiapagaInput <= totalComTaxa)) {
-      toast.error('Quantia paga insuficiente para gerar troco.');
-      return;
-    }
-    setShowTrocoModal(false);
-  };
-
-  const closeTrocoModal = () => {
-    setShowTrocoModal(false);
-    if (comanda.forma_pagamento === 'dinheiro') {
-      setComanda(prev => ({ ...prev, forma_pagamento: '' }));
-    }
-    setQuantiapagaInput(null);
-    setNeedsTroco(null);
-  };
-
-  const handlePagamentoMistoConfirm = () => {
-    const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
-    if (Math.abs(totalValores - totalComTaxa) < 0.01) {
-      setShowPagamentoMistoModal(false);
-      
-      if ((valorDinheiroInput || 0) > 0 && needsTroco === null) {
-        setShowTrocoModal(true);
+  const handleTrocoConfirmWrapper = () => {
+    if (!handleTrocoConfirm()) {
+      if (needsTroco === null) {
+        toast.error('Selecione se precisa de troco.');
+      } else if (needsTroco && (quantiapagaInput === null || quantiapagaInput <= totalComTaxa)) {
+        toast.error('Quantia paga insuficiente para gerar troco.');
       }
-    } else {
+      return;
+    }
+  };
+
+  const closeTrocoModalWrapper = () => {
+    const resetFormaPagamento = () => {
+      setComanda(prev => ({ ...prev, forma_pagamento: '' }));
+    };
+    closeTrocoModal(resetFormaPagamento);
+  };
+
+  const handlePagamentoMistoConfirmWrapper = () => {
+    if (!handlePagamentoMistoConfirm()) {
+      const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
       toast.error(`A soma dos valores (${totalValores.toFixed(2)}) deve ser igual ao total (${totalComTaxa.toFixed(2)}).`);
     }
   };
 
-  const closePagamentoMistoModal = () => {
-    setShowPagamentoMistoModal(false);
-    setComanda(prev => ({ ...prev, forma_pagamento: '' }));
-    setValorCartaoInput(null);
-    setValorDinheiroInput(null);
-    setValorPixInput(null);
+  const closePagamentoMistoModalWrapper = () => {
+    const resetFormaPagamento = () => {
+      setComanda(prev => ({ ...prev, forma_pagamento: '' }));
+    };
+    closePagamentoMistoModal(resetFormaPagamento);
   };
 
   return {
@@ -365,10 +409,10 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     atualizarQuantidadeProduto,
     onFormaPagamentoChange,
     onChange,
-    handleTrocoConfirm,
-    closeTrocoModal,
-    handlePagamentoMistoConfirm,
-    closePagamentoMistoModal,
+    handleTrocoConfirm: handleTrocoConfirmWrapper,
+    closeTrocoModal: closeTrocoModalWrapper,
+    handlePagamentoMistoConfirm: handlePagamentoMistoConfirmWrapper,
+    closePagamentoMistoModal: closePagamentoMistoModalWrapper,
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
