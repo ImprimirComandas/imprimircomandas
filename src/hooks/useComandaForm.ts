@@ -163,7 +163,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
         data: new Date().toISOString(),
         endereco: comanda.endereco,
         bairro: comanda.bairro,
-        taxaentrega: comanda.taxaentrega,
+        taxaentrega: comanda.taxaentrega, // Send as separate field
         pago: comanda.pago,
         quantiapaga: needsTroco ? quantiapagaInput || 0 : totalComTaxa,
         troco: needsTroco && quantiapagaInput ? quantiapagaInput - totalComTaxa : 0,
@@ -176,7 +176,16 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
       if (error) throw error;
 
       await import('../utils/printService').then(module => {
-        module.imprimirComanda({ ...novaComanda, id: data.id });
+        // Pass the correct total with tax to the print service
+        module.imprimirComanda({ 
+          ...novaComanda, 
+          id: data.id,
+          // Make sure the print service receives the right total information
+          total: novaComanda.total, // Subtotal
+          taxaentrega: novaComanda.taxaentrega, // Tax amount
+          // Calculate the display total with tax for printing
+          totalComTaxa: novaComanda.total + novaComanda.taxaentrega
+        });
         toast.success('Comanda salva e enviada para impressão!');
       }).catch(() => {
         toast.error('Comanda salva, mas erro ao imprimir.');
