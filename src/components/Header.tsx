@@ -18,7 +18,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Verificar status da loja ao montar o componente
   useEffect(() => {
     const checkShopStatus = async () => {
       try {
@@ -88,13 +87,12 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
       }
 
       setIsShopOpen(!isShopOpen);
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (error instanceof Error) {
         toast.error(`Erro ao alterar status da loja: ${error.message}`);
       } else {
         toast.error('Erro ao alterar status da loja');
       }
-      toast.error(`Erro ao alterar status da loja: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +110,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
     <header className="bg-blue-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <Store className="h-8 w-8 mr-2" />
@@ -122,7 +119,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             </Link>
           </div>
 
-          {/* Navegação Desktop */}
           <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={toggleShopStatus}
@@ -150,7 +146,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
                 <span>{label}</span>
               </Link>
             ))}
-            {/* Perfil */}
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -195,7 +190,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
             </div>
           </div>
 
-          {/* Botão Menu Mobile */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -211,7 +205,6 @@ export default function Header({ profile, onSignOut, showProfileMenu, setShowPro
         </div>
       </div>
 
-      {/* Menu Mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
