@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { calculateSessionDuration, formatDate } from './utils';
@@ -33,8 +32,12 @@ interface SessionHistoryProps {
 }
 
 export default function SessionHistory({ sessions, motoboys }: SessionHistoryProps) {
-  if (sessions.length === 0) {
-    return null;
+  if (!sessions || sessions.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6 text-center text-gray-600">
+        Nenhuma sessão registrada.
+      </div>
+    );
   }
 
   return (
@@ -79,16 +82,15 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                     {motoboy?.nome || 'Desconhecido'}
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(session.start_time)}
+                    {session.start_time ? formatDate(session.start_time) : '-'}
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {session.end_time 
-                      ? formatDate(session.end_time)
-                      : '-'
-                    }
+                    {session.end_time ? formatDate(session.end_time) : '-'}
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {calculateSessionDuration(session.start_time, session.end_time)}
+                    {session.start_time 
+                      ? calculateSessionDuration(session.start_time, session.end_time)
+                      : '-'}
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap">
                     {session.end_time === null ? (

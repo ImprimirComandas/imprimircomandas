@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Play, Square, Trash, User, X, Save } from 'lucide-react';
+import { Edit, Play, Square, Trash, User, X, Save, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { calculateSessionDuration } from './utils';
@@ -66,7 +65,7 @@ export default function MotoboyList({
 
       toast.success('Motoboy atualizado com sucesso');
       setEditingMotoboy(null);
-      onMotoboyDeleted(); // Refresh list
+      onMotoboyDeleted();
     } catch (error: unknown) {
       console.error('Erro ao atualizar motoboy:', error);
       const err = error as Error;
@@ -78,7 +77,6 @@ export default function MotoboyList({
     if (!confirm('Tem certeza que deseja excluir este motoboy?')) return;
 
     try {
-      // Verificar se o motoboy tem sessão aberta
       const activeSessions = sessions.filter(
         (s) => s.motoboy_id === id && s.end_time === null
       );
@@ -106,7 +104,6 @@ export default function MotoboyList({
 
   const startMotoboySession = async (motoboyId: string) => {
     try {
-      // Verificar se a loja está aberta
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar autenticado');
@@ -127,7 +124,6 @@ export default function MotoboyList({
         return;
       }
       
-      // Verificar se já existe uma sessão aberta para este motoboy
       const { data: existingSessions, error: existingSessionsError } = await supabase
         .from('motoboy_sessions')
         .select('*')
@@ -196,7 +192,7 @@ export default function MotoboyList({
     );
   }
 
-  if (motoboys.length === 0) {
+  if (!motoboys || motoboys.length === 0) {
     return (
       <div className="bg-gray-50 p-8 rounded-lg text-center">
         <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -237,6 +233,7 @@ export default function MotoboyList({
                         nome: e.target.value,
                       })
                     }
+                    placeholder="Digite o nome do motoboy"
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -253,6 +250,7 @@ export default function MotoboyList({
                         telefone: e.target.value,
                       })
                     }
+                    placeholder="Digite o telefone do motoboy"
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -302,7 +300,7 @@ export default function MotoboyList({
                   </p>
                 )}
                 
-                {isActive ? (
+                {isActive && activeSessions[0] ? (
                   <div className="mt-3">
                     <div className="flex items-center text-green-600 text-sm font-medium mb-2">
                       <Clock className="h-4 w-4 mr-1" />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
@@ -26,8 +25,9 @@ export default function DeliveryMotoboyManagement() {
   const [motoboys, setMotoboys] = useState<Motoboy[]>([]);
   const [sessions, setSessions] = useState<MotoboySession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMotoboys();
@@ -40,6 +40,7 @@ export default function DeliveryMotoboyManagement() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar autenticado');
+        setError('Usuário não autenticado');
         return;
       }
 
@@ -50,11 +51,13 @@ export default function DeliveryMotoboyManagement() {
         .order('nome');
 
       if (error) throw error;
+      console.log('Motoboys:', data);
       setMotoboys(data || []);
     } catch (error: unknown) {
       console.error('Erro ao carregar motoboys:', error);
       const err = error as Error;
       toast.error(`Erro ao carregar motoboys: ${err.message}`);
+      setError(`Erro ao carregar motoboys: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,11 @@ export default function DeliveryMotoboyManagement() {
     try {
       setSessionLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        toast.error('Você precisa estar autenticado');
+        setError('Usuário não autenticado');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('motoboy_sessions')
@@ -73,9 +80,13 @@ export default function DeliveryMotoboyManagement() {
         .order('start_time', { ascending: false });
 
       if (error) throw error;
+      console.log('Sessions:', data);
       setSessions(data || []);
     } catch (error: unknown) {
       console.error('Erro ao carregar sessões:', error);
+      const err = error as Error;
+      toast.error(`Erro ao carregar sessões: ${err.message}`);
+      setError(`Erro ao carregar sessões: ${err.message}`);
     } finally {
       setSessionLoading(false);
     }
@@ -85,6 +96,25 @@ export default function DeliveryMotoboyManagement() {
     setShowAddForm(false);
     fetchMotoboys();
   };
+
+  if (error && !loading && !sessionLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6 text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Erro</h2>
+        <p className="text-red-600">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            fetchMotoboys();
+            fetchSessions();
+          }}
+          className="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+        >
+          Tentar Novamente
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -108,7 +138,6 @@ export default function DeliveryMotoboyManagement() {
           )}
         </div>
 
-        {/* Formulário de Adição */}
         {showAddForm && (
           <AddMotoboyForm 
             onMotoboyAdded={handleMotoboyAdded} 
@@ -116,18 +145,31 @@ export default function DeliveryMotoboyManagement() {
           />
         )}
 
-        <MotoboyList 
-          motoboys={motoboys}
-          sessions={sessions}
-          loading={loading}
-          sessionLoading={sessionLoading}
-          onMotoboyDeleted={fetchMotoboys}
-          onSessionStatusChanged={fetchSessions}
-        />
+        {loading ? (
+          <div className="text-center text-gray-600">Carregando motoboys...</div>
+        ) : motoboys.length === 0 ? (
+          <div className="text-center text-gray-600">Nenhum motoboy cadastrado.</div>
+        ) : (
+          <MotoboyList 
+            motoboys={motoboys}
+            sessions={sessions}
+            loading={loading}
+            sessionLoading={sessionLoading}
+            onMotoboyDeleted={fetchMotoboys}
+            onSessionStatusChanged={fetchSessions}
+          />
+        )}
       </motion.div>
 
-      {/* Histórico de Sessões */}
-      <SessionHistory sessions={sessions} motoboys={motoboys} />
+      {sessionLoading ? (
+        <div className="text-center text-gray-600">Carregando histórico de sessões...</div>
+      ) : sessions.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-xl p-6 text-center text-gray-600">
+          Nenhuma sessão registrada.
+        </div>
+      ) : (
+        <SessionHistory sessions={sessions} motoboys={motoboys} />
+      )}
     </div>
   );
 }
