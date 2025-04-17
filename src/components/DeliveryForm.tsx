@@ -91,7 +91,7 @@ export default function DeliveryForm() {
       if (data && data.length > 0) {
         setEntrega((prev) => ({ ...prev, motoboy_id: data[0].id }));
       }
-    } catch (error: Error) {
+    } catch (error: any) {
       console.error('Erro ao buscar motoboys:', error);
       toast.error(`Erro ao buscar motoboys: ${error.message}`);
     }
@@ -116,13 +116,8 @@ export default function DeliveryForm() {
           valor_entrega: data[0].taxa || 0,
         }));
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(`Erro ao buscar bairros: ${error.message}`);
-      } else {
-        console.error('Erro desconhecido ao buscar bairros:', error);
-        toast.error('Erro desconhecido ao buscar bairros');
-      }
+    } catch (error: any) {
+      console.error('Erro ao buscar bairros:', error);
       toast.error(`Erro ao buscar bairros: ${error.message}`);
     }
   };
@@ -321,7 +316,7 @@ export default function DeliveryForm() {
   // Definir rótulo do campo
   const deliveryValueLabel = entrega.comanda_id
     ? 'Valor Total do Pedido (R$)'
-    : 'Valor Total do Pedido ou Taxa de Entrega (R$)';
+    : 'Valor Total do Pedido (R$)';
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
