@@ -1,15 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { useShopIsOpen } from '../hooks/useShopIsOpen'; // Adjust the path as necessary
 import { motion } from 'framer-motion';
 import { PlusCircle, Save, Trash2, Search, Edit, Plus, Minus, AlertTriangle } from 'lucide-react';
-import formatCurrency from '../utils/formatCurrency';
-import { useShopIsOpen } from '../hooks/useShopIsOpen';
+import { supabase } from '../lib/supabase'; // Ajuste o caminho conforme necessário
 import { toast } from 'sonner';
+import { debounce } from 'lodash';
 import type { Comanda, Produto } from '../types/database';
 
 interface ComandaFormProps {
   comanda: Comanda;
   pesquisaProduto: string;
-  produtosFiltrados: { id: string; nome: string; valor: number; numero?: number }[];
   salvando: boolean;
   totalComTaxa: number;
   bairrosDisponiveis: string[];
@@ -23,10 +23,16 @@ interface ComandaFormProps {
   startEditingProduct: (produto: { id: string; nome: string; valor: number }) => void;
 }
 
+interface ProdutoFiltrado {
+  id: string;
+  nome: string;
+  valor: number;
+  numero?: number;
+}
+
 export default function ComandaForm({
   comanda,
   pesquisaProduto,
-  produtosFiltrados,
   salvando,
   totalComTaxa,
   bairrosDisponiveis,
@@ -41,9 +47,47 @@ export default function ComandaForm({
 }: ComandaFormProps) {
   const { isShopOpen } = useShopIsOpen();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [produtosFiltrados, setProdutosFiltrados] = useState<ProdutoFiltrado[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Calculate subtotal
-  const subtotal = comanda.produtos.reduce((sum, produto) => sum + (produto.valor * produto.quantidade), 0);
+  const subtotal = comanda.produtos.reduce((sum, produto) => sum + produto.valor * produto.quantidade, 0);
+
+  // Busca de produtos
+  const searchProdutos = useCallback(
+    debounce(async (searchTerm: string) => {
+      if (!searchTerm.trim()) {
+        setProdutosFiltrados([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const trimmedTerm = searchTerm.trim();
+        console.log('Pesquisando produto:', trimmedTerm);
+
+        const { data, error } = await supabase
+          .rpc('search_produtos_by_name_or_number', { search_term: trimmedTerm });
+
+        if (error) throw error;
+        console.log('Resultados da pesquisa de produtos:', data);
+        setProdutosFiltrados(data || []);
+      } catch (error: unknown) {
+        console.error('Erro ao buscar produtos:', error);
+        toast.error(`Erro ao buscar produtos: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  // Manipular mudança no input de busca
+  const handlePesquisaProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onChange('pesquisaProduto', value);
+    searchProdutos(value);
+  };
 
   const handleSaveComanda = () => {
     if (!isShopOpen) {
@@ -70,11 +114,12 @@ export default function ComandaForm({
   };
 
   // Handle product selection
-  const handleSelectProduct = (produto: { id: string; nome: string; valor: number }) => {
+  const handleSelectProduct = (produto: ProdutoFiltrado) => {
     selecionarProdutoCadastrado(produto);
-    onChange('pesquisaProduto', ''); // Clear search input
+    onChange('pesquisaProduto', '');
+    setProdutosFiltrados([]);
     if (searchInputRef.current) {
-      searchInputRef.current.blur(); // Remove focus from input
+      searchInputRef.current.blur();
     }
   };
 
@@ -95,10 +140,11 @@ export default function ComandaForm({
             id="pesquisaProduto"
             type="text"
             value={pesquisaProduto}
-            onChange={(e) => onChange('pesquisaProduto', e.target.value)}
+            onChange={handlePesquisaProdutoChange}
             placeholder="Digite para buscar produtos cadastrados"
             className="w-full p-2 pl-8 border rounded text-sm"
             ref={searchInputRef}
+            disabled={loading}
           />
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           {pesquisaProduto && produtosFiltrados.length > 0 && (
@@ -137,9 +183,14 @@ export default function ComandaForm({
               ))}
             </motion.div>
           )}
-          {pesquisaProduto && produtosFiltrados.length === 0 && (
+          {pesquisaProduto && produtosFiltrados.length === 0 && !loading && (
             <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
               Nenhum produto encontrado
+            </div>
+          )}
+          {loading && pesquisaProduto && (
+            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
+              Buscando...
             </div>
           )}
         </div>

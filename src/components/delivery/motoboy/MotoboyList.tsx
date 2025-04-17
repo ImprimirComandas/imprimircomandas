@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Edit, Play, Square, Trash, User, X, Save, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +21,12 @@ interface MotoboySession {
   user_id: string;
 }
 
+interface DeliveryStats {
+  total_deliveries: number;
+  bairro: string | null;
+  delivery_count: number;
+}
+
 interface MotoboyListProps {
   motoboys: Motoboy[];
   sessions: MotoboySession[];
@@ -39,6 +45,61 @@ export default function MotoboyList({
   onSessionStatusChanged,
 }: MotoboyListProps) {
   const [editingMotoboy, setEditingMotoboy] = useState<Motoboy | null>(null);
+  const [deliveryStats, setDeliveryStats] = useState<Record<string, DeliveryStats[]>>({});
+
+  useEffect(() => {
+    const fetchDeliveryStats = async () => {
+      // setLoading(true); // Removed as setLoading is not defined
+      try {
+        const stats: Record<string, DeliveryStats[]> = {};
+        for (const motoboy of motoboys) {
+          const activeSession = sessions.find(
+            (s) => s.motoboy_id === motoboy.id && s.end_time === null
+          );
+          if (activeSession) {
+            if (!motoboy.id || !activeSession.id) {
+              console.warn('Invalid UUIDs for motoboy or session:', {
+                motoboyId: motoboy.id,
+                sessionId: activeSession.id,
+              });
+              stats[motoboy.id] = [];
+              continue;
+            }
+            console.log('Calling get_motoboy_deliveries with:', {
+              motoboy_id_param: motoboy.id,
+              session_id_param: activeSession.id,
+            });
+            const { data, error } = await supabase.rpc('get_motoboy_deliveries', {
+              motoboy_id_param: motoboy.id,
+              session_id_param: activeSession.id,
+            });
+            if (error) {
+              console.error('RPC error for motoboy', motoboy.id, ':', error);
+              throw new Error(`Failed to fetch stats for ${motoboy.nome}: ${error.message}`);
+            }
+            console.log('Stats for motoboy', motoboy.id, ':', data);
+            stats[motoboy.id] = data || [];
+          } else {
+            stats[motoboy.id] = [];
+          }
+        }
+        setDeliveryStats(stats);
+      } catch (error: unknown) {
+        console.error('Erro ao buscar estatísticas de entregas:', error);
+        if (error instanceof Error) {
+          toast.error(`Erro ao buscar estatísticas: ${error.message}`);
+        } else {
+          toast.error('Erro ao buscar estatísticas: Erro desconhecido');
+        }
+      } finally {
+        // Removed setLoading(false) as it is not defined
+      }
+    };
+
+    if (!loading && !sessionLoading && motoboys.length > 0) {
+      fetchDeliveryStats();
+    }
+  }, [motoboys, sessions, loading, sessionLoading]);
 
   const handleSaveMotoboy = async (motoboy: Motoboy) => {
     try {
@@ -80,7 +141,7 @@ export default function MotoboyList({
       const activeSessions = sessions.filter(
         (s) => s.motoboy_id === id && s.end_time === null
       );
-      
+
       if (activeSessions.length > 0) {
         toast.error('Finalize a sessão do motoboy antes de excluí-lo');
         return;
@@ -109,30 +170,30 @@ export default function MotoboyList({
         toast.error('Você precisa estar autenticado');
         return;
       }
-      
+
       const { data: shopSessions, error: shopSessionsError } = await supabase
         .from('shop_sessions')
         .select('*')
         .eq('user_id', session.user.id)
         .is('end_time', null)
         .limit(1);
-        
+
       if (shopSessionsError) throw shopSessionsError;
-      
+
       if (!shopSessions || shopSessions.length === 0) {
         toast.error('A loja precisa estar aberta para iniciar uma sessão de motoboy');
         return;
       }
-      
+
       const { data: existingSessions, error: existingSessionsError } = await supabase
         .from('motoboy_sessions')
         .select('*')
         .eq('motoboy_id', motoboyId)
         .is('end_time', null)
         .limit(1);
-        
+
       if (existingSessionsError) throw existingSessionsError;
-      
+
       if (existingSessions && existingSessions.length > 0) {
         toast.error('Este motoboy já possui uma sessão em andamento');
         return;
@@ -208,7 +269,10 @@ export default function MotoboyList({
       {motoboys.map((motoboy) => {
         const activeSessions = getActiveSessions(motoboy.id);
         const isActive = activeSessions.length > 0;
-        
+        const stats = deliveryStats[motoboy.id] || [];
+        const totalDeliveries = stats.find((s) => s.bairro === null)?.total_deliveries || 0;
+        const bairroStats = stats.filter((s) => s.bairro !== null);
+
         return (
           <motion.div
             key={motoboy.id}
@@ -272,9 +336,7 @@ export default function MotoboyList({
             ) : (
               <>
                 <div className="flex justify-between">
-                  <h3 className="font-semibold text-gray-800">
-                    {motoboy.nome}
-                  </h3>
+                  <h3 className="font-semibold text-gray-800">{motoboy.nome}</h3>
                   <div className="flex gap-1">
                     <button
                       onClick={() => setEditingMotoboy(motoboy)}
@@ -287,40 +349,62 @@ export default function MotoboyList({
                       onClick={() => handleDeleteMotoboy(motoboy.id)}
                       className="p-1 rounded-full text-red-600 hover:bg-red-100"
                       disabled={isActive}
-                      title={isActive ? "Finalize a sessão para excluir" : "Excluir"}
+                      title={isActive ? 'Finalize a sessão para excluir' : 'Excluir'}
                     >
                       <Trash className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                
+
                 {motoboy.telefone && (
                   <p className="text-sm text-gray-500 mt-1">
-                    {motoboy.telefone}
+                    Telefone: {motoboy.telefone}
                   </p>
                 )}
-                
-                {isActive && activeSessions[0] ? (
+
+                {isActive && activeSessions[0] && (
                   <div className="mt-3">
                     <div className="flex items-center text-green-600 text-sm font-medium mb-2">
                       <Clock className="h-4 w-4 mr-1" />
                       <span>
-                        Em atividade: 
-                        {calculateSessionDuration(
-                          activeSessions[0].start_time,
-                          null
-                        )}
+                        Em atividade:{' '}
+                        {calculateSessionDuration(activeSessions[0].start_time, null)}
                       </span>
                     </div>
-                    <button
-                      onClick={() => endMotoboySession(activeSessions[0].id)}
-                      disabled={sessionLoading}
-                      className="w-full mt-2 py-1.5 px-3 text-sm rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 flex items-center justify-center"
-                    >
-                      <Square className="h-3.5 w-3.5 mr-1.5" />
-                      Finalizar Sessão
-                    </button>
+                    <div className="text-sm text-gray-600 mb-2">
+                      <p>
+                        <span className="font-medium">Total de Entregas:</span>{' '}
+                        {totalDeliveries}
+                      </p>
+                      {bairroStats.length > 0 ? (
+                        <div className="mt-1">
+                          <p className="font-medium">Entregas por Bairro:</p>
+                          <ul className="list-disc list-inside">
+                            {bairroStats.map((stat) => (
+                              <li key={stat.bairro}>
+                                {stat.bairro}: {stat.delivery_count}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-gray-500">
+                          Nenhuma entrega registrada
+                        </p>
+                      )}
+                    </div>
                   </div>
+                )}
+
+                {isActive ? (
+                  <button
+                    onClick={() => endMotoboySession(activeSessions[0].id)}
+                    disabled={sessionLoading}
+                    className="w-full mt-2 py-1.5 px-3 text-sm rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 flex items-center justify-center"
+                  >
+                    <Square className="h-3.5 w-3.5 mr-1.5" />
+                    Finalizar Sessão
+                  </button>
                 ) : (
                   <button
                     onClick={() => startMotoboySession(motoboy.id)}
