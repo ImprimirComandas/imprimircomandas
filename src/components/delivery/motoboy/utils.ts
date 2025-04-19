@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 
 export function calculateSessionDuration(start: string | null, end: string | null): string {
@@ -29,4 +30,31 @@ export function formatDate(date: string | null): string {
     console.error('Error in formatDate:', error);
     return '-';
   }
+}
+
+export function summarizeDeliveries(stats: { bairro: string, count: number }[]): { 
+  totalDeliveries: number; 
+  byNeighborhood: { name: string; count: number }[] 
+} {
+  if (!stats || !Array.isArray(stats)) {
+    return { totalDeliveries: 0, byNeighborhood: [] };
+  }
+
+  // Calculate total from all neighborhoods
+  const totalDeliveries = stats.reduce((sum, item) => sum + item.count, 0);
+  
+  // Format for display
+  const byNeighborhood = stats.map(s => ({
+    name: s.bairro,
+    count: s.count
+  })).sort((a, b) => b.count - a.count);
+
+  return { totalDeliveries, byNeighborhood };
+}
+
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
 }

@@ -1,87 +1,73 @@
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { DoorOpen, DoorClosed, LogOut } from 'lucide-react';
+import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Profile } from '../../types/database';
+import { Menu, X, Package, BarChart2, Settings, MapPin, Truck } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
-interface MobileMenuProps {
-  isMobileMenuOpen: boolean;
-  profile: Profile | null;
-  isShopOpen: boolean;
-  isLoading: boolean;
-  toggleShopStatus: () => void;
-  navLinks: { to: string; label: string; icon: React.ElementType }[];
-  onSignOut: () => void;
-  setIsMobileMenuOpen: (open: boolean) => void;
+export interface MobileMenuProps {
+  pathname: string;
 }
 
-export default function MobileMenu({
-  isMobileMenuOpen,
-  profile,
-  isShopOpen,
-  isLoading,
-  toggleShopStatus,
-  navLinks,
-  onSignOut,
-  setIsMobileMenuOpen
-}: MobileMenuProps) {
+const MobileMenu: FC<MobileMenuProps> = ({ pathname }) => {
+  const [open, setOpen] = useState(false);
+  
+  const links = [
+    { to: "/delivery", icon: <Truck className="mr-2 h-5 w-5" />, label: "Delivery" },
+    { to: "/products", icon: <Package className="mr-2 h-5 w-5" />, label: "Produtos" },
+    { to: "/orders-by-day", icon: <BarChart2 className="mr-2 h-5 w-5" />, label: "Relatórios" },
+    { to: "/delivery-rates", icon: <MapPin className="mr-2 h-5 w-5" />, label: "Taxas" },
+    { to: "/store-settings", icon: <Settings className="mr-2 h-5 w-5" />, label: "Configurações" },
+  ];
+  
+  const closeMenu = () => setOpen(false);
+  
   return (
-    <AnimatePresence>
-      {isMobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
-          className="md:hidden bg-blue-700"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-2">
-            <button
-              onClick={toggleShopStatus}
-              disabled={isLoading}
-              className={`flex items-center w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                isShopOpen
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu />
+          <span className="sr-only">Abrir menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <span className="font-semibold text-lg">Menu</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setOpen(false)}
             >
-              {isShopOpen ? (
-                <DoorOpen className="h-5 w-5 mr-2" />
-              ) : (
-                <DoorClosed className="h-5 w-5 mr-2" />
-              )}
-              <span>{isShopOpen ? 'Loja Aberta' : 'Loja Fechada'}</span>
-            </button>
-            {navLinks.map(({ to, label, icon: Icon }) => (
+              <X size={20} />
+            </Button>
+          </div>
+          
+          <nav className="flex flex-col space-y-3 mb-auto">
+            {links.map((link) => (
               <Link
-                key={to}
-                to={to}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center w-full px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors duration-200"
+                key={link.to}
+                to={link.to}
+                className={`flex items-center px-3 py-2 rounded-md ${
+                  pathname === link.to 
+                    ? 'bg-accent text-accent-foreground font-medium' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+                onClick={closeMenu}
               >
-                <Icon className="h-5 w-5 mr-2" />
-                <span>{label}</span>
+                {link.icon}
+                <span>{link.label}</span>
               </Link>
             ))}
-            <div className="border-t border-blue-600 pt-2">
-              <div className="px-4 py-2">
-                <p className="font-medium text-white">{profile?.full_name || 'Usuário'}</p>
-                <p className="text-xs text-blue-200 truncate">{profile?.email || ''}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  onSignOut();
-                }}
-                className="flex items-center w-full px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors duration-200"
-              >
-                <LogOut className="h-5 w-5 mr-2" />
-                Sair
-              </button>
-            </div>
+          </nav>
+          
+          <div className="mt-auto pt-4 text-center text-xs text-muted-foreground">
+            DeliveryApp © {new Date().getFullYear()}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
-}
+};
+
+export default MobileMenu;

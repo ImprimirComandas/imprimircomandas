@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { calculateSessionDuration, formatDate } from './utils';
@@ -9,6 +10,18 @@ import {
   TableBody, 
   TableCell 
 } from '../../ui/table';
+import { Button } from '../../ui/button';
+import { Package, X, Info, Truck } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../../ui/dialog';
 
 interface Motoboy {
   id: string;
@@ -26,12 +39,67 @@ interface MotoboySession {
   user_id: string;
 }
 
+interface Delivery {
+  id: string;
+  motoboy_id: string;
+  bairro: string;
+  created_at: string;
+  valor_entrega: number;
+  forma_pagamento: string;
+  origem: string;
+  comanda_id: string | null;
+}
+
 interface SessionHistoryProps {
   sessions: MotoboySession[];
   motoboys: Motoboy[];
 }
 
 export default function SessionHistory({ sessions, motoboys }: SessionHistoryProps) {
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  
+  const fetchDeliveries = async (sessionId: string) => {
+    setLoadingDeliveries(true);
+    try {
+      // Get the session details to find the motoboy and time range
+      const session = sessions.find(s => s.id === sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+      
+      const startTime = new Date(session.start_time);
+      const endTime = session.end_time ? new Date(session.end_time) : new Date();
+      
+      // Query entregas for this motoboy within the session timeframe
+      const { data, error } = await supabase
+        .from('entregas')
+        .select('*')
+        .eq('motoboy_id', session.motoboy_id)
+        .gte('created_at', startTime.toISOString())
+        .lte('created_at', endTime.toISOString())
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      setDeliveries(data || []);
+      setExpandedSession(sessionId);
+    } catch (error) {
+      console.error('Error fetching deliveries:', error);
+      toast.error('Erro ao buscar entregas');
+    } finally {
+      setLoadingDeliveries(false);
+    }
+  };
+  
+  const viewDeliveryDetails = (delivery: Delivery) => {
+    setSelectedDelivery(delivery);
+    setDialogOpen(true);
+  };
+
   if (!sessions || sessions.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-xl p-6 text-center text-gray-600">
@@ -70,45 +138,191 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ações
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sessions.slice(0, 10).map((session) => {
               const motoboy = motoboys.find(m => m.id === session.motoboy_id);
+              const isExpanded = expandedSession === session.id;
               
               return (
-                <TableRow key={session.id}>
-                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {motoboy?.nome || 'Desconhecido'}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {session.start_time ? formatDate(session.start_time) : '-'}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {session.end_time ? formatDate(session.end_time) : '-'}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {session.start_time 
-                      ? calculateSessionDuration(session.start_time, session.end_time)
-                      : '-'}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 whitespace-nowrap">
-                    {session.end_time === null ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Ativa
-                      </span>
-                    ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Finalizada
-                      </span>
-                    )}
-                  </TableCell>
-                </TableRow>
+                <React.Fragment key={session.id}>
+                  <TableRow>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {motoboy?.nome || 'Desconhecido'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.start_time ? formatDate(session.start_time) : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.end_time ? formatDate(session.end_time) : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.start_time 
+                        ? calculateSessionDuration(session.start_time, session.end_time)
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
+                      {session.end_time === null ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Ativa
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          Finalizada
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (isExpanded) {
+                            setExpandedSession(null);
+                          } else {
+                            fetchDeliveries(session.id);
+                          }
+                        }}
+                      >
+                        {isExpanded ? (
+                          <X className="h-4 w-4 mr-1" />
+                        ) : (
+                          <Package className="h-4 w-4 mr-1" />
+                        )}
+                        {isExpanded ? 'Fechar' : 'Ver Entregas'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Expanded deliveries section */}
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0 border-t-0">
+                        <div className="bg-gray-50 p-4">
+                          <h3 className="font-medium text-gray-700 mb-3">Detalhes das Entregas</h3>
+                          
+                          {loadingDeliveries ? (
+                            <div className="text-center py-3">
+                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                              <p className="text-sm text-gray-500 mt-2">Carregando entregas...</p>
+                            </div>
+                          ) : deliveries.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-2">Nenhuma entrega registrada para esta sessão.</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs">ID</TableHead>
+                                  <TableHead className="text-xs">Bairro</TableHead>
+                                  <TableHead className="text-xs">Valor</TableHead>
+                                  <TableHead className="text-xs">Data/Hora</TableHead>
+                                  <TableHead className="text-xs">Ações</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {deliveries.map((delivery) => (
+                                  <TableRow key={delivery.id}>
+                                    <TableCell className="text-xs">
+                                      {delivery.comanda_id ? 
+                                        delivery.comanda_id.slice(-8) : 
+                                        delivery.id.slice(-8)}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      {delivery.bairro}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      R$ {delivery.valor_entrega.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      {format(new Date(delivery.created_at), 'dd/MM HH:mm')}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-7 w-7"
+                                        onClick={() => viewDeliveryDetails(delivery)}
+                                      >
+                                        <Info className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               );
             })}
           </TableBody>
         </Table>
       </div>
+      
+      {/* Delivery Details Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalhes da Entrega</DialogTitle>
+            <DialogDescription>
+              Informações da entrega {selectedDelivery?.comanda_id ? 
+                `#${selectedDelivery.comanda_id.slice(-8)}` : 
+                `ID: ${selectedDelivery?.id.slice(-8)}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Bairro</p>
+                <p className="text-sm">{selectedDelivery?.bairro || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Valor</p>
+                <p className="text-sm">
+                  R$ {selectedDelivery?.valor_entrega.toFixed(2) || '0.00'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Forma de Pagamento</p>
+                <p className="text-sm capitalize">
+                  {selectedDelivery?.forma_pagamento || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Origem</p>
+                <p className="text-sm capitalize">
+                  {selectedDelivery?.origem || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Data</p>
+                <p className="text-sm">
+                  {selectedDelivery 
+                    ? format(new Date(selectedDelivery.created_at), 'dd/MM/yyyy HH:mm') 
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

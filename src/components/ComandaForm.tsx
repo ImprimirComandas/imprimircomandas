@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'; // Ajuste o caminho conforme necess√
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
 import type { Comanda, Produto } from '../types/database';
+import React from 'react';
 
 interface ComandaFormProps {
   comanda: Comanda;
@@ -72,9 +73,9 @@ export default function ComandaForm({
         if (error) throw error;
         console.log('Resultados da pesquisa de produtos:', data);
         setProdutosFiltrados(data || []);
-      } catch (error: unknown) {
+      } catch (error: any) {
         console.error('Erro ao buscar produtos:', error);
-        toast.error(`Erro ao buscar produtos: ${error.message}`);
+        toast.error(`Erro ao buscar produtos: ${error.message || 'Erro desconhecido'}`);
       } finally {
         setLoading(false);
       }
@@ -176,6 +177,7 @@ export default function ComandaForm({
                   <button
                     onClick={() => startEditingProduct(produto)}
                     className="text-blue-600 hover:text-blue-900 ml-2"
+                    title="Editar produto"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
@@ -233,6 +235,7 @@ export default function ComandaForm({
                   type="button"
                   onClick={() => onRemoveProduto(index)}
                   className="text-red-500 hover:text-red-700"
+                  title="Remover produto"
                 >
                   <Trash2 size={18} />
                 </button>

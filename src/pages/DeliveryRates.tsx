@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Edit, Trash, Save, Plus, X } from 'lucide-react';
@@ -223,6 +223,7 @@ export default function DeliveryRates() {
               </div>
               <div className="flex justify-end gap-3 mt-4">
                 <button
+                  title="Editar Bairro"
                   onClick={() => setShowAddForm(false)}
                   className="flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
                 >
@@ -349,12 +350,14 @@ export default function DeliveryRates() {
                               <button
                                 onClick={() => setEditingBairro(bairro)}
                                 className="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition-colors duration-200"
+                                title="Editar Bairro"
                               >
                                 <Edit className="h-5 w-5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(bairro.id)}
                                 className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors duration-200"
+                                title="Excluir Bairro"
                               >
                                 <Trash className="h-5 w-5" />
                               </button>

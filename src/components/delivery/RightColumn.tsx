@@ -38,6 +38,9 @@ export default function RightColumn({
   onConfirmPayment,
   chartData
 }: RightColumnProps) {
+  // Filter to only show unconfirmed orders
+  const pendingOrders = comandasAnteriores.filter(comanda => !comanda.pago);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -56,10 +59,11 @@ export default function RightColumn({
         />
       </div>
 
-      {/* Comandas Anteriores */}
+      {/* Comandas Anteriores - Only Pending Orders */}
       <div className="bg-white rounded-2xl shadow-xl p-6">
+        <h2 className="text-xl font-bold mb-4">Pedidos Pendentes</h2>
         <ComandasAnterioresModificado
-          comandas={comandasAnteriores}
+          comandas={pendingOrders}
           expandedComandas={expandedComandas}
           carregando={carregando}
           onReimprimir={reimprimirComanda}

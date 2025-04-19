@@ -1,31 +1,28 @@
 
-import { ReactNode } from 'react';
+import { FC, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 
-interface NavLinkProps {
+export interface NavLinkProps {
   to: string;
-  icon: ReactNode;
-  label: string;
-  onClick?: () => void;
+  pathname: string;
+  children: ReactNode;
 }
 
-export default function NavLink({ to, icon, label, onClick }: NavLinkProps) {
-  const location = useLocation();
-  const isActive = location.pathname === to;
+const NavLink: FC<NavLinkProps> = ({ to, pathname, children }) => {
+  const isActive = pathname === to;
   
   return (
     <Link
       to={to}
-      onClick={onClick}
-      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+      className={`text-sm font-medium transition-colors hover:text-primary ${
         isActive 
-          ? 'bg-blue-700 text-white' 
-          : 'hover:bg-blue-700'
+          ? 'text-foreground font-semibold' 
+          : 'text-muted-foreground'
       }`}
     >
-      {icon}
-      <span className="ml-2">{label}</span>
+      {children}
     </Link>
   );
-}
+};
+
+export default NavLink;
