@@ -41,17 +41,7 @@ export default function DeliveryManagement() {
               <Truck className="h-4 w-4 mr-2" />
               Cadastrar Entrega
             </button>
-            <button
-              onClick={() => setActiveTab('stats')}
-              className={`py-3 px-4 flex items-center font-semibold text-sm transition-all duration-200 ${
-                activeTab === 'stats'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300'
-              }`}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Estatísticas
-            </button>
+        
             <button
               onClick={() => setActiveTab('motoboys')}
               className={`py-3 px-4 flex items-center font-semibold text-sm transition-all duration-200 ${
@@ -63,6 +53,18 @@ export default function DeliveryManagement() {
               <User className="h-4 w-4 mr-2" />
               Motoboys
             </button>
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`py-3 px-4 flex items-center font-semibold text-sm transition-all duration-200 ${
+                activeTab === 'stats'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Estatísticas
+            </button>
+            
             <button
               onClick={goToDeliveryRates}
               className="py-3 px-4 flex items-center font-semibold text-sm text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300 transition-all duration-200"
