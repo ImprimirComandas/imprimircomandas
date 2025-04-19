@@ -54,7 +54,7 @@ export default function Header({
             <NavLink
               to="/delivery"
               pathname={location.pathname}
-              className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
+              className="relative text-sm font-medium text-foreground/80 transition-colors duration-300 hover:text-primary"
             >
               Delivery
               {location.pathname === '/delivery' && (
@@ -70,7 +70,15 @@ export default function Header({
             <NavLink
               to="/products"
               pathname={location.pathname}
-              className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
+              style={{
+                position: 'relative',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: 'var(--foreground-80)',
+                transition: 'color 0.3s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground-80)')}
             >
               Produtos
               {location.pathname === '/products' && (

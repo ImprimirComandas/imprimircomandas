@@ -10,9 +10,9 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
   Legend,
 } from 'recharts';
 
@@ -197,6 +197,7 @@ export default function OrdersByDay() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
+        console.log('Usuário não autenticado para fetchOrdersForChart');
         return [];
       }
 
@@ -215,7 +216,7 @@ export default function OrdersByDay() {
         return [];
       }
 
-      return data?.map(comanda => ({
+      const formattedData = data?.map(comanda => ({
         ...comanda,
         produtos: Array.isArray(comanda.produtos)
           ? comanda.produtos
@@ -223,6 +224,8 @@ export default function OrdersByDay() {
           ? JSON.parse(comanda.produtos)
           : [],
       })) || [];
+      console.log('Dados brutos do fetchOrdersForChart:', formattedData);
+      return formattedData;
     } catch (error) {
       console.error('Erro ao carregar comandas para o gráfico:', error);
       return [];
@@ -341,6 +344,7 @@ export default function OrdersByDay() {
   useEffect(() => {
     const loadChartData = async () => {
       const orders = await fetchOrdersForChart();
+      console.log('Pedidos retornados para o gráfico:', orders);
       const data = Array.from({ length: 7 }, (_, i) => {
         const date = subDays(selectedDate, 6 - i); // De 6 dias atrás até hoje
         const ordersForDay = orders.filter(order => {
@@ -349,13 +353,16 @@ export default function OrdersByDay() {
             orderDate >= startOfDay(date) && orderDate <= endOfDay(date)
           );
         });
-        return {
+        const entry = {
           name: format(date, 'dd/MM'),
           Pedidos: ordersForDay.length,
           Valor: ordersForDay.reduce((sum, order) => sum + (order.total || 0), 0),
           date: date.toISOString(), // Para clique
         };
+        console.log(`Dados para ${entry.name}:`, entry);
+        return entry;
       });
+      console.log('chartData final:', data);
       setChartData(data);
     };
     loadChartData();
@@ -494,50 +501,108 @@ export default function OrdersByDay() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                  margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                   onClick={handlePointClick}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="name" stroke="#374151" />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#000000"
+                    tick={{ fontSize: 12, fill: '#000000' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#000000' }}
+                  />
                   <YAxis
                     yAxisId="left"
-                    stroke="#34D399"
-                    label={{ value: 'Pedidos', angle: -90, position: 'insideLeft', offset: -10 }}
+                    stroke="#000000"
+                    tick={{ fontSize: 12, fill: '#000000' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#000000' }}
+                    label={{
+                      value: 'Pedidos',
+                      angle: -90,
+                      position: 'insideLeft',
+                      offset: -5,
+                      fill: '#000000',
+                      fontSize: 12,
+                    }}
                   />
                   <YAxis
                     yAxisId="right"
                     orientation="right"
-                    stroke="#3B82F6"
-                    label={{ value: 'Valor (R$)', angle: 90, position: 'insideRight', offset: -10 }}
+                    stroke="#000000"
+                    tick={{ fontSize: 12, fill: '#000000' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#000000' }}
+                    label={{
+                      value: 'Vendas (R$)',
+                      angle: 90,
+                      position: 'insideRight',
+                      offset: -5,
+                      fill: '#000000',
+                      fontSize: 12,
+                    }}
                   />
                   <Tooltip
                     formatter={(value: number, name: string) =>
                       name === 'Pedidos' ? `${value} pedidos` : `R$ ${value.toFixed(2)}`
                     }
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      borderRadius: '8px',
-                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '6px',
+                      border: '1px solid #000000',
+                      padding: '8px',
+                      fontSize: '12px',
                     }}
+                    labelStyle={{ color: '#000000', fontSize: '12px' }}
                   />
-                  <Legend />
+                  <Legend
+                    wrapperStyle={{ fontSize: '12px', color: '#000000' }}
+                    verticalAlign="bottom"
+                    height={24}
+                  />
+                  {/* Linhas verticais tracejadas para Pedidos */}
+                  {chartData.map((entry, index) => (
+                    <ReferenceLine
+                      key={`pedidos-${index}`}
+                      x={entry.name}
+                      stroke="#1E90FF"
+                      strokeDasharray="3 3"
+                      strokeWidth={1}
+                      yAxisId="left"
+                      y={0}
+                      ifOverflow="extendDomain"
+                    />
+                  ))}
+                  {/* Linhas verticais tracejadas para Valor */}
+                  {chartData.map((entry, index) => (
+                    <ReferenceLine
+                      key={`valor-${index}`}
+                      x={entry.name}
+                      stroke="#000000"
+                      strokeDasharray="3 3"
+                      strokeWidth={1}
+                      yAxisId="right"
+                      y={0}
+                      ifOverflow="extendDomain"
+                    />
+                  ))}
                   <Line
                     yAxisId="left"
                     type="monotone"
                     dataKey="Pedidos"
-                    stroke="#34D399"
+                    stroke="#1E90FF"
                     strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dot={{ r: 4, fill: '#1E90FF', stroke: '#1E90FF' }}
+                    activeDot={{ r: 6, fill: '#1E90FF', stroke: '#FFFFFF', strokeWidth: 2 }}
                   />
                   <Line
                     yAxisId="right"
                     type="monotone"
                     dataKey="Valor"
-                    stroke="#3B82F6"
+                    stroke="#000000"
                     strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dot={{ r: 4, fill: '#000000', stroke: '#000000' }}
+                    activeDot={{ r: 6, fill: '#000000', stroke: '#FFFFFF', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

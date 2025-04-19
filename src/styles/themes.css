@@ -1,96 +1,103 @@
-
 /* Light Theme (Default) */
 .theme-light {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+  --background: 0 0% 100%; /* Branco puro */
+  --foreground: 240 10% 10%; /* Cinza escuro para maior contraste */
+  --card: 0 0% 100%; /* Fundo branco para cards */
+  --card-foreground: 240 10% 10%; /* Texto escuro */
+  --popover: 0 0% 100%; /* Popover branco */
+  --popover-foreground: 240 10% 10%; /* Texto escuro */
+  --menu-background: rgba(255, 255, 255, 0.95); /* Menu com leve transparência */
+  --menu-foreground: 240 10% 10%; /* Texto escuro para menu */
+  --primary: 221.2 83.2% 50%; /* Azul um pouco mais suave */
+  --primary-foreground: 0 0% 100%; /* Branco puro */
+  --secondary: 210 40% 96.1%; /* Cinza claro */
+  --secondary-foreground: 222.2 47.4% 11.2%; /* Cinza escuro */
+  --muted: 210 40% 96.1%; /* Fundo suave */
+  --muted-foreground: 215.4 16.3% 46.9%; /* Texto médio */
+  --accent: 210 40% 96.1%; /* Igual a secondary */
+  --accent-foreground: 222.2 47.4% 11.2%; /* Texto escuro */
+  --destructive: 0 84.2% 60.2%; /* Vermelho vibrante */
+  --destructive-foreground: 0 0% 100%; /* Branco */
+  --border: 214.3 31.8% 91.4%; /* Borda clara */
+  --input: 214.3 31.8% 91.4%; /* Input claro */
+  --ring: 221.2 83.2% 50%; /* Anel de foco azul */
+  --radius: 0.5rem; /* Bordas arredondadas consistentes */
 }
 
 /* Dark Theme */
 .theme-dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
-  --radius: 0.5rem;
+  --background: 240 10% 3.9%; /* Fundo escuro */
+  --foreground: 0 0% 98%; /* Texto quase branco */
+  --card: 240 10% 5%; /* Cards ligeiramente mais claros */
+  --card-foreground: 0 0% 98%; /* Texto claro */
+  --popover: 240 10% 5%; /* Popover escuro */
+  --popover-foreground: 0 0% 98%; /* Texto claro */
+  --menu-background: rgba(36, 39, 59, 0.8); /* Menu com transparência controlada */
+  --menu-foreground: 0 0% 98%; /* Texto claro para menu */
+  --primary: 217.2 91.2% 59.8%; /* Azul vibrante */
+  --primary-foreground: 0 0% 98%; /* Texto claro */
+  --secondary: 217.2 32.6% 17.5%; /* Cinza escuro */
+  --secondary-foreground: 0 0% 98%; /* Texto claro */
+  --muted: 217.2 32.6% 17.5%; /* Fundo suave */
+  --muted-foreground: 215 20.2% 65.1%; /* Texto médio */
+  --accent: 217.2 32.6% 17.5%; /* Igual a secondary */
+  --accent-foreground: 0 0% 98%; /* Texto claro */
+  --destructive: 0 62.8% 30.6%; /* Vermelho escuro */
+  --destructive-foreground: 0 0% 98%; /* Texto claro */
+  --border: 217.2 32.6% 17.5%; /* Borda escura */
+  --input: 217.2 32.6% 17.5%; /* Input escuro */
+  --ring: 217.2 91.2% 59.8%; /* Anel de foco azul */
+  --radius: 0.5rem; /* Consistência com tema claro */
 }
 
 /* Light Blue Theme */
 .theme-light-blue {
-  --background: 210 50% 98%;
-  --foreground: 220 70% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 70% 10%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 220 70% 10%;
-  --primary: 200 82% 45%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 200 30% 92%;
-  --secondary-foreground: 200 70% 20%;
-  --muted: 200 20% 92%;
-  --muted-foreground: 220 15% 45%;
-  --accent: 200 30% 92%;
-  --accent-foreground: 200 70% 20%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 200 40% 88%;
-  --input: 200 40% 88%;
-  --ring: 200 82% 45%;
-  --radius: 0.75rem;
+  --background: 200 50% 96%; /* Azul claro mais vibrante */
+  --foreground: 220 70% 15%; /* Texto mais escuro para contraste */
+  --card: 0 0% 100%; /* Cards brancos */
+  --card-foreground: 220 70% 15%; /* Texto escuro */
+  --popover: 0 0% 100%; /* Popover branco */
+  --popover-foreground: 220 70% 15%; /* Texto escuro */
+  --menu-background: rgba(255, 255, 255, 0.95); /* Menu com leve transparência */
+  --menu-foreground: 220 70% 15%; /* Texto escuro para menu */
+  --primary: 200 82% 48%; /* Azul mais vibrante */
+  --primary-foreground: 0 0% 100%; /* Branco */
+  --secondary: 200 30% 90%; /* Azul claro suave */
+  --secondary-foreground: 200 70% 20%; /* Texto escuro */
+  --muted: 200 20% 90%; /* Fundo suave */
+  --muted-foreground: 220 15% 50%; /* Texto médio */
+  --accent: 200 30% 90%; /* Igual a secondary */
+  --accent-foreground: 200 70% 20%; /* Texto escuro */
+  --destructive: 0 84.2% 60.2%; /* Vermelho vibrante */
+  --destructive-foreground: 0 0% 100%; /* Branco */
+  --border: 200 40% 85%; /* Borda azul clara */
+  --input: 200 40% 85%; /* Input azul claro */
+  --ring: 200 82% 48%; /* Anel de foco azul */
+  --radius: 0.5rem; /* Consistência com outros temas */
 }
 
 /* Dark Purple Theme */
 .theme-dark-purple {
-  --background: 270 50% 8%;
-  --foreground: 270 10% 95%;
-  --card: 270 35% 15%;
-  --card-foreground: 270 10% 95%;
-  --popover: 270 35% 15%;
-  --popover-foreground: 270 10% 95%;
-  --primary: 270 80% 55%;
-  --primary-foreground: 270 10% 95%;
-  --secondary: 270 50% 20%;
-  --secondary-foreground: 270 10% 95%;
-  --muted: 270 30% 20%;
-  --muted-foreground: 270 10% 70%;
-  --accent: 270 50% 30%;
-  --accent-foreground: 270 10% 95%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 270 10% 95%;
-  --border: 270 50% 25%;
-  --input: 270 30% 20%;
-  --ring: 270 80% 55%;
-  --radius: 1rem;
+  --background: 270 50% 10%; /* Roxo escuro mais claro */
+  --foreground: 270 10% 98%; /* Texto quase branco */
+  --card: 270 35% 18%; /* Cards mais claros */
+  --card-foreground: 270 10% 98%; /* Texto claro */
+  --popover: 270 35% 18%; /* Popover roxo escuro */
+  --popover-foreground: 270 10% 98%; /* Texto claro */
+  --menu-background: rgba(60, 48, 90, 0.8); /* Menu com transparência controlada */
+  --menu-foreground: 270 10% 98%; /* Texto claro para menu */
+  --primary: 270 80% 60%; /* Roxo mais claro para legibilidade */
+  --primary-foreground: 0 0% 98%; /* Texto claro */
+  --secondary: 270 50% 25%; /* Roxo escuro suave */
+  --secondary-foreground: 0 0% 98%; /* Texto claro */
+  --muted: 270 30% 25%; /* Fundo suave */
+  --muted-foreground: 270 10% 75%; /* Texto médio */
+  --accent: 270 50% 35%; /* Roxo médio */
+  --accent-foreground: 0 0% 98%; /* Texto claro */
+  --destructive: 0 62.8% 30.6%; /* Vermelho escuro */
+  --destructive-foreground: 0 0% 98%; /* Texto claro */
+  --border: 270 50% 30%; /* Borda roxa */
+  --input: 270 30% 25%; /* Input roxo escuro */
+  --ring: 270 80% 60%; /* Anel de foco roxo */
+  --radius: 0.5rem; /* Consistência com outros temas */
 }
