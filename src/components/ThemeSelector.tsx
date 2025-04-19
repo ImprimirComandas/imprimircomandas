@@ -1,4 +1,3 @@
-
 import { FC } from 'react';
 import { Moon, Sun, Palette } from 'lucide-react';
 import { 
@@ -23,7 +22,7 @@ const ThemeSelector: FC<ThemeSelectorProps> = ({ className }) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" className={className}>
-          {theme.includes('dark') ? (
+          {theme.includes('light') ? (
             <Moon className="h-[1.2rem] w-[1.2rem]" />
           ) : (
             <Sun className="h-[1.2rem] w-[1.2rem]" />
