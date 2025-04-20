@@ -67,7 +67,7 @@ export default function Header({
               Delivery
               {location.pathname === '/delivery' && (
                 <motion.div
-                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
+                  className=" "
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -91,7 +91,7 @@ export default function Header({
               Produtos
               {location.pathname === '/products' && (
                 <motion.div
-                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
+                  className=" "
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -107,7 +107,7 @@ export default function Header({
               Relatórios
               {location.pathname === '/orders-by-day' && (
                 <motion.div
-                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
+                  className=" "
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
