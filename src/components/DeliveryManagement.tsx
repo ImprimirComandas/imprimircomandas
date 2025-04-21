@@ -83,7 +83,9 @@ export default function DeliveryManagement() {
           transition={{ duration: 0.3 }}
         >
           {activeTab === 'form' ? (
-            <DeliveryForm />
+            <DeliveryForm onDeliveryAdded={function (): void {
+              throw new Error('Function not implemented.');
+            } } />
           ) : activeTab === 'stats' ? (
             <DeliveryStats />
           ) : (

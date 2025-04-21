@@ -1,38 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.ts';
 import { toast } from 'sonner';
 import { Truck, Search, Save } from 'lucide-react';
 import { debounce } from 'lodash';
+import { Motoboy, Comanda, Entrega, BairroTaxa } from '../types'; // Adjusted path to '../types'
 
-interface Motoboy {
-  id: string;
-  nome: string;
+interface DeliveryFormProps {
+  onDeliveryAdded: () => void; // Obrigatória
 }
 
-interface Comanda {
-  id?: string;
-  bairro?: string;
-  taxaentrega?: number;
-  total?: number;
-  quantiapaga?: number | null;
-  forma_pagamento?: string;
-  troco?: number | null;
-}
-
-interface Entrega {
-  id?: string;
-  motoboy_id: string;
-  comanda_id?: string | null;
-  bairro: string;
-  origem: string;
-  valor_entrega: number;
-  forma_pagamento?: string; // Adicionado
-}
-
-export default function DeliveryForm() {
+export default function DeliveryForm({ onDeliveryAdded }: DeliveryFormProps) {
   const [loading, setLoading] = useState(false);
   const [motoboys, setMotoboys] = useState<Motoboy[]>([]);
-  const [bairros, setBairros] = useState<{ nome: string; taxa: number }[]>([]);
+  const [bairros, setBairros] = useState<BairroTaxa[]>([]);
   const [comandaId, setComandaId] = useState('');
   const [comandaSearchResults, setComandaSearchResults] = useState<Comanda[]>([]);
   const [showComandaSearch, setShowComandaSearch] = useState(false);
@@ -42,20 +22,109 @@ export default function DeliveryForm() {
     bairro: '',
     origem: 'whatsapp',
     valor_entrega: 0,
+    valor_pedido: 0,
     forma_pagamento: '',
   });
 
-  // Buscar motoboys e bairros
+  useEffect(() => {
+    console.log('DeliveryForm: onDeliveryAdded recebido?', typeof onDeliveryAdded === 'function');
+  }, [onDeliveryAdded]);
+
   useEffect(() => {
     fetchMotoboys();
     fetchBairros();
   }, []);
 
-  // Buscar motoboys ativos
+  // Função para normalizar nomes de bairros
+  const normalizeBairro = (bairro: string) => {
+    return bairro
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+  };
+
+  useEffect(() => {
+    const calculateDeliveryValue = async () => {
+      if (!entrega.motoboy_id || !entrega.bairro) {
+        const selectedBairro = bairros.find((b) => normalizeBairro(b.nome) === normalizeBairro(entrega.bairro));
+        if (selectedBairro) {
+          setEntrega((prev) => ({
+            ...prev,
+            valor_entrega: selectedBairro.taxa || 0,
+          }));
+        }
+        return;
+      }
+
+      try {
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('motoboy_sessions')
+          .select('*')
+          .eq('motoboy_id', entrega.motoboy_id)
+          .is('end_time', null)
+          .single();
+
+        if (sessionError || !sessionData) {
+          const selectedBairro = bairros.find((b) => normalizeBairro(b.nome) === normalizeBairro(entrega.bairro));
+          setEntrega((prev) => ({
+            ...prev,
+            valor_entrega: selectedBairro?.taxa || 0,
+          }));
+          return;
+        }
+
+        const startTime = new Date(sessionData.start_time);
+        const endTime = new Date();
+        const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
+        const { data: deliveries, error: deliveriesError } = await supabase
+          .from('entregas')
+          .select('*')
+          .eq('motoboy_id', entrega.motoboy_id)
+          .gte('created_at', startTime.toISOString())
+          .lte('created_at', endTime.toISOString());
+
+        if (deliveriesError) throw deliveriesError;
+
+        const deliveryCount = deliveries?.length || 0;
+        let deliveryValue = 0;
+
+        if (deliveryCount < 10) {
+          deliveryValue = durationHours <= 6 ? 9 : 11;
+        } else {
+          const selectedBairro = bairros.find((b) => normalizeBairro(b.nome) === normalizeBairro(entrega.bairro));
+          deliveryValue = normalizeBairro(entrega.bairro) === normalizeBairro('jardim paraiso')
+            ? 6
+            : (selectedBairro?.taxa || 9);
+        }
+
+        setEntrega((prev) => ({
+          ...prev,
+          valor_entrega: deliveryValue,
+        }));
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Erro ao calcular valor da entrega:', error);
+          toast.error('Erro ao calcular valor da entrega');
+          const selectedBairro = bairros.find((b) => normalizeBairro(b.nome) === normalizeBairro(entrega.bairro));
+          setEntrega((prev) => ({
+          ...prev,
+          valor_entrega: selectedBairro?.taxa || 0,
+        }));
+        }
+      }
+    };
+
+    calculateDeliveryValue();
+  }, [entrega.motoboy_id, entrega.bairro, bairros]);
+
   const fetchMotoboys = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) {
         toast.error('Usuário não autenticado');
         return;
       }
@@ -63,11 +132,10 @@ export default function DeliveryForm() {
       const { data: activeSessions, error: sessionsError } = await supabase
         .from('motoboy_sessions')
         .select('motoboy_id')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .is('end_time', null);
 
       if (sessionsError) throw sessionsError;
-      console.log('Sessões ativas:', activeSessions);
 
       if (!activeSessions || activeSessions.length === 0) {
         setMotoboys([]);
@@ -79,13 +147,12 @@ export default function DeliveryForm() {
       const { data, error } = await supabase
         .from('motoboys')
         .select('id, nome')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .eq('status', 'ativo')
         .in('id', activeMotoboyIds)
         .order('nome');
 
       if (error) throw error;
-      console.log('Motoboys ativos:', data);
       setMotoboys(data || []);
 
       if (data && data.length > 0) {
@@ -97,7 +164,6 @@ export default function DeliveryForm() {
     }
   };
 
-  // Buscar bairros
   const fetchBairros = async () => {
     try {
       const { data, error } = await supabase
@@ -106,7 +172,6 @@ export default function DeliveryForm() {
         .order('nome');
 
       if (error) throw error;
-      console.log('Bairros:', data);
       setBairros(data || []);
 
       if (data && data.length > 0) {
@@ -122,20 +187,6 @@ export default function DeliveryForm() {
     }
   };
 
-  // Atualizar valor_entrega para bairros (sem comanda)
-  useEffect(() => {
-    if (!entrega.comanda_id) {
-      const selectedBairro = bairros.find((b) => b.nome === entrega.bairro);
-      if (selectedBairro && entrega.valor_entrega === 0) {
-        setEntrega((prev) => ({
-          ...prev,
-          valor_entrega: selectedBairro.taxa || 0,
-        }));
-      }
-    }
-  }, [entrega.bairro, bairros, entrega.comanda_id]);
-
-  // Pesquisa de comanda
   const searchComanda = useCallback(
     debounce(async (searchId: string) => {
       if (!searchId.trim()) {
@@ -147,13 +198,10 @@ export default function DeliveryForm() {
       setLoading(true);
       try {
         const trimmedId = searchId.trim().toLowerCase();
-        console.log('Pesquisando comanda com ID (8 últimos dígitos):', trimmedId);
-
         const { data, error } = await supabase
           .rpc('search_comandas_by_last_8', { search_term: trimmedId });
 
         if (error) throw error;
-        console.log('Resultados da pesquisa de comanda:', data);
         setComandaSearchResults(data || []);
         setShowComandaSearch(true);
       } catch (error: any) {
@@ -166,16 +214,14 @@ export default function DeliveryForm() {
     []
   );
 
-  // Manipular mudança no input
   const handleComandaIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setComandaId(value);
     searchComanda(value);
   };
 
-  // Selecionar comanda
   const selectComanda = (comanda: Comanda) => {
-    const valorEntrega =
+    const valorPedido =
       comanda.forma_pagamento === 'dinheiro' &&
       comanda.troco &&
       comanda.troco > 0 &&
@@ -183,24 +229,33 @@ export default function DeliveryForm() {
         ? comanda.quantiapaga
         : comanda.total || 0;
 
+    // Normalizar bairro do pedido
+    const comandaBairro = comanda.bairro ? normalizeBairro(comanda.bairro) : '';
+    const selectedBairro = bairros.find((b) => normalizeBairro(b.nome) === comandaBairro) || bairros[0];
+    const taxaBairro = selectedBairro?.taxa || 0;
+
+    console.log('selectComanda: Bairro do pedido:', comanda.bairro, 'Normalizado:', comandaBairro);
+    console.log('selectComanda: Bairro selecionado:', selectedBairro?.nome, 'Taxa:', taxaBairro);
+
     setEntrega((prev) => ({
       ...prev,
       comanda_id: comanda.id || null,
-      bairro: comanda.bairro || prev.bairro,
-      valor_entrega: valorEntrega,
+      bairro: selectedBairro?.nome || prev.bairro,
+      valor_entrega: taxaBairro,
+      valor_pedido: valorPedido,
       forma_pagamento: comanda.forma_pagamento || '',
     }));
     setComandaId(comanda.id?.slice(-8) || '');
     setShowComandaSearch(false);
   };
 
-  // Limpar comanda
   const clearComanda = () => {
     setEntrega((prev) => ({
       ...prev,
       comanda_id: null,
       bairro: bairros.length > 0 ? bairros[0].nome : '',
       valor_entrega: bairros.length > 0 ? bairros[0].taxa : 0,
+      valor_pedido: 0,
       forma_pagamento: '',
     }));
     setComandaId('');
@@ -208,18 +263,16 @@ export default function DeliveryForm() {
     setShowComandaSearch(false);
   };
 
-  // Manipular mudanças nos inputs
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setEntrega((prev) => ({
       ...prev,
-      [name]: name === 'valor_entrega' ? parseFloat(value) || 0 : value,
+      [name]: name === 'valor_entrega' || name === 'valor_pedido' ? parseFloat(value) || 0 : value,
     }));
   };
 
-  // Manipular mudança na forma de pagamento
   const handleFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
     setEntrega((prev) => ({
       ...prev,
@@ -227,7 +280,6 @@ export default function DeliveryForm() {
     }));
   };
 
-  // Salvar entrega
   const saveDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -242,7 +294,7 @@ export default function DeliveryForm() {
     }
 
     if (entrega.valor_entrega <= 0) {
-      toast.error('Informe o valor total do pedido');
+      toast.error('A taxa de entrega deve ser maior que zero');
       return;
     }
 
@@ -253,38 +305,61 @@ export default function DeliveryForm() {
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Usuário não autenticado');
-        return;
+      // Tentar getUser em vez de getSession
+      console.log('saveDelivery: Buscando usuário autenticado');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Erro ao obter usuário:', authError);
+        throw new Error('Erro ao verificar autenticação: ' + authError.message);
       }
+      if (!user) {
+        console.error('Nenhum usuário encontrado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('saveDelivery: Usuário autenticado, user_id:', user.id);
 
       const newEntrega = {
         ...entrega,
-        user_id: session.user.id,
+        user_id: user.id,
       };
 
+      console.log('saveDelivery: Dados a serem inseridos:', JSON.stringify(newEntrega, null, 2));
+
+      // Tentar inserção sem .single()
       const { data, error } = await supabase
         .from('entregas')
         .insert([newEntrega])
-        .select()
-        .single();
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw new Error(`Erro ao inserir entrega: ${error.message}`);
+      }
+
+      console.log('saveDelivery: Entrega salva com sucesso:', data);
 
       toast.success('Entrega cadastrada com sucesso!');
-
       setEntrega({
         motoboy_id: motoboys.length > 0 ? motoboys[0].id : '',
         comanda_id: null,
         bairro: bairros.length > 0 ? bairros[0].nome : '',
         origem: 'whatsapp',
         valor_entrega: bairros.length > 0 ? bairros[0].taxa : 0,
+        valor_pedido: 0,
         forma_pagamento: '',
       });
       setComandaId('');
       setComandaSearchResults([]);
       setShowComandaSearch(false);
+
+      console.log('saveDelivery: Tentando chamar onDeliveryAdded');
+      if (typeof onDeliveryAdded === 'function') {
+        onDeliveryAdded();
+      } else {
+        console.error('saveDelivery: onDeliveryAdded não é uma função:', onDeliveryAdded);
+        toast.error('Erro ao atualizar dados após salvar entrega');
+      }
     } catch (error: any) {
       console.error('Erro ao salvar entrega:', error);
       toast.error(`Erro ao salvar entrega: ${error.message}`);
@@ -293,7 +368,6 @@ export default function DeliveryForm() {
     }
   };
 
-  // Mensagem para nenhum motoboy
   if (motoboys.length === 0 && !loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center">
@@ -313,10 +387,9 @@ export default function DeliveryForm() {
     );
   }
 
-  // Definir rótulo do campo
   const deliveryValueLabel = entrega.comanda_id
-    ? 'Valor Total do Pedido (R$)'
-    : 'Valor Total do Pedido (R$)';
+    ? 'Taxa de Entrega (R$)'
+    : 'Taxa de Entrega (R$)';
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -324,7 +397,6 @@ export default function DeliveryForm() {
         <Truck className="mr-2" /> Cadastro de Entrega
       </h2>
 
-      {/* Pesquisa de Comanda */}
       <div className="mb-4">
         <label htmlFor="comandaId" className="block text-sm font-medium text-gray-700 mb-1">
           Buscar Pedido (Opcional)
@@ -397,7 +469,6 @@ export default function DeliveryForm() {
       </div>
 
       <form onSubmit={saveDelivery}>
-        {/* Seleção de Motoboy */}
         <div className="mb-4">
           <label htmlFor="motoboy_id" className="block text-sm font-medium text-gray-700 mb-1">
             Motoboy
@@ -419,7 +490,6 @@ export default function DeliveryForm() {
           </select>
         </div>
 
-        {/* Bairro */}
         <div className="mb-4">
           <label htmlFor="bairro" className="block text-sm font-medium text-gray-700 mb-1">
             Bairro
@@ -441,7 +511,6 @@ export default function DeliveryForm() {
           </select>
         </div>
 
-        {/* Origem */}
         <div className="mb-4">
           <label htmlFor="origem" className="block text-sm font-medium text-gray-700 mb-1">
             Origem
@@ -461,7 +530,6 @@ export default function DeliveryForm() {
           </select>
         </div>
 
-        {/* Forma de Pagamento */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Forma de Pagamento
@@ -494,7 +562,6 @@ export default function DeliveryForm() {
           )}
         </div>
 
-        {/* Campo de Valor */}
         <div className="mb-6">
           <label htmlFor="valor_entrega" className="block text-sm font-medium text-gray-700 mb-1">
             {deliveryValueLabel}
@@ -509,11 +576,28 @@ export default function DeliveryForm() {
             min="0"
             className="w-full p-2 border rounded-md"
             required
-            disabled={!!entrega.comanda_id}
           />
         </div>
 
-        {/* Botão de Enviar */}
+        {entrega.comanda_id && (
+          <div className="mb-6">
+            <label htmlFor="valor_pedido" className="block text-sm font-medium text-gray-700 mb-1">
+              Valor Total do Pedido (R$)
+            </label>
+            <input
+              type="number"
+              id="valor_pedido"
+              name="valor_pedido"
+              value={entrega.valor_pedido}
+              onChange={handleInputChange}
+              step="0.01"
+              min="0"
+              className="w-full p-2 border rounded-md"
+              disabled
+            />
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading || motoboys.length === 0}

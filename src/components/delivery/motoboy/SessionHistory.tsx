@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { calculateSessionDuration, formatDate } from './utils';
 import { 
   Table, 
   TableHeader, 
@@ -11,7 +10,7 @@ import {
   TableCell 
 } from '../../ui/table';
 import { Button } from '../../ui/button';
-import { Package, X, Info, Truck } from 'lucide-react';
+import { Package, X, Info } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'sonner';
 import {
@@ -23,6 +22,7 @@ import {
   DialogFooter,
 } from '../../ui/dialog';
 
+// Tipos
 interface Motoboy {
   id: string;
   nome: string;
@@ -53,28 +53,68 @@ interface Delivery {
 interface SessionHistoryProps {
   sessions: MotoboySession[];
   motoboys: Motoboy[];
+  onRefresh: () => void; // Callback para atualizar a lista de sessões/entregas
 }
 
-export default function SessionHistory({ sessions, motoboys }: SessionHistoryProps) {
+// Função utilitária para formatar data
+const formatDate = (dateString: string) => {
+  return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+};
+
+// Função utilitária para calcular duração da sessão
+const calculateSessionDuration = (start: string, end: string | null) => {
+  const startTime = new Date(start);
+  const endTime = end ? new Date(end) : new Date();
+  const diffMs = endTime.getTime() - startTime.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${minutes}m`;
+};
+
+// Função para calcular o pagamento do motoboy
+const calculateMotoboyPayment = (session: MotoboySession, deliveries: Delivery[]): number => {
+  // Calcula a duração da sessão em horas
+  const startTime = new Date(session.start_time);
+  const endTime = session.end_time ? new Date(session.end_time) : new Date();
+  const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
+  // Base: R$90,00 (≤ 6 horas) ou R$110,00 (> 6 horas) para até 10 entregas
+  const basePayment = durationHours <= 6 ? 90 : 110;
+  const totalDeliveries = deliveries.length;
+
+  // Soma os valores das entregas
+  const deliveryValues = deliveries.reduce((sum, delivery) => sum + delivery.valor_entrega, 0);
+
+  // Ajusta o pagamento: base para até 10 entregas, valores completos para mais entregas
+  if (totalDeliveries <= 10) {
+    return basePayment;
+  } else {
+    // Subtrai o valor base das primeiras 10 entregas e usa os valores reais
+    const baseForFirstTen = deliveries
+      .slice(0, 10)
+      .reduce((sum, delivery) => sum + delivery.valor_entrega, 0);
+    return basePayment - baseForFirstTen + deliveryValues;
+  }
+};
+
+export default function SessionHistory({ sessions, motoboys, onRefresh }: SessionHistoryProps) {
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  
+
   const fetchDeliveries = async (sessionId: string) => {
     setLoadingDeliveries(true);
     try {
-      // Get the session details to find the motoboy and time range
-      const session = sessions.find(s => s.id === sessionId);
+      const session = sessions.find((s) => s.id === sessionId);
       if (!session) {
         throw new Error('Sessão não encontrada');
       }
-      
+
       const startTime = new Date(session.start_time);
       const endTime = session.end_time ? new Date(session.end_time) : new Date();
-      
-      // Query entregas for this motoboy within the session timeframe
+
       const { data, error } = await supabase
         .from('entregas')
         .select('*')
@@ -82,9 +122,9 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
         .gte('created_at', startTime.toISOString())
         .lte('created_at', endTime.toISOString())
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       setDeliveries(data || []);
       setExpandedSession(sessionId);
     } catch (error) {
@@ -94,7 +134,7 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
       setLoadingDeliveries(false);
     }
   };
-  
+
   const viewDeliveryDetails = (delivery: Delivery) => {
     setSelectedDelivery(delivery);
     setDialogOpen(true);
@@ -115,10 +155,8 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
       transition={{ duration: 0.5, delay: 0.2 }}
       className="bg-white rounded-2xl shadow-xl p-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Histórico de Sessões
-      </h2>
-      
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Histórico de Sessões</h2>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -139,15 +177,22 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                 Status
               </TableHead>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Pagamento
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sessions.slice(0, 10).map((session) => {
-              const motoboy = motoboys.find(m => m.id === session.motoboy_id);
+              const motoboy = motoboys.find((m) => m.id === session.motoboy_id);
               const isExpanded = expandedSession === session.id;
-              
+              const payment =
+                isExpanded && deliveries.length > 0
+                  ? calculateMotoboyPayment(session, deliveries)
+                  : 0;
+
               return (
                 <React.Fragment key={session.id}>
                   <TableRow>
@@ -161,7 +206,7 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                       {session.end_time ? formatDate(session.end_time) : '-'}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {session.start_time 
+                      {session.start_time
                         ? calculateSessionDuration(session.start_time, session.end_time)
                         : '-'}
                     </TableCell>
@@ -175,6 +220,11 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                           Finalizada
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {isExpanded && !loadingDeliveries
+                        ? `R$ ${payment.toFixed(2)}`
+                        : '-'}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       <Button
@@ -197,21 +247,29 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                       </Button>
                     </TableCell>
                   </TableRow>
-                  
-                  {/* Expanded deliveries section */}
+
                   {isExpanded && (
                     <TableRow>
-                      <TableCell colSpan={6} className="p-0 border-t-0">
+                      <TableCell colSpan={7} className="p-0 border-t-0">
                         <div className="bg-gray-50 p-4">
-                          <h3 className="font-medium text-gray-700 mb-3">Detalhes das Entregas</h3>
-                          
+                          <h3 className="font-medium text-gray-700 mb-3">
+                            Detalhes das Entregas
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Total a pagar: R$ {payment.toFixed(2)}
+                          </p>
+
                           {loadingDeliveries ? (
                             <div className="text-center py-3">
                               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                              <p className="text-sm text-gray-500 mt-2">Carregando entregas...</p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                Carregando entregas...
+                              </p>
                             </div>
                           ) : deliveries.length === 0 ? (
-                            <p className="text-sm text-gray-500 py-2">Nenhuma entrega registrada para esta sessão.</p>
+                            <p className="text-sm text-gray-500 py-2">
+                              Nenhuma entrega registrada para esta sessão.
+                            </p>
                           ) : (
                             <Table>
                               <TableHeader>
@@ -227,9 +285,9 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                                 {deliveries.map((delivery) => (
                                   <TableRow key={delivery.id}>
                                     <TableCell className="text-xs">
-                                      {delivery.comanda_id ? 
-                                        delivery.comanda_id.slice(-8) : 
-                                        delivery.id.slice(-8)}
+                                      {delivery.comanda_id
+                                        ? delivery.comanda_id.slice(-8)
+                                        : delivery.id.slice(-8)}
                                     </TableCell>
                                     <TableCell className="text-xs">
                                       {delivery.bairro}
@@ -241,9 +299,9 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
                                       {format(new Date(delivery.created_at), 'dd/MM HH:mm')}
                                     </TableCell>
                                     <TableCell>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-7 w-7"
                                         onClick={() => viewDeliveryDetails(delivery)}
                                       >
@@ -265,19 +323,19 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
           </TableBody>
         </Table>
       </div>
-      
-      {/* Delivery Details Dialog */}
+
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Detalhes da Entrega</DialogTitle>
             <DialogDescription>
-              Informações da entrega {selectedDelivery?.comanda_id ? 
-                `#${selectedDelivery.comanda_id.slice(-8)}` : 
-                `ID: ${selectedDelivery?.id.slice(-8)}`}
+              Informações da entrega{' '}
+              {selectedDelivery?.comanda_id
+                ? `#${selectedDelivery.comanda_id.slice(-8)}`
+                : `ID: ${selectedDelivery?.id.slice(-8)}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -305,19 +363,16 @@ export default function SessionHistory({ sessions, motoboys }: SessionHistoryPro
               <div>
                 <p className="text-sm font-medium text-gray-500">Data</p>
                 <p className="text-sm">
-                  {selectedDelivery 
-                    ? format(new Date(selectedDelivery.created_at), 'dd/MM/yyyy HH:mm') 
+                  {selectedDelivery
+                    ? format(new Date(selectedDelivery.created_at), 'dd/MM/yyyy HH:mm')
                     : 'N/A'}
                 </p>
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Fechar
             </Button>
           </DialogFooter>
