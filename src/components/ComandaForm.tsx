@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { useShopIsOpen } from '../hooks/useShopIsOpen'; // Adjust the path as necessary
+import { useShopIsOpen } from '../hooks/useShopIsOpen';
 import { motion } from 'framer-motion';
 import { PlusCircle, Save, Trash2, Search, Edit, Plus, Minus, AlertTriangle } from 'lucide-react';
-import { supabase } from '../lib/supabase'; // Ajuste o caminho conforme necessário
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
-import type { Comanda, Produto } from '../types/database';
+import type { Comanda, Produto } from '../types';
 import React from 'react';
 
 interface ComandaFormProps {
@@ -64,18 +64,15 @@ export default function ComandaForm({
 
       setLoading(true);
       try {
-        const trimmedTerm = searchTerm.trim();
-        console.log('Pesquisando produto:', trimmedTerm);
-
         const { data, error } = await supabase
-          .rpc('search_produtos_by_name_or_number', { search_term: trimmedTerm });
+          .rpc('search_produtos_by_name_or_number', { search_term: searchTerm.trim() });
 
-        if (error) throw error;
-        console.log('Resultados da pesquisa de produtos:', data);
+        if (error) throw new Error(`Erro na busca de produtos: ${error.message}`);
         setProdutosFiltrados(data || []);
-      } catch (error: any) {
-        console.error('Erro ao buscar produtos:', error);
-        toast.error(`Erro ao buscar produtos: ${error.message || 'Erro desconhecido'}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        toast.error(`Erro ao buscar produtos: ${errorMessage}`);
+        setProdutosFiltrados([]);
       } finally {
         setLoading(false);
       }
@@ -88,6 +85,14 @@ export default function ComandaForm({
     const value = e.target.value;
     onChange('pesquisaProduto', value);
     searchProdutos(value);
+  };
+
+  // Handle product selection
+  const handleSelectProduct = (produto: ProdutoFiltrado) => {
+    selecionarProdutoCadastrado(produto);
+    onChange('pesquisaProduto', '');
+    setProdutosFiltrados([]);
+    if (searchInputRef.current) searchInputRef.current.blur();
   };
 
   const handleSaveComanda = () => {
@@ -111,17 +116,8 @@ export default function ComandaForm({
       toast.error('Selecione uma forma de pagamento');
       return;
     }
+    console.log('handleSaveComanda: Dados da comanda:', JSON.stringify(comanda, null, 2));
     onSaveComanda();
-  };
-
-  // Handle product selection
-  const handleSelectProduct = (produto: ProdutoFiltrado) => {
-    selecionarProdutoCadastrado(produto);
-    onChange('pesquisaProduto', '');
-    setProdutosFiltrados([]);
-    if (searchInputRef.current) {
-      searchInputRef.current.blur();
-    }
   };
 
   return (
@@ -132,70 +128,45 @@ export default function ComandaForm({
       className="bg-white rounded-lg shadow-md p-4 md:p-6"
     >
       {/* Busca de Produtos */}
-      <div className="mb-4">
+      <div className="mb-4 relative">
         <label htmlFor="pesquisaProduto" className="block text-sm font-medium text-gray-700">
           Buscar Produto (nome ou número)
         </label>
-        <div className="relative">
-          <input
-            id="pesquisaProduto"
-            type="text"
-            value={pesquisaProduto}
-            onChange={handlePesquisaProdutoChange}
-            placeholder="Digite para buscar produtos cadastrados"
-            className="w-full p-2 pl-8 border rounded text-sm"
-            ref={searchInputRef}
-            disabled={loading}
-          />
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          {pesquisaProduto && produtosFiltrados.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto"
-            >
-              {produtosFiltrados.map((produto) => (
-                <div
-                  key={produto.id}
-                  className="p-2 hover:bg-gray-100 flex justify-between items-center"
-                >
-                  <div
-                    className="flex-1 cursor-pointer"
-                    onClick={() => handleSelectProduct(produto)}
-                  >
-                    <div className="font-medium">
-                      {produto.numero !== undefined && (
-                        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2 py-0.5 rounded">
-                          #{produto.numero}
-                        </span>
-                      )}
-                      {produto.nome}
-                    </div>
-                    <div className="text-sm text-gray-600">R$ {produto.valor.toFixed(2)}</div>
-                  </div>
-                  <button
-                    onClick={() => startEditingProduct(produto)}
-                    className="text-blue-600 hover:text-blue-900 ml-2"
-                    title="Editar produto"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </motion.div>
-          )}
-          {pesquisaProduto && produtosFiltrados.length === 0 && !loading && (
-            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
-              Nenhum produto encontrado
-            </div>
-          )}
-          {loading && pesquisaProduto && (
-            <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1 p-2 text-center text-gray-500">
-              Buscando...
-            </div>
-          )}
-        </div>
+        <input
+          id="pesquisaProduto"
+          type="text"
+          value={pesquisaProduto}
+          onChange={handlePesquisaProdutoChange}
+          placeholder="Digite o nome ou número do produto"
+          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          ref={searchInputRef}
+          disabled={loading}
+          aria-label="Buscar produto por nome ou número"
+        />
+        {loading && (
+          <div className="absolute right-3 top-9 text-gray-400">Carregando...</div>
+        )}
+        {produtosFiltrados.length > 0 && (
+          <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
+            {produtosFiltrados.map((produto) => (
+              <div
+                key={produto.id}
+                onClick={() => handleSelectProduct(produto)}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+              >
+                <span>
+                  {produto.numero !== undefined && (
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2 py-0.5 rounded">
+                      #{produto.numero}
+                    </span>
+                  )}
+                  {produto.nome}
+                </span>
+                <span>R$ {produto.valor.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Lista de Produtos */}

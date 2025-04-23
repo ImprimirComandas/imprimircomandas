@@ -431,3 +431,47 @@ export const Constants = {
     Enums: {},
   },
 } as const
+export interface Motoboy {
+  id: string;
+  nome: string;
+  telefone?: string;
+  user_id?: string;
+  created_at?: string;
+  status?: string;
+}
+
+export interface MotoboySession {
+  id: string;
+  motoboy_id: string;
+  start_time: string;
+  end_time: string | null;
+  user_id: string;
+}
+
+export interface Delivery {
+  id?: string;
+  motoboy_id: string;
+  comanda_id?: string | null;
+  bairro: string;
+  origem: string;
+  valor_entrega: number; // Taxa do bairro
+  valor_pedido?: number; // Valor total do pedido (comanda)
+  forma_pagamento?: string;
+  created_at?: string;
+  user_id?: string;
+}
+
+export interface Comanda {
+  id?: string;
+  bairro?: string;
+  taxaentrega?: number;
+  total?: number;
+  quantiapaga?: number | null;
+  forma_pagamento?: string;
+  troco?: number | null;
+}
+
+export interface BairroTaxa {
+  nome: string;
+  taxa: number;
+}

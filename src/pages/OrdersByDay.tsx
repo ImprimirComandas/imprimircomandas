@@ -1,13 +1,40 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { format, parseISO, startOfDay, endOfDay, subDays, addDays } from 'date-fns';
-import { Search, X, CheckCircle, XCircle, ChevronLeft, ChevronRight, Edit2, Save, Trash2, Plus, Printer } from 'lucide-react';
+import { format, startOfDay, endOfDay, subDays, addDays } from 'date-fns';
+import { Search, X, CheckCircle, XCircle, ChevronLeft, ChevronRight, Edit2, Save, Trash2, Plus, Printer, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
-import type { Comanda, Produto } from '../types/database';
+import { getUltimos8Digitos, imprimirComanda } from '../utils/printService';
+import { DateRangePicker, RangeKeyDict } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // Estilo padrão
+import 'react-date-range/dist/theme/default.css'; // Tema padrão
 
-// Interface for filtered products in search
+// Interfaces
+interface Produto {
+  nome: string;
+  quantidade: number;
+  valor: number;
+}
+
+interface Comanda {
+  id: string;
+  data: string;
+  user_id: string;
+  produtos: Produto[];
+  total: number;
+  forma_pagamento: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto';
+  pago: boolean;
+  troco: number;
+  quantiapaga: number;
+  valor_cartao: number;
+  valor_dinheiro: number;
+  valor_pix: number;
+  bairro: string;
+  taxaentrega: number;
+  endereco: string;
+}
+
 interface ProdutoFiltrado {
   id: string;
   nome: string;
@@ -15,343 +42,7 @@ interface ProdutoFiltrado {
   numero?: number;
 }
 
-// Printing Functions
-const getUltimos8Digitos = (id: string | undefined): string => {
-  if (!id) return 'N/A';
-  return id.slice(-8);
-};
-
-const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string | null }> => {
-  let storeName = 'Loja Padrão';
-  let avatarUrl = null;
-
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('store_name, avatar_url')
-        .eq('id', session.user.id)
-        .single();
-
-      if (data?.store_name) storeName = data.store_name;
-      if (data?.avatar_url) avatarUrl = data.avatar_url;
-    }
-  } catch (error) {
-    console.error('Erro ao buscar dados da loja para impressão:', error);
-  }
-
-  return { storeName, avatarUrl };
-};
-
-const truncateProductName = (name: string, maxLength: number = 20): string => {
-  if (name.length <= maxLength) return name;
-  return name.slice(0, maxLength - 3) + '...';
-};
-
-const generatePrintStyles = (): string => `
-  @page {
-    size: 80mm auto;
-    margin: 0;
-  }
-  body {
-    margin: 0;
-    padding: 2mm;
-    font-family: Arial, sans-serif;
-    font-size: 16px;
-    width: 75mm;
-    color: #000;
-    line-height: 1.2;
-  }
-  .store-logo {
-    width: 40mm;
-    height: 40mm;
-    margin: 0 auto 2mm;
-    display: block;
-    object-fit: contain;
-  }
-  .header {
-    text-align: center;
-    margin-bottom: 2mm;
-  }
-  .header-title {
-    font-weight: bold;
-    font-size: 16px;
-    margin-bottom: 1mm;
-  }
-  .header-info {
-    font-size: 14px;
-  }
-  .divider {
-    border-top: 1px dashed #000;
-    margin: 2mm 0;
-  }
-  .section-title {
-    font-weight: bold;
-    font-size: 16px;
-    margin-bottom: 2mm;
-    text-transform: uppercase;
-  }
-  .customer-info div {
-    margin-bottom: 1mm;
-    font-size: 16px;
-  }
-  .product-table {
-    margin-bottom: 2mm;
-  }
-  .product-header {
-    display: flex;
-    font-weight: bold;
-    border-bottom: 1px solid #000;
-    padding-bottom: 1mm;
-    margin-bottom: 2mm;
-  }
-  .product-row {
-    display: flex;
-    margin-bottom: 1mm;
-  }
-  .col-item {
-    flex: 2.5;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 45mm;
-  }
-  .col-qtd {
-    flex: 0.8;
-    text-align: center;
-  }
-  .col-valor {
-    flex: 1.2;
-    text-align: right;
-    font-weight: bold;
-  }
-  .totals-section {
-    margin: 2mm 0;
-  }
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1mm;
-    font-size: 16px;
-  }
-  .total-row.total {
-    font-weight: bold;
-    font-size: 16px;
-    border-top: 1px solid #000;
-    padding-top: 2mm;
-  }
-  .payment-section {
-    margin-bottom: 2mm;
-  }
-  .payment-section div {
-    margin-bottom: 1mm;
-    font-size: 16px;
-  }
-  .payment-status {
-    text-align: center;
-    font-weight: bold;
-    font-size: 26px;
-    margin: 2mm 0;
-  }
-  .footer {
-    text-align: center;
-    font-size: 14px;
-    margin-top: 2mm;
-  }
-  .cut-line {
-    border-top: 1px dashed #000;
-    margin: 2mm 0;
-  }
-  .cut-text {
-    text-align: center;
-    font-size: 10px;
-  }
-`;
-
-const createLogoSection = (avatarUrl: string | null, storeName: string): string =>
-  avatarUrl ? `<img src="${avatarUrl}" alt="${storeName}" class="store-logo" />` : '';
-
-const createHeaderSection = (storeName: string, comanda: Comanda): string => `
-  <div class="header">
-    <div class="header-title">${storeName}</div>
-    <div class="header-info">Pedido #${getUltimos8Digitos(comanda.id)}</div>
-    <div class="header-info">Data: ${format(parseISO(comanda.created_at || new Date().toISOString()), 'dd/MM/yyyy HH:mm')}</div>
-  </div>
-`;
-
-const createCustomerSection = (comanda: Comanda): string => `
-  <div class="customer-info">
-    <div>Endereço: ${comanda.endereco || 'Não especificado'}</div>
-    <div>Bairro: ${comanda.bairro || 'Não especificado'}</div>
-  </div>
-`;
-
-const createProductsSection = (comanda: Comanda): string => {
-  const productsHtml = comanda.produtos
-    .map(
-      (produto) => `
-        <div class="product-row">
-          <div class="col-qtd">${produto.quantidade || 1}</div>
-          <div class="col-item">${truncateProductName(produto.nome || 'Produto desconhecido')}</div>
-          <div class="col-valor">R$ ${((produto.valor || 0) * (produto.quantidade || 1)).toFixed(2)}</div>
-        </div>
-      `
-    )
-    .join('');
-
-  return `
-    <div class="product-table">
-      ${productsHtml}
-    </div>
-  `;
-};
-
-const createTotalsSection = (comanda: Comanda): string => {
-  const subtotal = comanda.produtos.reduce((sum, produto) => sum + ((produto.valor || 0) * (produto.quantidade || 1)), 0);
-
-  return `
-    <div class="totals-section">
-      <div class="total-row">
-        <span>Subtotal:</span>
-        <span>R$ ${subtotal.toFixed(2)}</span>
-      </div>
-      <div class="total-row">
-        <span>Taxa de Entrega:</span>
-        <span>R$ ${(comanda.taxaentrega || 0).toFixed(2)}</span>
-      </div>
-      <div class="total-row total">
-        <span>Total:</span>
-        <span>R$ ${(comanda.total || 0).toFixed(2)}</span>
-      </div>
-    </div>
-  `;
-};
-
-const createPaymentSection = (comanda: Comanda): string => {
-  let paymentDetails = `<div>Forma de Pagamento: ${(comanda.forma_pagamento || 'Não especificado').toUpperCase()}</div>`;
-
-  if (comanda.forma_pagamento === 'misto') {
-    paymentDetails += `
-      ${comanda.valor_cartao > 0 ? `<div>Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
-      ${comanda.valor_dinheiro > 0 ? `<div>Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
-      ${comanda.valor_pix > 0 ? `<div>PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
-    `;
-  }
-
-  if ((comanda.forma_pagamento === 'dinheiro' || comanda.forma_pagamento === 'misto') && comanda.quantiapaga && comanda.quantiapaga > 0) {
-    paymentDetails += `
-      <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
-      <div>Troco: R$ ${(comanda.troco || 0).toFixed(2)}</div>
-    `;
-  }
-
-  return `
-    <div class="payment-section">
-      ${paymentDetails}
-    </div>
-    <div class="divider"></div>
-    <div class="payment-status">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
-  `;
-};
-
-const createFooterSection = (): string => `
-  <div class="footer">
-    <div>Deus é fiel.</div>
-  </div>
-`;
-
-const createPrintScript = (): string => `
-  <script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
-        setTimeout(function() {
-          window.close();
-        }, 100);
-      }, 200);
-    };
-  </script>
-`;
-
-const assembleHtmlContent = (
-  styles: string,
-  logoSection: string,
-  headerSection: string,
-  customerSection: string,
-  productsSection: string,
-  totalsSection: string,
-  paymentSection: string,
-  footerSection: string,
-  printScript: string
-): string => `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Comanda</title>
-      <style>${styles}</style>
-    </head>
-    <body>
-      ${logoSection}
-      ${headerSection}
-      <div class="divider"></div>
-      ${customerSection}
-      <div class="divider"></div>
-      ${productsSection}
-      ${totalsSection}
-      <div class="divider"></div>
-      ${paymentSection}
-      <div class="divider"></div>
-      ${footerSection}
-      ${printScript}
-    </body>
-  </html>
-`;
-
-const openPrintWindow = (printContent: string): Window | null => {
-  const printWindow = window.open('', '_blank', 'width=300,height=auto');
-  if (!printWindow) {
-    toast.error('Não foi possível abrir a janela de impressão. Verifique as configurações do navegador.');
-    return null;
-  }
-  printWindow.document.write(printContent);
-  printWindow.document.close();
-  return printWindow;
-};
-
-const imprimirComanda = async (comanda: Comanda): Promise<void> => {
-  try {
-    const { storeName, avatarUrl } = await fetchStoreInfo();
-    const styles = generatePrintStyles();
-    const logoSection = createLogoSection(avatarUrl, storeName);
-    const headerSection = createHeaderSection(storeName, comanda);
-    const customerSection = createCustomerSection(comanda);
-    const productsSection = createProductsSection(comanda);
-    const totalsSection = createTotalsSection(comanda);
-    const paymentSection = createPaymentSection(comanda);
-    const footerSection = createFooterSection();
-    const printScript = createPrintScript();
-
-    const printContent = assembleHtmlContent(
-      styles,
-      logoSection,
-      headerSection,
-      customerSection,
-      productsSection,
-      totalsSection,
-      paymentSection,
-      footerSection,
-      printScript
-    );
-
-    openPrintWindow(printContent);
-  } catch (error: any) {
-    console.error('Erro ao imprimir comanda:', error);
-    toast.error(`Erro ao imprimir comanda: ${error.message || 'Erro desconhecido'}`);
-  }
-};
-
-// OrderCard Component
+// Componente OrderCard
 const OrderCard = ({
   comanda,
   onTogglePayment,
@@ -367,65 +58,48 @@ const OrderCard = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProdutos, setEditedProdutos] = useState<Produto[]>([]);
-  const [editedFormaPagamento, setEditedFormaPagamento] = useState(comanda.forma_pagamento || '');
-  const [editedPago, setEditedPago] = useState(comanda.pago || false);
-  const [editedTroco, setEditedTroco] = useState(comanda.troco || 0);
-  const [editedQuantiapaga, setEditedQuantiapaga] = useState(comanda.quantiapaga || 0);
-  const [editedValorCartao, setEditedValorCartao] = useState(comanda.valor_cartao || 0);
-  const [editedValorDinheiro, setEditedValorDinheiro] = useState(comanda.valor_dinheiro || 0);
-  const [editedValorPix, setEditedValorPix] = useState(comanda.valor_pix || 0);
-  const [editedBairro, setEditedBairro] = useState(comanda.bairro || '');
-  const [editedTaxaEntrega, setEditedTaxaEntrega] = useState(comanda.taxaentrega || 0);
-  const [editedEndereco, setEditedEndereco] = useState(comanda.endereco || '');
+  const [editedComanda, setEditedComanda] = useState<Partial<Comanda>>({});
   const [pesquisaProduto, setPesquisaProduto] = useState('');
   const [produtosFiltrados, setProdutosFiltrados] = useState<ProdutoFiltrado[]>([]);
   const [loadingProdutos, setLoadingProdutos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const getProdutos = (): Produto[] => {
+  const getProdutos = useMemo(() => {
     try {
-      if (Array.isArray(comanda.produtos)) {
-        return comanda.produtos.map(p => ({
-          nome: p.nome || 'Produto desconhecido',
-          quantidade: p.quantidade || 1,
-          valor: p.valor || 0,
-        }));
-      }
-      if (typeof comanda.produtos === 'string') {
-        const parsed = JSON.parse(comanda.produtos);
-        return Array.isArray(parsed)
-          ? parsed.map(p => ({
-              nome: p.nome || 'Produto desconhecido',
-              quantidade: p.quantidade || 1,
-              valor: p.valor || 0,
-            }))
-          : [];
-      }
-      return [];
+      const produtos = Array.isArray(comanda.produtos)
+        ? comanda.produtos
+        : typeof comanda.produtos === 'string'
+        ? JSON.parse(comanda.produtos)
+        : [];
+      return produtos.map((p: Produto) => ({
+        nome: p.nome || 'Produto desconhecido',
+        quantidade: p.quantidade || 1,
+        valor: p.valor || 0,
+      }));
     } catch (error) {
       console.error('Erro ao processar produtos:', error);
       return [];
     }
-  };
-
-  const produtos = getProdutos();
+  }, [comanda.produtos]);
 
   useEffect(() => {
     if (isEditing) {
-      setEditedProdutos(produtos);
-      setEditedFormaPagamento(comanda.forma_pagamento || '');
-      setEditedPago(comanda.pago || false);
-      setEditedTroco(comanda.troco || 0);
-      setEditedQuantiapaga(comanda.quantiapaga || 0);
-      setEditedValorCartao(comanda.valor_cartao || 0);
-      setEditedValorDinheiro(comanda.valor_dinheiro || 0);
-      setEditedValorPix(comanda.valor_pix || 0);
-      setEditedBairro(comanda.bairro || '');
-      setEditedTaxaEntrega(comanda.taxaentrega || 0);
-      setEditedEndereco(comanda.endereco || '');
+      setEditedComanda({
+        produtos: getProdutos,
+        forma_pagamento: comanda.forma_pagamento,
+        pago: comanda.pago,
+        troco: comanda.troco,
+        quantiapaga: comanda.quantiapaga,
+        valor_cartao: comanda.valor_cartao,
+        valor_dinheiro: comanda.valor_dinheiro,
+        valor_pix: comanda.valor_pix,
+        bairro: comanda.bairro,
+        taxaentrega: comanda.taxaentrega,
+        endereco: comanda.endereco,
+        total: comanda.total, // Initialize total
+      });
     }
-  }, [isEditing, comanda]);
+  }, [isEditing, comanda, getProdutos]);
 
   const searchProdutos = useCallback(
     debounce(async (searchTerm: string) => {
@@ -435,14 +109,14 @@ const OrderCard = ({
       }
       setLoadingProdutos(true);
       try {
-        const trimmedTerm = searchTerm.trim();
-        const { data, error } = await supabase
-          .rpc('search_produtos_by_name_or_number', { search_term: trimmedTerm });
+        const { data, error } = await supabase.rpc('search_produtos_by_name_or_number', {
+          search_term: searchTerm.trim(),
+        });
         if (error) throw new Error(`Erro na busca de produtos: ${error.message}`);
         setProdutosFiltrados(data || []);
-      } catch (error: any) {
-        console.error('Erro ao buscar produtos:', error);
-        toast.error(`Erro ao buscar produtos: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        toast.error(`Erro ao buscar produtos: ${errorMessage}`);
       } finally {
         setLoadingProdutos(false);
       }
@@ -457,99 +131,91 @@ const OrderCard = ({
   };
 
   const handleSelectProduct = (produto: ProdutoFiltrado) => {
-    setEditedProdutos([...editedProdutos, { nome: produto.nome, quantidade: 1, valor: produto.valor }]);
+    setEditedComanda({
+      ...editedComanda,
+      produtos: [...(editedComanda.produtos || []), { nome: produto.nome, quantidade: 1, valor: produto.valor }],
+    });
     setPesquisaProduto('');
     setProdutosFiltrados([]);
     if (searchInputRef.current) searchInputRef.current.blur();
   };
 
   const handleProdutoChange = (index: number, field: keyof Produto, value: string | number) => {
-    const updatedProdutos = [...editedProdutos];
+    const updatedProdutos = [...(editedComanda.produtos || [])];
     updatedProdutos[index] = { ...updatedProdutos[index], [field]: value };
-    setEditedProdutos(updatedProdutos);
+    setEditedComanda({ ...editedComanda, produtos: updatedProdutos });
   };
 
   const addProduto = () => {
-    setEditedProdutos([...editedProdutos, { nome: '', quantidade: 1, valor: 0 }]);
+    setEditedComanda({
+      ...editedComanda,
+      produtos: [...(editedComanda.produtos || []), { nome: '', quantidade: 1, valor: 0 }],
+    });
   };
 
   const removeProduto = (index: number) => {
-    setEditedProdutos(editedProdutos.filter((_, i) => i !== index));
+    setEditedComanda({
+      ...editedComanda,
+      produtos: (editedComanda.produtos || []).filter((_, i) => i !== index),
+    });
   };
 
   const calculateSubtotal = () => {
-    return editedProdutos.reduce((sum, produto) => sum + (produto.valor * produto.quantidade), 0);
+    return (editedComanda.produtos || []).reduce((sum, produto) => sum + produto.valor * produto.quantidade, 0);
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + editedTaxaEntrega;
+    return calculateSubtotal() + (editedComanda.taxaentrega || 0);
   };
 
   const handleSave = () => {
-    // Input validations
-    if (editedProdutos.length === 0 || editedProdutos.some(p => !p.nome || p.quantidade <= 0 || p.valor < 0)) {
+    const { produtos, forma_pagamento, bairro, endereco, quantiapaga } = editedComanda;
+
+    if (!produtos?.length || produtos.some(p => !p.nome || p.quantidade <= 0 || p.valor < 0)) {
       toast.error('Preencha todos os campos dos produtos corretamente');
       return;
     }
-    if (!editedBairro) {
+    if (!bairro) {
       toast.error('Selecione um bairro');
       return;
     }
-    if (!editedEndereco) {
+    if (!endereco) {
       toast.error('Informe o endereço');
       return;
     }
-    if (!editedFormaPagamento) {
+    if (!forma_pagamento) {
       toast.error('Selecione uma forma de pagamento');
       return;
     }
 
     const totalComTaxa = calculateTotal();
 
-    // Validate quantiapaga and troco
-    if (editedFormaPagamento === 'dinheiro' || editedFormaPagamento === 'misto') {
-      if (editedQuantiapaga < totalComTaxa) {
+    if (forma_pagamento === 'dinheiro' || forma_pagamento === 'misto') {
+      if ((quantiapaga || 0) < totalComTaxa) {
         toast.error('A quantia paga deve ser maior ou igual ao total do pedido');
         return;
       }
-      const calculatedTroco = editedQuantiapaga - totalComTaxa;
-      if (calculatedTroco < 0) {
-        toast.error('O troco não pode ser negativo');
-        return;
-      }
-      setEditedTroco(calculatedTroco);
+      editedComanda.troco = (quantiapaga || 0) - totalComTaxa;
     } else {
-      setEditedQuantiapaga(0);
-      setEditedTroco(0);
+      editedComanda.quantiapaga = 0;
+      editedComanda.troco = 0;
     }
 
-    // Validate mixed payment
-    if (editedFormaPagamento === 'misto') {
-      const totalMisto = editedValorCartao + editedValorDinheiro + editedValorPix;
+    if (forma_pagamento === 'misto') {
+      const totalMisto = (editedComanda.valor_cartao || 0) + (editedComanda.valor_dinheiro || 0) + (editedComanda.valor_pix || 0);
       if (totalMisto < totalComTaxa) {
         toast.error('A soma dos valores do pagamento misto deve cobrir o total do pedido');
         return;
       }
     }
 
-    const updatedComanda: Partial<Comanda> = {
-      produtos: editedProdutos,
-      forma_pagamento: editedFormaPagamento,
-      pago: editedPago,
-      total: totalComTaxa,
-      troco: editedFormaPagamento === 'dinheiro' || editedFormaPagamento === 'misto' ? editedTroco : 0,
-      quantiapaga: editedFormaPagamento === 'dinheiro' || editedFormaPagamento === 'misto' ? editedQuantiapaga : 0,
-      valor_cartao: editedFormaPagamento === 'misto' ? editedValorCartao : 0,
-      valor_dinheiro: editedFormaPagamento === 'misto' ? editedValorDinheiro : 0,
-      valor_pix: editedFormaPagamento === 'misto' ? editedValorPix : 0,
-      bairro: editedBairro,
-      taxaentrega: editedTaxaEntrega,
-      endereco: editedEndereco,
+    // Update the total in editedComanda before saving
+    const updatedComanda = {
+      ...editedComanda,
+      total: totalComTaxa, // Ensure total is updated
     };
 
-    console.log('Salvando comanda atualizada:', updatedComanda);
-
-    onSaveEdit(comanda.id!, updatedComanda);
+    onSaveEdit(comanda.id, updatedComanda);
     setIsEditing(false);
   };
 
@@ -565,14 +231,14 @@ const OrderCard = ({
         <div>
           <h3 className="text-lg font-bold text-gray-800">Pedido #{getUltimos8Digitos(comanda.id)}</h3>
           <p className="text-sm text-gray-500">
-            {comanda.created_at ? format(parseISO(comanda.created_at), 'dd/MM/yyyy HH:mm') : 'Data indisponível'}
+            {comanda.data ? new Date(comanda.data).toLocaleString('pt-BR') : 'Data indisponível'}
           </p>
           <p className="text-sm text-gray-500">Bairro: {comanda.bairro || 'Não especificado'}</p>
           <p className="text-sm text-gray-500">Endereço: {comanda.endereco || 'Não especificado'}</p>
           <p className="text-sm text-gray-500">Total: R$ {(comanda.total || 0).toFixed(2)}</p>
           {(comanda.forma_pagamento === 'dinheiro' || comanda.forma_pagamento === 'misto') && comanda.quantiapaga > 0 && (
             <>
-              <p className="text-sm text-gray-500">Quantia Paga: R$ {(comanda.quantiapaga || 0).toFixed(2)}</p>
+              <p className="text-sm text-gray-500">Troco para: R$ {(comanda.quantiapaga || 0).toFixed(2)}</p>
               <p className="text-sm text-gray-500">Troco: R$ {(comanda.troco || 0).toFixed(2)}</p>
             </>
           )}
@@ -606,16 +272,19 @@ const OrderCard = ({
             <div className="border-t pt-4">
               {isEditing ? (
                 <div className="space-y-4">
-                  {/* Product Search */}
-                  <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700">Buscar Produto</label>
+                  <div>
+                    <label htmlFor="pesquisa_produto" className="block text-sm font-medium text-gray-700">
+                      Buscar Produto
+                    </label>
                     <input
+                      id="pesquisa_produto"
                       ref={searchInputRef}
                       type="text"
                       value={pesquisaProduto}
                       onChange={handlePesquisaProdutoChange}
                       placeholder="Digite o nome ou número do produto"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                      aria-label="Buscar produto por nome ou número"
                     />
                     {loadingProdutos && (
                       <div className="absolute right-3 top-9 text-gray-400">Carregando...</div>
@@ -635,15 +304,15 @@ const OrderCard = ({
                     )}
                   </div>
 
-                  {/* Product List */}
-                  {editedProdutos.map((produto, index) => (
+                  {(editedComanda.produtos || []).map((produto, index) => (
                     <div key={index} className="flex items-center gap-3 border-b pb-2">
                       <input
                         type="text"
                         value={produto.nome}
                         onChange={(e) => handleProdutoChange(index, 'nome', e.target.value)}
                         placeholder="Nome do produto"
-                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Nome do produto ${index + 1}`}
                       />
                       <input
                         type="number"
@@ -651,7 +320,8 @@ const OrderCard = ({
                         onChange={(e) => handleProdutoChange(index, 'quantidade', parseInt(e.target.value) || 1)}
                         placeholder="Qtd"
                         min="1"
-                        className="w-20 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-20 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Quantidade do produto ${index + 1}`}
                       />
                       <input
                         type="number"
@@ -660,11 +330,13 @@ const OrderCard = ({
                         placeholder="Valor"
                         step="0.01"
                         min="0"
-                        className="w-24 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-24 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Valor do produto ${index + 1}`}
                       />
                       <button
                         onClick={() => removeProduto(index)}
                         className="text-red-600 hover:text-red-800"
+                        aria-label={`Remover produto ${index + 1}`}
                       >
                         <Trash2 size={18} />
                       </button>
@@ -678,60 +350,68 @@ const OrderCard = ({
                     Adicionar Produto
                   </button>
 
-                  {/* Address */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Endereço</label>
+                    <label htmlFor="endereco" className="block text-sm font-medium text-gray-700">
+                      Endereço
+                    </label>
                     <input
+                      id="endereco"
                       type="text"
-                      value={editedEndereco}
-                      onChange={(e) => setEditedEndereco(e.target.value)}
+                      value={editedComanda.endereco || ''}
+                      onChange={(e) => setEditedComanda({ ...editedComanda, endereco: e.target.value })}
                       placeholder="Endereço de entrega"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                      aria-label="Endereço de entrega"
                     />
                   </div>
 
-                  {/* Neighborhood */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Bairro</label>
+                    <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
+                      Bairro
+                    </label>
                     <input
+                      id="bairro"
                       type="text"
-                      value={editedBairro}
-                      onChange={(e) => setEditedBairro(e.target.value)}
+                      value={editedComanda.bairro || ''}
+                      onChange={(e) => setEditedComanda({ ...editedComanda, bairro: e.target.value })}
                       placeholder="Bairro"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                      aria-label="Bairro"
                     />
                   </div>
 
-                  {/* Delivery Fee */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Taxa de Entrega</label>
+                    <label htmlFor="taxa_entrega" className="block text-sm font-medium text-gray-700">
+                      Taxa de Entrega
+                    </label>
                     <input
+                      id="taxa_entrega"
                       type="number"
-                      value={editedTaxaEntrega}
-                      onChange={(e) => setEditedTaxaEntrega(parseFloat(e.target.value) || 0)}
+                      value={editedComanda.taxaentrega || 0}
+                      onChange={(e) => setEditedComanda({ ...editedComanda, taxaentrega: parseFloat(e.target.value) || 0 })}
                       placeholder="Taxa de entrega"
                       step="0.01"
                       min="0"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                      aria-label="Taxa de entrega"
                     />
                   </div>
 
-                  {/* Payment Method */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Forma de Pagamento</label>
+                    <label htmlFor="forma_pagamento" className="block text-sm font-medium text-gray-700">
+                      Forma de Pagamento
+                    </label>
                     <select
-                      value={editedFormaPagamento}
-                      onChange={(e) => {
-                        setEditedFormaPagamento(e.target.value);
-                        if (e.target.value !== 'dinheiro' && e.target.value !== 'misto') {
-                          setEditedQuantiapaga(0);
-                          setEditedTroco(0);
-                          setEditedValorCartao(0);
-                          setEditedValorDinheiro(0);
-                          setEditedValorPix(0);
-                        }
-                      }}
-                      className="mt-1 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                      id="forma_pagamento"
+                      value={editedComanda.forma_pagamento || ''}
+                      onChange={(e) =>
+                        setEditedComanda({
+                          ...editedComanda,
+                          forma_pagamento: e.target.value as '' | 'pix' | 'dinheiro' | 'cartao' | 'misto',
+                        })
+                      }
+                      className="mt-1 px-3 py-2 rounded-lg border border-gray-200 w-full"
+                      aria-label="Selecione a forma de pagamento"
                     >
                       <option value="">Selecione</option>
                       <option value="pix">Pix</option>
@@ -741,89 +421,112 @@ const OrderCard = ({
                     </select>
                   </div>
 
-                  {/* Mixed Payment Fields */}
-                  {editedFormaPagamento === 'misto' && (
+                  {editedComanda.forma_pagamento === 'misto' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Valor em Cartão</label>
+                        <label htmlFor="valor_cartao" className="block text-sm font-medium text-gray-700">
+                          Valor em Cartão
+                        </label>
                         <input
+                          id="valor_cartao"
                           type="number"
-                          value={editedValorCartao}
-                          onChange={(e) => setEditedValorCartao(parseFloat(e.target.value) || 0)}
+                          value={editedComanda.valor_cartao || 0}
+                          onChange={(e) => setEditedComanda({ ...editedComanda, valor_cartao: parseFloat(e.target.value) || 0 })}
                           placeholder="Valor em cartão"
                           step="0.01"
                           min="0"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                          aria-label="Valor em cartão"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Valor em Dinheiro</label>
+                        <label htmlFor="valor_dinheiro" className="block text-sm font-medium text-gray-700">
+                          Valor em Dinheiro
+                        </label>
                         <input
+                          id="valor_dinheiro"
                           type="number"
-                          value={editedValorDinheiro}
-                          onChange={(e) => setEditedValorDinheiro(parseFloat(e.target.value) || 0)}
+                          value={editedComanda.valor_dinheiro || 0}
+                          onChange={(e) => setEditedComanda({ ...editedComanda, valor_dinheiro: parseFloat(e.target.value) || 0 })}
                           placeholder="Valor em dinheiro"
                           step="0.01"
                           min="0"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                          aria-label="Valor em dinheiro"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Valor em Pix</label>
+                        <label htmlFor="valor_pix" className="block text-sm font-medium text-gray-700">
+                          Valor em Pix
+                        </label>
                         <input
+                          id="valor_pix"
                           type="number"
-                          value={editedValorPix}
-                          onChange={(e) => setEditedValorPix(parseFloat(e.target.value) || 0)}
+                          value={editedComanda.valor_pix || 0}
+                          onChange={(e) => setEditedComanda({ ...editedComanda, valor_pix: parseFloat(e.target.value) || 0 })}
                           placeholder="Valor em pix"
                           step="0.01"
                           min="0"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                          aria-label="Valor em pix"
                         />
                       </div>
                     </>
                   )}
 
-                  {/* Quantia Paga and Troco */}
-                  {(editedFormaPagamento === 'dinheiro' || editedFormaPagamento === 'misto') && (
+                  {(editedComanda.forma_pagamento === 'dinheiro' || editedComanda.forma_pagamento === 'misto') && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Quantia Paga (R$)</label>
+                        <label htmlFor="quantiapaga" className="block text-sm font-medium text-gray-700">
+                          Troco para (R$)
+                        </label>
                         <input
+                          id="quantiapaga"
                           type="number"
-                          value={editedQuantiapaga}
+                          value={editedComanda.quantiapaga || 0}
                           onChange={(e) => {
                             const quantiapaga = parseFloat(e.target.value) || 0;
-                            setEditedQuantiapaga(quantiapaga);
-                            const totalComTaxa = calculateTotal();
-                            setEditedTroco(quantiapaga >= totalComTaxa ? quantiapaga - totalComTaxa : 0);
+                            setEditedComanda({
+                              ...editedComanda,
+                              quantiapaga,
+                              troco: quantiapaga >= calculateTotal() ? quantiapaga - calculateTotal() : 0,
+                            });
                           }}
-                          placeholder="Quantia paga pelo cliente"
+                          placeholder="Valor entregue pelo cliente"
                           step="0.01"
-                          min={calculateTotal()}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min="0"
+                          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+                          aria-label="Valor entregue pelo cliente"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Troco (R$)</label>
+                        <label htmlFor="troco" className="block text-sm font-medium text-gray-700">
+                          Troco (R$)
+                        </label>
                         <input
+                          id="troco"
                           type="number"
-                          value={editedTroco}
+                          value={(editedComanda.troco || 0).toFixed(2)}
                           readOnly
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-100"
+                          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-100"
+                          aria-label="Troco calculado"
                         />
                       </div>
                     </>
                   )}
 
-                  {/* Payment Status */}
                   <div className="flex items-center gap-2">
                     <input
+                      id="pago"
                       type="checkbox"
-                      checked={editedPago}
-                      onChange={(e) => setEditedPago(e.target.checked)}
+                      checked={editedComanda.pago || false}
+                      onChange={(e) => setEditedComanda({ ...editedComanda, pago: e.target.checked })}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      aria-label="Marcar como pago"
                     />
-                    <label className="text-sm font-medium text-gray-700">Pago</label>
+                    <label htmlFor="pago" className="text-sm font-medium text-gray-700">
+                      Pago
+                    </label>
                   </div>
 
                   <div className="font-bold text-gray-800 text-lg">
@@ -836,14 +539,14 @@ const OrderCard = ({
                   <div className="flex gap-3">
                     <button
                       onClick={handleSave}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Save size={18} />
                       Salvar
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors duration-200"
+                      className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800"
                     >
                       Cancelar
                     </button>
@@ -851,20 +554,20 @@ const OrderCard = ({
                 </div>
               ) : (
                 <>
-                  {produtos.length > 0 ? (
-                    produtos.map((produto: Produto, index: number) => (
+                  {getProdutos.length > 0 ? (
+                    getProdutos.map((produto: Produto, index: number) => (
                       <div key={index} className="flex justify-between text-sm text-gray-600 mb-2">
                         <span>
-                          {(produto.nome || 'Produto desconhecido')} (x{(produto.quantidade || 1)})
+                          {produto.nome} (x{produto.quantidade})
                         </span>
-                        <span>R$ {((produto.valor || 0) * (produto.quantidade || 1)).toFixed(2)}</span>
+                        <span>R$ {(produto.valor * produto.quantidade).toFixed(2)}</span>
                       </div>
                     ))
                   ) : (
                     <p className="text-sm text-gray-500">Nenhum produto registrado</p>
                   )}
                   <div className="mt-3 text-sm text-gray-600">
-                    Subtotal: R$ {produtos.reduce((sum, p) => sum + (p.valor * p.quantidade), 0).toFixed(2)}
+                    Subtotal: R$ {getProdutos.reduce((sum, p) => sum + p.valor * p.quantidade, 0).toFixed(2)}
                   </div>
                   <div className="mt-1 text-sm text-gray-600">
                     Taxa de Entrega: R$ {(comanda.taxaentrega || 0).toFixed(2)}
@@ -873,7 +576,7 @@ const OrderCard = ({
                     Total: R$ {(comanda.total || 0).toFixed(2)}
                   </div>
                   <div className="mt-1 text-sm text-gray-500">
-                    Pagamento: {(comanda.forma_pagamento || 'Não especificado').charAt(0).toUpperCase() + (comanda.forma_pagamento || '').slice(1)}
+                    Pagamento: {comanda.forma_pagamento || 'Não especificado'}
                   </div>
                   {comanda.forma_pagamento === 'misto' && (
                     <>
@@ -897,7 +600,7 @@ const OrderCard = ({
                   {(comanda.forma_pagamento === 'dinheiro' || comanda.forma_pagamento === 'misto') && comanda.quantiapaga > 0 && (
                     <>
                       <div className="mt-1 text-sm text-gray-500">
-                        Quantia Paga: R$ {(comanda.quantiapaga || 0).toFixed(2)}
+                        Troco para: R$ {(comanda.quantiapaga || 0).toFixed(2)}
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
                         Troco: R$ {(comanda.troco || 0).toFixed(2)}
@@ -909,28 +612,28 @@ const OrderCard = ({
                       onClick={() => onTogglePayment(comanda)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                         comanda.pago ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-                      } text-white transition-colors duration-200`}
+                      } text-white`}
                     >
                       {comanda.pago ? <XCircle size={18} /> : <CheckCircle size={18} />}
                       {comanda.pago ? 'Desmarcar' : 'Confirmar'}
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors duration-200"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white"
                     >
                       <Edit2 size={18} />
                       Editar
                     </button>
                     <button
                       onClick={() => onReprint(comanda)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Printer size={18} />
                       Reimprimir
                     </button>
                     <button
-                      onClick={() => onDelete(comanda.id!)}
-                      className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors duration-200"
+                      onClick={() => onDelete(comanda.id)}
+                      className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800"
                     >
                       Excluir
                     </button>
@@ -945,31 +648,38 @@ const OrderCard = ({
   );
 };
 
-// Main OrdersByDay Component
+// Componente Principal
 export default function OrdersByDay() {
   const [comandas, setComandas] = useState<Comanda[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: startOfDay(new Date()),
+      endDate: endOfDay(new Date()),
+      key: 'selection',
+    },
+  ]);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending'>('all');
   const [loading, setLoading] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
-  const fetchOrdersByDate = async (date: Date) => {
+  const fetchOrdersByPeriod = async (start: Date, end: Date) => {
     setLoading(true);
     try {
-      const start = startOfDay(date).toISOString();
-      const end = endOfDay(date).toISOString();
+      const startISO = startOfDay(start).toISOString();
+      const endISO = endOfDay(end).toISOString();
       const { data, error } = await supabase
         .from('comandas')
-        .select('id, created_at, user_id, produtos, total, forma_pagamento, pago, troco, quantiapaga, valor_cartao, valor_dinheiro, valor_pix, bairro, taxaentrega, endereco')
-        .gte('created_at', start)
-        .lte('created_at', end)
-        .order('created_at', { ascending: false });
+        .select('id, data, user_id, produtos, total, forma_pagamento, pago, troco, quantiapaga, valor_cartao, valor_dinheiro, valor_pix, bairro, taxaentrega, endereco')
+        .gte('data', startISO)
+        .lte('data', endISO)
+        .order('data', { ascending: false });
 
       if (error) throw new Error(`Erro ao carregar pedidos: ${error.message}`);
 
-      console.log('Pedidos carregados:', data);
       setComandas(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao carregar pedidos:', error);
       toast.error(error.message || 'Erro ao carregar pedidos');
     } finally {
@@ -978,19 +688,33 @@ export default function OrdersByDay() {
   };
 
   useEffect(() => {
-    fetchOrdersByDate(selectedDate);
-  }, [selectedDate]);
+    fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
+  }, [dateRange]);
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(e.target.value);
-    if (!isNaN(newDate.getTime())) {
-      setSelectedDate(newDate);
+  // Fechar calendário ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDateRangeChange = (ranges: RangeKeyDict) => {
+    const { startDate, endDate } = ranges.selection;
+    if (startDate && endDate) {
+      setDateRange([{ startDate, endDate, key: 'selection' }]);
+      setShowCalendar(false);
     }
   };
 
-  const changeDate = (direction: 'prev' | 'next') => {
-    const newDate = direction === 'prev' ? subDays(selectedDate, 1) : addDays(selectedDate, 1);
-    setSelectedDate(newDate);
+  const changePeriod = (direction: 'prev' | 'next') => {
+    const daysDiff = Math.ceil((dateRange[0].endDate.getTime() - dateRange[0].startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+    const newStart = direction === 'prev' ? subDays(dateRange[0].startDate, daysDiff) : addDays(dateRange[0].startDate, daysDiff);
+    const newEnd = direction === 'prev' ? subDays(dateRange[0].endDate, daysDiff) : addDays(dateRange[0].endDate, daysDiff);
+    setDateRange([{ startDate: newStart, endDate: newEnd, key: 'selection' }]);
   };
 
   const togglePayment = async (comanda: Comanda) => {
@@ -1002,9 +726,9 @@ export default function OrdersByDay() {
 
       if (error) throw new Error(`Erro ao atualizar pagamento: ${error.message}`);
 
-      fetchOrdersByDate(selectedDate);
+      fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success(`Pagamento ${!comanda.pago ? 'confirmado' : 'desmarcado'}!`);
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error('Erro ao atualizar pagamento:', error);
       toast.error(error.message || 'Erro ao atualizar pagamento');
     }
@@ -1012,27 +736,24 @@ export default function OrdersByDay() {
 
   const reprintOrder = async (comanda: Comanda) => {
     try {
-      const totalComTaxa = comanda.total || 0;
-      const quantiapaga = comanda.quantiapaga || 0;
-      const troco = comanda.troco || 0;
-      const valorEntrega = comanda.forma_pagamento === 'dinheiro' && troco > 0 && quantiapaga >= totalComTaxa
-        ? quantiapaga
-        : totalComTaxa;
+      const subtotal = comanda.produtos.reduce((sum, p) => sum + p.valor * p.quantidade, 0);
+      const total = subtotal + (comanda.taxaentrega || 0);
 
       const formattedComanda: Comanda = {
-        id: comanda.id,
-        created_at: comanda.created_at,
-        user_id: comanda.user_id,
+        ...comanda,
+        id: comanda.id || crypto.randomUUID(),
+        data: comanda.data || new Date().toISOString(),
+        user_id: comanda.user_id || '',
         produtos: comanda.produtos.map(p => ({
           nome: p.nome || 'Produto desconhecido',
           quantidade: p.quantidade || 1,
           valor: p.valor || 0,
         })),
-        total: totalComTaxa,
-        forma_pagamento: comanda.forma_pagamento || 'Não especificado',
+        total,
+        forma_pagamento: comanda.forma_pagamento || '',
         pago: comanda.pago || false,
-        troco: troco,
-        quantiapaga: quantiapaga,
+        troco: comanda.troco || 0,
+        quantiapaga: comanda.quantiapaga || 0,
         valor_cartao: comanda.valor_cartao || 0,
         valor_dinheiro: comanda.valor_dinheiro || 0,
         valor_pix: comanda.valor_pix || 0,
@@ -1041,11 +762,9 @@ export default function OrdersByDay() {
         endereco: comanda.endereco || 'Não especificado',
       };
 
-      console.log('Comanda formatada para impressão:', formattedComanda);
-
       await imprimirComanda(formattedComanda);
       toast.success('Comanda enviada para impressão');
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error('Erro ao reimprimir comanda:', error);
       toast.error(`Erro ao reimprimir comanda: ${error.message || 'Erro desconhecido'}`);
     }
@@ -1062,9 +781,9 @@ export default function OrdersByDay() {
 
       if (error) throw new Error(`Erro ao excluir pedido: ${error.message}`);
 
-      fetchOrdersByDate(selectedDate);
+      fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success('Pedido excluído com sucesso!');
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error('Erro ao excluir pedido:', error);
       toast.error(error.message || 'Erro ao excluir pedido');
     }
@@ -1072,16 +791,20 @@ export default function OrdersByDay() {
 
   const saveEdit = async (id: string, updatedComanda: Partial<Comanda>) => {
     try {
+      // Ensure total is included in the update
       const { error } = await supabase
         .from('comandas')
-        .update(updatedComanda)
+        .update({
+          ...updatedComanda,
+          total: updatedComanda.total, // Explicitly include total
+        })
         .eq('id', id);
 
       if (error) throw new Error(`Erro ao salvar alterações: ${error.message}`);
 
-      fetchOrdersByDate(selectedDate);
+      fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success('Comanda atualizada com sucesso!');
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error('Erro ao salvar alterações:', error);
       toast.error(error.message || 'Erro ao salvar alterações');
     }
@@ -1091,9 +814,7 @@ export default function OrdersByDay() {
     return comandas.filter(comanda => {
       const matchesSearch = searchTerm
         ? getUltimos8Digitos(comanda.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (comanda.produtos || []).some((p: { nome: string }) =>
-            (p.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          comanda.produtos.some(p => p.nome.toLowerCase().includes(searchTerm.toLowerCase()))
         : true;
 
       const matchesStatus =
@@ -1104,28 +825,16 @@ export default function OrdersByDay() {
   }, [comandas, searchTerm, filterStatus]);
 
   const totais = useMemo(() => {
-    const result = {
-      pix: 0,
-      dinheiro: 0,
-      cartao: 0,
-      misto: 0,
-      geral: 0,
-      confirmados: 0,
-      naoConfirmados: 0,
-    };
-    filteredComandas.forEach(comanda => {
-      const valor = comanda.forma_pagamento === 'dinheiro' && comanda.troco && comanda.troco > 0 && comanda.quantiapaga
-        ? comanda.quantiapaga
-        : comanda.total || 0;
-      if (comanda.pago) result.confirmados += valor;
-      else result.naoConfirmados += valor;
-      result.geral += valor;
-      if (comanda.forma_pagamento === 'pix') result.pix += valor;
-      else if (comanda.forma_pagamento === 'dinheiro') result.dinheiro += valor;
-      else if (comanda.forma_pagamento === 'cartao') result.cartao += valor;
-      else if (comanda.forma_pagamento === 'misto') result.misto += valor;
-    });
-    return result;
+    return filteredComandas.reduce(
+      (acc, comanda) => {
+        const valor = comanda.total || 0;
+        acc.total += valor;
+        if (comanda.pago) acc.confirmados += valor;
+        else acc.naoConfirmados += valor;
+        return acc;
+      },
+      { confirmados: 0, naoConfirmados: 0, total: 0 }
+    );
   }, [filteredComandas]);
 
   return (
@@ -1141,7 +850,7 @@ export default function OrdersByDay() {
             Controle de Pedidos
           </h1>
           <p className="mt-2 text-gray-600 text-center sm:text-left">
-            Gerencie seus pedidos diários de forma simples e eficiente
+            Gerencie seus pedidos por período
           </p>
         </motion.div>
 
@@ -1152,24 +861,41 @@ export default function OrdersByDay() {
           className="bg-white rounded-2xl shadow-xl p-6 mb-8"
         >
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative">
               <button
-                onClick={() => changeDate('prev')}
-                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
-                aria-label="Dia anterior"
+                onClick={() => changePeriod('prev')}
+                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                aria-label="Período anterior"
               >
                 <ChevronLeft size={20} />
               </button>
-              <input
-                type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
-                onChange={handleDateChange}
-                className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              <div>
+                <button
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 hover:bg-gray-100"
+                  aria-label="Selecionar período"
+                >
+                  <Calendar size={20} />
+                  {format(dateRange[0].startDate, 'dd/MM/yyyy')} - {format(dateRange[0].endDate, 'dd/MM/yyyy')}
+                </button>
+                {showCalendar && (
+                  <div ref={calendarRef} className="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl">
+                    <DateRangePicker
+                      ranges={dateRange}
+                      onChange={handleDateRangeChange}
+                      maxDate={new Date()}
+                      showDateDisplay={false}
+                      direction="vertical"
+                      months={1}
+                      className="rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
               <button
-                onClick={() => changeDate('next')}
-                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
-                aria-label="Próximo dia"
+                onClick={() => changePeriod('next')}
+                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                aria-label="Próximo período"
               >
                 <ChevronRight size={20} />
               </button>
@@ -1185,12 +911,14 @@ export default function OrdersByDay() {
                 placeholder="Buscar pedido (8 últimos dígitos ou produto)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 pl-10 pr-10 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full sm:w-64 pl-10 pr-10 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500"
+                aria-label="Buscar pedido por ID ou produto"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Limpar busca"
                 >
                   <X size={16} />
                 </button>
@@ -1202,30 +930,24 @@ export default function OrdersByDay() {
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-4 py-2 rounded-lg font-medium ${
-                filterStatus === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              } transition-colors duration-200`}
+                filterStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
               Todos
             </button>
             <button
               onClick={() => setFilterStatus('paid')}
               className={`px-4 py-2 rounded-lg font-medium ${
-                filterStatus === 'paid'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              } transition-colors duration-200`}
+                filterStatus === 'paid' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
               Pagos
             </button>
             <button
               onClick={() => setFilterStatus('pending')}
               className={`px-4 py-2 rounded-lg font-medium ${
-                filterStatus === 'pending'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              } transition-colors duration-200`}
+                filterStatus === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
               Pendentes
             </button>
@@ -1233,26 +955,22 @@ export default function OrdersByDay() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl shadow-xl p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-xl p-6 text-white shadow-lg">
-            <p className="text-sm font-medium">Pagos</p>
-            <p className="text-2xl font-bold">R$ {totais.confirmados.toFixed(2)}</p>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <p className="text-sm font-medium text-green-800">Confirmados</p>
+            <p className="text-lg font-bold text-green-900">R$ {totais.confirmados.toFixed(2)}</p>
           </div>
-          <div className="bg-gradient-to-r from-red-400 to-red-600 rounded-xl p-6 text-white shadow-lg">
-            <p className="text-sm font-medium">Pendentes</p>
-            <p className="text-2xl font-bold">R$ {totais.naoConfirmados.toFixed(2)}</p>
+          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+            <p className="text-sm font-medium text-red-800">Não Confirmados</p>
+            <p className="text-lg font-bold text-red-900">R$ {totais.naoConfirmados.toFixed(2)}</p>
           </div>
-          <div className="bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-            <p className="text-sm font-medium">Total</p>
-            <p className="text-2xl font-bold">R$ {totais.geral.toFixed(2)}</p>
-          </div>
-          <div className="bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-            <p className="text-sm font-medium">Pedidos</p>
-            <p className="text-2xl font-bold">{filteredComandas.length}</p>
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p className="text-sm font-medium text-gray-600">Total</p>
+            <p className="text-lg font-bold text-gray-900">R$ {totais.total.toFixed(2)}</p>
           </div>
         </motion.div>
 
@@ -1268,7 +986,7 @@ export default function OrdersByDay() {
               className="bg-white rounded-xl shadow-lg p-8 text-center"
             >
               <p className="text-gray-600 text-lg font-medium">
-                Nenhum pedido encontrado para esta data.
+                Nenhum pedido encontrado para este período.
               </p>
             </motion.div>
           ) : (

@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Play, Square, Trash, User, X, Save, Clock as ClockIcon } from 'lucide-react';
+import { Edit, Play, Square, Trash, User, X, Save, Clock as ClockIcon, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { calculateSessionDuration, summarizeDeliveries } from './utils';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../ui/dialog';
 
 interface Motoboy {
   id: string;
@@ -50,6 +50,10 @@ export default function MotoboyList({
   const [deliveryStats, setDeliveryStats] = useState<Record<string, { total: number, byNeighborhood: DeliveryStats[] }>>({});
   const [expandedStats, setExpandedStats] = useState<Record<string, boolean>>({});
   const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [motoboyToDelete, setMotoboyToDelete] = useState<string | null>(null);
+  const [isDeletingMotoboy, setIsDeletingMotoboy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDeliveryStats = async () => {
@@ -158,32 +162,61 @@ export default function MotoboyList({
     }
   };
 
-  const handleDeleteMotoboy = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este motoboy?')) return;
+  const confirmDeleteMotoboy = (id: string) => {
+    setMotoboyToDelete(id);
+    setDeleteError(null);
+    setShowDeleteDialog(true);
+  };
 
+  const handleDeleteMotoboy = async () => {
+    if (!motoboyToDelete) return;
+    
+    setIsDeletingMotoboy(true);
+    setDeleteError(null);
+    
     try {
       const activeSessions = sessions.filter(
-        (s) => s.motoboy_id === id && s.end_time === null
+        (s) => s.motoboy_id === motoboyToDelete && s.end_time === null
       );
 
       if (activeSessions.length > 0) {
         toast.error('Finalize a sessão do motoboy antes de excluí-lo');
+        setShowDeleteDialog(false);
+        setIsDeletingMotoboy(false);
         return;
       }
 
+      // Check if motoboy has any associated deliveries
+      const { count, error: countError } = await supabase
+        .from('entregas')
+        .select('*', { count: 'exact', head: true })
+        .eq('motoboy_id', motoboyToDelete);
+      
+      if (countError) throw countError;
+      
+      if (count && count > 0) {
+        setDeleteError(`Este motoboy tem ${count} entregas associadas. Para excluir, é necessário remover todas as entregas associadas primeiro.`);
+        setIsDeletingMotoboy(false);
+        return;
+      }
+      
       const { error } = await supabase
         .from('motoboys')
         .delete()
-        .eq('id', id);
+        .eq('id', motoboyToDelete);
 
       if (error) throw error;
 
       toast.success('Motoboy excluído com sucesso');
+      setShowDeleteDialog(false);
       onMotoboyDeleted();
     } catch (error: unknown) {
       console.error('Erro ao excluir motoboy:', error);
       const err = error as Error;
+      setDeleteError(`Erro ao excluir motoboy: ${err.message}`);
       toast.error(`Erro ao excluir motoboy: ${err.message}`);
+    } finally {
+      setIsDeletingMotoboy(false);
     }
   };
 
@@ -377,7 +410,7 @@ export default function MotoboyList({
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteMotoboy(motoboy.id)}
+                      onClick={() => confirmDeleteMotoboy(motoboy.id)}
                       className="p-1 rounded-full text-red-600 hover:bg-red-100"
                       disabled={isActive}
                       title={isActive ? 'Finalize a sessão para excluir' : 'Excluir'}
@@ -476,6 +509,42 @@ export default function MotoboyList({
           </motion.div>
         );
       })}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este motoboy?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {deleteError && (
+            <div className="bg-red-50 p-3 rounded-md border border-red-200 flex items-start gap-2 text-sm">
+              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <span className="text-red-700">{deleteError}</span>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeletingMotoboy}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteMotoboy}
+              disabled={isDeletingMotoboy || deleteError !== null}
+            >
+              {isDeletingMotoboy ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

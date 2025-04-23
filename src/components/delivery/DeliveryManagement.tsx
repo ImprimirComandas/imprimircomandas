@@ -1,28 +1,34 @@
 
 import { useState } from 'react';
-import DeliveryForm from './DeliveryForm';
-import DeliveryStats from './DeliveryStats';
-import DeliveryMotoboyManagement from './delivery/DeliveryMotoboyManagement';
-import DeliveryHeader from './delivery/DeliveryHeader';
+import DeliveryForm from '../DeliveryForm';
+import DeliveryMotoboyManagement from './DeliveryMotoboyManagement';
+import DeliveryHeader from './DeliveryHeader';
 import { motion } from 'framer-motion';
-import { Truck, BarChart3, MapPin, User } from 'lucide-react';
+import { Truck, BarChart3, MapPin, User, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DeliveryList from './DeliveryList';
 
 export default function DeliveryManagement() {
-  const [activeTab, setActiveTab] = useState<'form' | 'stats' | 'motoboys'>('form');
+  const [activeTab, setActiveTab] = useState<'form' | 'deliveries' | 'motoboys'>('deliveries');
+  const [refreshDeliveries, setRefreshDeliveries] = useState(0);
   const navigate = useNavigate();
 
   const goToDeliveryRates = () => {
     navigate('/delivery-rates');
   };
 
+  const handleDeliveryAdded = () => {
+    // Notificar que uma nova entrega foi adicionada
+    setRefreshDeliveries(prev => prev + 1);
+    // Automaticamente mudar para a tab de entregas após adicionar uma nova
+    setActiveTab('deliveries');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
         <DeliveryHeader />
 
-        {/* Abas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -54,15 +60,15 @@ export default function DeliveryManagement() {
               Motoboys
             </button>
             <button
-              onClick={() => setActiveTab('stats')}
+              onClick={() => setActiveTab('deliveries')}
               className={`py-3 px-4 flex items-center font-semibold text-sm transition-all duration-200 ${
-                activeTab === 'stats'
+                activeTab === 'deliveries'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300'
               }`}
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Estatísticas
+              <Package className="h-4 w-4 mr-2" />
+              Entregas
             </button>
             
             <button
@@ -75,7 +81,6 @@ export default function DeliveryManagement() {
           </div>
         </motion.div>
 
-        {/* Conteúdo das Abas */}
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 20 }}
@@ -83,11 +88,9 @@ export default function DeliveryManagement() {
           transition={{ duration: 0.3 }}
         >
           {activeTab === 'form' ? (
-            <DeliveryForm onDeliveryAdded={function (): void {
-              throw new Error('Function not implemented.');
-            } } />
-          ) : activeTab === 'stats' ? (
-            <DeliveryStats />
+            <DeliveryForm onDeliveryAdded={handleDeliveryAdded} />
+          ) : activeTab === 'deliveries' ? (
+            <DeliveryList key={refreshDeliveries} />
           ) : (
             <DeliveryMotoboyManagement />
           )}
