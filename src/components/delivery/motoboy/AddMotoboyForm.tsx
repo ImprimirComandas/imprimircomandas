@@ -1,120 +1,91 @@
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '../../../lib/supabase';
-import { toast } from 'sonner';
 import { X, Save } from 'lucide-react';
+import { AddMotoboyFormProps } from './index';
 
-interface AddMotoboyFormProps {
-  onMotoboyAdded: () => void;
-  onCancel: () => void;
-}
+export default function AddMotoboyForm({ onSubmit, loading }: AddMotoboyFormProps) {
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [plate, setPlate] = useState('');
+  const [vehicleType, setVehicleType] = useState('');
 
-export default function AddMotoboyForm({ onMotoboyAdded, onCancel }: AddMotoboyFormProps) {
-  const [newMotoboy, setNewMotoboy] = useState({ nome: '', telefone: '' });
-
-  const handleAddMotoboy = async () => {
-    try {
-      if (newMotoboy.nome.trim() === '') {
-        toast.error('O nome do motoboy não pode estar vazio');
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar autenticado');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('motoboys')
-        .insert([
-          {
-            nome: newMotoboy.nome,
-            telefone: newMotoboy.telefone,
-            user_id: session.user.id,
-          },
-        ]);
-
-      if (error) throw error;
-
-      toast.success('Motoboy adicionado com sucesso');
-      setNewMotoboy({ nome: '', telefone: '' });
-      onMotoboyAdded();
-    } catch (error: unknown) {
-      console.error('Erro ao adicionar motoboy:', error);
-      const err = error as Error;
-      toast.error(`Erro ao adicionar motoboy: ${err.message}`);
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(nome, telefone, plate, vehicleType);
+    // Clear form after submission
+    setNome('');
+    setTelefone('');
+    setPlate('');
+    setVehicleType('');
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="bg-gray-50 rounded-xl p-4 mb-6"
-    >
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Adicionar Novo Motoboy
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="new-nome"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="nome" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Nome
           </label>
           <input
-            id="new-nome"
+            id="nome"
             type="text"
-            value={newMotoboy.nome}
-            onChange={(e) =>
-              setNewMotoboy({ ...newMotoboy, nome: e.target.value })
-            }
-            className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            required
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Nome do motoboy"
           />
         </div>
-        <div>
-          <label
-            htmlFor="new-telefone"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+        <div className="space-y-2">
+          <label htmlFor="telefone" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Telefone
           </label>
           <input
-            id="new-telefone"
+            id="telefone"
             type="tel"
-            value={newMotoboy.telefone}
-            onChange={(e) =>
-              setNewMotoboy({
-                ...newMotoboy,
-                telefone: e.target.value,
-              })
-            }
-            className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="(00) 00000-0000"
           />
         </div>
+        <div className="space-y-2">
+          <label htmlFor="plate" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Placa
+          </label>
+          <input
+            id="plate"
+            type="text"
+            value={plate}
+            onChange={(e) => setPlate(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="ABC1D23"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="vehicleType" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Tipo de Veículo
+          </label>
+          <input
+            id="vehicleType"
+            type="text"
+            value={vehicleType}
+            onChange={(e) => setVehicleType(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Moto, Carro, etc."
+          />
+        </div>
       </div>
-      <div className="flex justify-end gap-3 mt-4">
+      <div className="flex justify-end gap-2">
         <button
-          onClick={onCancel}
-          className="flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
         >
-          <X className="h-4 w-4 mr-2" />
-          Cancelar
-        </button>
-        <button
-          onClick={handleAddMotoboy}
-          className="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Salvar
+          {loading ? 'Adicionando...' : 'Adicionar Motoboy'}
         </button>
       </div>
-    </motion.div>
+    </form>
   );
 }

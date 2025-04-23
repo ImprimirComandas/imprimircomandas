@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Edit, Play, Square, Trash, User, X, Save, Clock as ClockIcon } from 'lucide-react';
@@ -7,22 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { calculateSessionDuration, summarizeDeliveries } from './utils';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
-
-interface Motoboy {
-  id: string;
-  nome: string;
-  telefone: string;
-  user_id: string;
-  created_at: string;
-}
-
-interface MotoboySession {
-  id: string;
-  motoboy_id: string;
-  start_time: string;
-  end_time: string | null;
-  user_id: string;
-}
+import { Motoboy, MotoboySession } from '../../../types';
 
 interface DeliveryStats {
   bairro: string;
@@ -33,18 +17,22 @@ interface MotoboyListProps {
   motoboys: Motoboy[];
   sessions: MotoboySession[];
   loading: boolean;
-  sessionLoading: boolean;
+  sessionLoading?: boolean;
   onMotoboyDeleted: () => void;
-  onSessionStatusChanged: () => void;
+  onSessionAdded: () => void;
+  onSessionEnded: () => void;
+  onToggleStatus: (id: string, currentStatus: string) => Promise<void>;
 }
 
 export default function MotoboyList({
   motoboys,
   sessions,
   loading,
-  sessionLoading,
+  sessionLoading = false,
   onMotoboyDeleted,
-  onSessionStatusChanged,
+  onSessionAdded,
+  onSessionEnded,
+  onToggleStatus,
 }: MotoboyListProps) {
   const [editingMotoboy, setEditingMotoboy] = useState<Motoboy | null>(null);
   const [deliveryStats, setDeliveryStats] = useState<Record<string, { total: number, byNeighborhood: DeliveryStats[] }>>({});
@@ -65,7 +53,6 @@ export default function MotoboyList({
             setLoadingStats(prev => ({ ...prev, [motoboy.id]: true }));
             
             try {
-              // Fetch all entregas for this motoboy during the current session
               const startTime = new Date(activeSession.start_time);
               
               const { data: entregas, error } = await supabase
@@ -76,7 +63,6 @@ export default function MotoboyList({
                 
               if (error) throw error;
               
-              // Count by neighborhood
               const neighborhoods: Record<string, number> = {};
               let total = 0;
               
@@ -88,7 +74,6 @@ export default function MotoboyList({
                 });
               }
               
-              // Format for display
               const byNeighborhood = Object.entries(neighborhoods).map(([name, count]) => ({
                 bairro: name,
                 count
@@ -237,7 +222,7 @@ export default function MotoboyList({
       if (error) throw error;
 
       toast.success('Sessão iniciada com sucesso');
-      onSessionStatusChanged();
+      onSessionAdded();
     } catch (error: unknown) {
       console.error('Erro ao iniciar sessão:', error);
       const err = error as Error;
@@ -255,7 +240,7 @@ export default function MotoboyList({
       if (error) throw error;
 
       toast.success('Sessão finalizada com sucesso');
-      onSessionStatusChanged();
+      onSessionEnded();
     } catch (error: unknown) {
       console.error('Erro ao finalizar sessão:', error);
       const err = error as Error;
