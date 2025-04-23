@@ -42,7 +42,7 @@ interface ProdutoFiltrado {
   numero?: number;
 }
 
-// Componente OrderCard
+// Componente OrderCard (mantido igual ao anterior, para brevidade)
 const OrderCard = ({
   comanda,
   onTogglePayment,
@@ -96,7 +96,6 @@ const OrderCard = ({
         bairro: comanda.bairro,
         taxaentrega: comanda.taxaentrega,
         endereco: comanda.endereco,
-        total: comanda.total, // Initialize total
       });
     }
   }, [isEditing, comanda, getProdutos]);
@@ -209,13 +208,7 @@ const OrderCard = ({
       }
     }
 
-    // Update the total in editedComanda before saving
-    const updatedComanda = {
-      ...editedComanda,
-      total: totalComTaxa, // Ensure total is updated
-    };
-
-    onSaveEdit(comanda.id, updatedComanda);
+    onSaveEdit(comanda.id, editedComanda);
     setIsEditing(false);
   };
 
@@ -791,13 +784,9 @@ export default function OrdersByDay() {
 
   const saveEdit = async (id: string, updatedComanda: Partial<Comanda>) => {
     try {
-      // Ensure total is included in the update
       const { error } = await supabase
         .from('comandas')
-        .update({
-          ...updatedComanda,
-          total: updatedComanda.total, // Explicitly include total
-        })
+        .update(updatedComanda)
         .eq('id', id);
 
       if (error) throw new Error(`Erro ao salvar alterações: ${error.message}`);

@@ -10,7 +10,7 @@ import {
   TableCell 
 } from '../../ui/table';
 import { Button } from '../../ui/button';
-import { Package, Printer, Info, Trash2 } from 'lucide-react';
+import { Package, X, Info, Truck } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'sonner';
 import { calculateMotoboyPayment, calculateSessionDuration, formatDate } from './utils';
@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "../../ui/alert-dialog";
 
+// Tipos
 interface Motoboy {
   id: string;
   nome: string;
@@ -64,58 +65,15 @@ interface Delivery {
 interface SessionHistoryProps {
   sessions: MotoboySession[];
   motoboys: Motoboy[];
-  onSessionDeleted?: () => void;
 }
 
-interface StoreSettings {
-  default_neighborhood: string;
-  default_delivery_rate: number;
-}
-
-export default function SessionHistory({ sessions, motoboys, onSessionDeleted }: SessionHistoryProps) {
+export default function SessionHistory({ sessions, motoboys }: SessionHistoryProps) {
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
-  const [storeSettings, setStoreSettings] = useState<StoreSettings>({
-    default_neighborhood: 'Jardim Paraíso',
-    default_delivery_rate: 6
-  });
-
-  useEffect(() => {
-    async function fetchStoreSettings() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data, error } = await supabase
-          .from('store_settings')
-          .select('default_neighborhood, default_delivery_rate')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching store settings:', error);
-          return;
-        }
-
-        if (data) {
-          setStoreSettings({
-            default_neighborhood: data.default_neighborhood || 'Jardim Paraíso',
-            default_delivery_rate: data.default_delivery_rate || 6
-          });
-        }
-      } catch (error) {
-        console.error('Error in fetchStoreSettings:', error);
-      }
-    }
-
-    fetchStoreSettings();
-  }, []);
-
+  
   const fetchDeliveries = async (sessionId: string) => {
     setLoadingDeliveries(true);
     try {
@@ -357,53 +315,68 @@ export default function SessionHistory({ sessions, motoboys, onSessionDeleted }:
       transition={{ duration: 0.5 }}
       className="bg-white rounded-2xl shadow-xl p-4 md:p-6"
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Histórico de Sessões</h2>
-        <Button
-          onClick={handlePrint}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <Printer className="h-4 w-4" />
-          Imprimir Histórico
-        </Button>
-      </div>
-
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        Histórico de Sessões
+      </h2>
+      
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Motoboy</TableHead>
-              <TableHead>Período</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Motoboy
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Início
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fim
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Duração
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ações
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sessions.map((session) => {
-              const motoboy = motoboys.find((m) => m.id === session.motoboy_id);
+            {sessions.slice(0, 10).map((session) => {
+              const motoboy = motoboys.find(m => m.id === session.motoboy_id);
               const isExpanded = expandedSession === session.id;
-              const duration = calculateSessionDuration(session.start_time, session.end_time);
               
               return (
-                <TableRow key={session.id} className="group hover:bg-gray-50">
-                  <TableCell className="font-medium">{motoboy?.nome || 'Desconhecido'}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{format(new Date(session.start_time), 'dd/MM HH:mm')}</div>
-                      <div className="text-gray-500">{duration}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      session.end_time ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {session.end_time ? 'Finalizada' : 'Ativa'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
+                <React.Fragment key={session.id}>
+                  <TableRow>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {motoboy?.nome || 'Desconhecido'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.start_time ? formatDate(session.start_time) : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.end_time ? formatDate(session.end_time) : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {session.start_time 
+                        ? calculateSessionDuration(session.start_time, session.end_time)
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
+                      {session.end_time === null ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Ativa
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          Finalizada
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -424,19 +397,71 @@ export default function SessionHistory({ sessions, motoboys, onSessionDeleted }:
                       >
                         <Printer className="h-4 w-4" />
                       </Button>
-                      {session.end_time && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => confirmDelete(session.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Expanded deliveries section */}
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0 border-t-0">
+                        <div className="bg-gray-50 p-4">
+                          <h3 className="font-medium text-gray-700 mb-3">Detalhes das Entregas</h3>
+                          
+                          {loadingDeliveries ? (
+                            <div className="text-center py-3">
+                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                              <p className="text-sm text-gray-500 mt-2">Carregando entregas...</p>
+                            </div>
+                          ) : deliveries.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-2">Nenhuma entrega registrada para esta sessão.</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs">ID</TableHead>
+                                  <TableHead className="text-xs">Bairro</TableHead>
+                                  <TableHead className="text-xs">Valor</TableHead>
+                                  <TableHead className="text-xs">Data/Hora</TableHead>
+                                  <TableHead className="text-xs">Ações</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {deliveries.map((delivery) => (
+                                  <TableRow key={delivery.id}>
+                                    <TableCell className="text-xs">
+                                      {delivery.comanda_id ? 
+                                        delivery.comanda_id.slice(-8) : 
+                                        delivery.id.slice(-8)}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      {delivery.bairro}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      R$ {delivery.valor_entrega.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      {format(new Date(delivery.created_at), 'dd/MM HH:mm')}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-7 w-7"
+                                        onClick={() => viewDeliveryDetails(delivery)}
+                                      >
+                                        <Info className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               );
             })}
           </TableBody>
