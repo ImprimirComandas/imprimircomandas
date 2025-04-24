@@ -4,22 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { Plus, User, Clock } from 'lucide-react';
 import { MotoboyList, AddMotoboyForm, SessionHistory } from './motoboy';
-
-interface Motoboy {
-  id: string;
-  nome: string;
-  telefone: string;
-  user_id: string;
-  created_at: string;
-}
-
-interface MotoboySession {
-  id: string;
-  motoboy_id: string;
-  start_time: string;
-  end_time: string | null;
-  user_id: string;
-}
+import type { Motoboy, MotoboySession } from '../../types'; // Import from global types instead of local types
 
 export default function DeliveryMotoboyManagement() {
   const [motoboys, setMotoboys] = useState<Motoboy[]>([]);
@@ -28,6 +13,7 @@ export default function DeliveryMotoboyManagement() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     fetchMotoboys();
@@ -51,7 +37,6 @@ export default function DeliveryMotoboyManagement() {
         .order('nome');
 
       if (error) throw error;
-      console.log('Motoboys:', data);
       setMotoboys(data || []);
     } catch (error: unknown) {
       console.error('Erro ao carregar motoboys:', error);
@@ -80,7 +65,6 @@ export default function DeliveryMotoboyManagement() {
         .order('start_time', { ascending: false });
 
       if (error) throw error;
-      console.log('Sessions:', data);
       setSessions(data || []);
     } catch (error: unknown) {
       console.error('Erro ao carregar sessões:', error);
@@ -92,9 +76,55 @@ export default function DeliveryMotoboyManagement() {
     }
   };
 
-  const handleMotoboyAdded = () => {
-    setShowAddForm(false);
-    fetchMotoboys();
+  const handleAddMotoboy = async (nome: string, telefone: string) => {
+    try {
+      setFormLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar autenticado');
+        return;
+      }
+
+      const { error } = await supabase.from('motoboys').insert([
+        {
+          nome,
+          telefone,
+          user_id: session.user.id,
+          status: 'inactive'
+        }
+      ]);
+
+      if (error) throw error;
+
+      toast.success('Motoboy adicionado com sucesso');
+      setShowAddForm(false);
+      fetchMotoboys();
+    } catch (error: unknown) {
+      console.error('Erro ao adicionar motoboy:', error);
+      const err = error as Error;
+      toast.error(`Erro ao adicionar motoboy: ${err.message}`);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const { error } = await supabase
+        .from('motoboys')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Status atualizado com sucesso');
+      fetchMotoboys();
+    } catch (error: unknown) {
+      console.error('Erro ao atualizar status:', error);
+      const err = error as Error;
+      toast.error(`Erro ao atualizar status: ${err.message}`);
+    }
   };
 
   if (error && !loading && !sessionLoading) {
@@ -118,7 +148,6 @@ export default function DeliveryMotoboyManagement() {
 
   return (
     <div className="space-y-8">
-      {/* Motoboys Cadastrados */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,8 +169,9 @@ export default function DeliveryMotoboyManagement() {
 
         {showAddForm && (
           <AddMotoboyForm 
-            onMotoboyAdded={handleMotoboyAdded} 
-            onCancel={() => setShowAddForm(false)} 
+            onSubmit={handleAddMotoboy}
+            loading={formLoading}
+            onCancel={() => setShowAddForm(false)}
           />
         )}
 
@@ -156,7 +186,9 @@ export default function DeliveryMotoboyManagement() {
             loading={loading}
             sessionLoading={sessionLoading}
             onMotoboyDeleted={fetchMotoboys}
-            onSessionStatusChanged={fetchSessions}
+            onSessionAdded={fetchSessions}
+            onSessionEnded={fetchSessions}
+            onToggleStatus={handleToggleStatus}
           />
         )}
       </motion.div>
@@ -168,7 +200,11 @@ export default function DeliveryMotoboyManagement() {
           Nenhuma sessão registrada.
         </div>
       ) : (
-        <SessionHistory sessions={sessions} motoboys={motoboys} />
+        <SessionHistory 
+          sessions={sessions} 
+          motoboys={motoboys}
+          onRefresh={fetchSessions}
+        />
       )}
     </div>
   );

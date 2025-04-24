@@ -9,7 +9,7 @@ import MotoboyDeliveryGroup from './deliveryList/MotoboyDeliveryGroup';
 import DeleteDeliveryDialog from './deliveryList/DeleteDeliveryDialog';
 import EditDeliveryDialog from './deliveryList/EditDeliveryDialog';
 import { format } from 'date-fns';
-import { Entrega, GroupedDeliveries } from '@/types';
+import { Entrega, GroupedDeliveries } from '../../types';
 
 export default function DeliveryList() {
   const [deliveries, setDeliveries] = useState<Entrega[]>([]);
@@ -123,7 +123,7 @@ export default function DeliveryList() {
     });
 
     deliveries.forEach(delivery => {
-      if (grouped[delivery.motoboy_id]) {
+      if (delivery.motoboy_id && grouped[delivery.motoboy_id]) {
         const deliveryDate = format(new Date(delivery.created_at || ''), 'yyyy-MM-dd');
         
         if (!grouped[delivery.motoboy_id].deliveriesByDate[deliveryDate]) {
@@ -135,6 +135,7 @@ export default function DeliveryList() {
       }
     });
 
+    // Remove motoboys without deliveries
     Object.keys(grouped).forEach(motoboyId => {
       if (Object.keys(grouped[motoboyId].deliveriesByDate).length === 0) {
         delete grouped[motoboyId];

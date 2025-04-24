@@ -4,6 +4,7 @@ import TotaisPorStatusPagamento from '../TotaisPorStatusPagamento';
 import ComandasAnterioresModificado from '../ComandasAnterioresModificado';
 import GrowthChart from './GrowthChart';
 import type { Comanda } from '../../types/database';
+import { TotaisCardProps } from '../../types';
 
 interface RightColumnProps {
   totais: {
@@ -22,6 +23,20 @@ interface RightColumnProps {
   getUltimos8Digitos: (id: string | undefined) => string;
   onConfirmPayment: (comanda: Comanda) => void;
   chartData: { name: string; Pedidos: number; Valor: number }[];
+}
+
+export function TotaisCard({ confirmados, naoConfirmados, total, showValues, toggleShowValues }: TotaisCardProps) {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl p-6">
+      <TotaisPorStatusPagamento
+        confirmados={confirmados || 0}
+        naoConfirmados={naoConfirmados || 0}
+        total={total || 0}
+        showValues={showValues}
+        toggleShowValues={toggleShowValues}
+      />
+    </div>
+  );
 }
 
 export default function RightColumn({
@@ -49,15 +64,13 @@ export default function RightColumn({
       className="lg:w-1/2 space-y-6"
     >
       {/* Totais por Status */}
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <TotaisPorStatusPagamento
-          confirmados={totais.confirmados || 0}
-          naoConfirmados={totais.naoConfirmados || 0}
-          total={totais.geral || 0}
-          showValues={showValues}
-          toggleShowValues={toggleShowValues}
-        />
-      </div>
+      <TotaisCard
+        confirmados={totais.confirmados || 0}
+        naoConfirmados={totais.naoConfirmados || 0}
+        total={totais.geral || 0}
+        showValues={showValues}
+        toggleShowValues={toggleShowValues}
+      />
 
       {/* Comandas Anteriores - Only Pending Orders */}
       <div className="bg-white rounded-2xl shadow-xl p-6">

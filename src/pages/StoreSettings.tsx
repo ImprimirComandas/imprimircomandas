@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Store, Upload, ArrowLeft } from 'lucide-react';
+import { Store, Upload, ArrowLeft, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import type { Profile } from '../types/database';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function StoreSettings() {
   const [loading, setLoading] = useState(false);
@@ -12,6 +19,7 @@ export default function StoreSettings() {
   const [storeName, setStoreName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [printSize, setPrintSize] = useState<'80mm' | '58mm'>('80mm');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,6 +48,9 @@ export default function StoreSettings() {
         setProfile(data);
         setStoreName(data.store_name || '');
         setAvatarUrl(data.avatar_url);
+        if (data.print_size) {
+          setPrintSize(data.print_size);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
@@ -63,6 +74,7 @@ export default function StoreSettings() {
         id: session.user.id,
         store_name: storeName,
         avatar_url: avatarUrl,
+        print_size: printSize,
         updated_at: new Date().toISOString(),
       };
 
@@ -131,7 +143,6 @@ export default function StoreSettings() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        {/* Cabeçalho */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -155,7 +166,6 @@ export default function StoreSettings() {
           </button>
         </motion.div>
 
-        {/* Card de Configurações */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +178,6 @@ export default function StoreSettings() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Avatar */}
               <div className="flex flex-col items-center">
                 <div className="mb-4 h-32 w-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                   {avatarUrl ? (
@@ -200,7 +209,6 @@ export default function StoreSettings() {
                 </label>
               </div>
 
-              {/* Nome da Loja */}
               <div>
                 <label
                   htmlFor="store-name"
@@ -218,7 +226,28 @@ export default function StoreSettings() {
                 />
               </div>
 
-              {/* Botão Salvar */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Printer className="w-4 h-4" />
+                  Tamanho da Impressão
+                </label>
+                <Select
+                  value={printSize}
+                  onValueChange={(value: '80mm' | '58mm') => setPrintSize(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tamanho da impressão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="80mm">80mm (Padrão)</SelectItem>
+                    <SelectItem value="58mm">58mm (Compacto)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">
+                  Escolha o tamanho do papel da sua impressora térmica
+                </p>
+              </div>
+
               <button
                 onClick={updateProfile}
                 disabled={loading}

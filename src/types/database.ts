@@ -1,12 +1,13 @@
-
 export interface Profile {
   id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  store_name: string;
-  avatar_url: string | null;
   updated_at: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  store_name: string;
+  store_open: boolean;
+  taxa_entrega_default: number;
+  print_size: '80mm' | '58mm';
 }
 
 export interface AuthError {
@@ -53,6 +54,7 @@ export interface ShopSession {
   end_time: string | null;
   created_at: string;
 }
+
 export interface Comanda {
   id?: string;
   produtos: Produto[];

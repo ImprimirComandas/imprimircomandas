@@ -117,6 +117,34 @@ export function Products() {
     }
   };
 
+  const exportProducts = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Usuário não autenticado');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('nome, valor, categoria, numero')
+        .eq('user_id', session.user.id)
+        .order('nome');
+
+      if (error) throw error;
+
+      const ws = XLSX.utils.json_to_sheet(data || []);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+      XLSX.writeFile(wb, 'produtos.xlsx');
+      
+      toast.success('Produtos exportados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar produtos:', error);
+      toast.error('Erro ao exportar produtos');
+    }
+  };
+
   const addProduct = async () => {
     if (!productName || !productValue) {
       toast.error('Por favor, preencha o nome e o valor do produto');
@@ -138,11 +166,25 @@ export function Products() {
         return;
       }
 
+      const { data: maxNumberData, error: maxNumberError } = await supabase
+        .from('produtos')
+        .select('numero')
+        .eq('user_id', session.user.id)
+        .order('numero', { ascending: false })
+        .limit(1);
+
+      if (maxNumberError) throw maxNumberError;
+
+      const nextNumber = maxNumberData && maxNumberData[0]?.numero 
+        ? maxNumberData[0].numero + 1 
+        : 1;
+
       const newProduct = {
         nome: productName,
         valor: parseFloat(parsedValue.toFixed(2)),
         categoria: productCategory || null,
         user_id: session.user.id,
+        numero: nextNumber,
       };
 
       const { data, error } = await supabase
@@ -387,12 +429,30 @@ export function Products() {
           return;
         }
 
-        const productsToUpsert = uniqueProducts.map(product => ({
-          nome: product.nome,
-          valor: product.valor,
-          categoria: product.categoria,
-          user_id: session.user.id,
-        }));
+        const { maxNumberData, error: maxNumberError } = await supabase
+          .from('produtos')
+          .select('numero')
+          .eq('user_id', session.user.id)
+          .order('numero', { ascending: false })
+          .limit(1);
+
+        if (maxNumberError) throw maxNumberError;
+
+        let nextNumber = maxNumberData && maxNumberData[0]?.numero 
+          ? maxNumberData[0].numero + 1 
+          : 1;
+
+        const productsToUpsert = uniqueProducts.map(product => {
+          const productWithNumber = {
+            nome: product.nome,
+            valor: product.valor,
+            categoria: product.categoria,
+            user_id: session.user.id,
+            numero: nextNumber,
+          };
+          nextNumber++;
+          return productWithNumber;
+        });
 
         const { error } = await supabase
           .from('produtos')
@@ -428,7 +488,6 @@ export function Products() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        {/* Cabeçalho */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -443,16 +502,25 @@ export function Products() {
           </p>
         </motion.div>
 
-        {/* Formulário de Adição/Edição */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-white rounded-2xl shadow-xl p-6 mb-8"
         >
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
-            {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">
+              {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
+            </h2>
+            <button
+              onClick={exportProducts}
+              className="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Exportar Produtos
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -569,7 +637,6 @@ export function Products() {
           </div>
         </motion.div>
 
-        {/* Lista de Produtos */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
