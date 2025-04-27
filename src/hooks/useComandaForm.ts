@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useBairros } from './useBairros';
 import { useProdutoSearch } from './useProdutoSearch';
@@ -75,6 +74,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   );
 
   const onChange = (field: string, value: any) => {
+    // console.log('onChange:', field, value);
     if (field === 'pesquisaProduto') setPesquisaProduto(value);
     else if (field === 'endereco') updateComandaField('endereco', value);
     else if (field === 'pago') setPago(value);

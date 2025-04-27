@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -45,14 +44,17 @@ export function useProdutoSearch() {
     debounce((searchTerm: string) => {
       if (!searchTerm || searchTerm.trim() === '') {
         setProdutosFiltrados([]);
+        setLoading(false);
         return;
       }
       
       setLoading(true);
-      const filtered = produtosCadastrados.filter(p =>
-        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.numero !== undefined && p.numero !== null && 
-         p.numero.toString() && p.numero.toString().includes(searchTerm))
+      const filtered = produtosCadastrados.filter(
+        (p) =>
+          p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.numero !== undefined &&
+            p.numero !== null &&
+            p.numero.toString().includes(searchTerm))
       );
       setProdutosFiltrados(filtered);
       setLoading(false);
@@ -60,27 +62,9 @@ export function useProdutoSearch() {
     [produtosCadastrados]
   );
 
-  // Update search term and filter products
-  const updateSearchTerm = (term: string) => {
-    setPesquisaProduto(term);
-    
-    // Clear results immediately if search is empty
-    if (!term || term.trim() === '') {
-      setProdutosFiltrados([]);
-      return;
-    }
-    
-    debouncedFilter(term);
-  };
-
   // Filter products when search term changes
   useEffect(() => {
-    // Don't filter if search term is empty
-    if (!pesquisaProduto || pesquisaProduto.trim() === '') {
-      setProdutosFiltrados([]);
-      return;
-    }
-    
+    // console.log('pesquisaProduto atualizado:', pesquisaProduto);
     debouncedFilter(pesquisaProduto);
   }, [pesquisaProduto, debouncedFilter]);
 
@@ -134,7 +118,7 @@ export function useProdutoSearch() {
 
   return {
     pesquisaProduto,
-    setPesquisaProduto: updateSearchTerm,
+    setPesquisaProduto, // Use diretamente a função do useState
     produtosCadastrados,
     produtosFiltrados,
     editingProduct,
