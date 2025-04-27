@@ -125,23 +125,43 @@ export function Products() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('nome, valor, categoria, numero')
-        .eq('user_id', session.user.id)
-        .order('nome');
+      let allProducts: { nome: string; valor: number; categoria: string | null; numero: number }[] = [];
+      let currentPage = 0;
+      const exportPageSize = 1000;
 
-      if (error) throw error;
+      // Paginate to fetch all products
+      while (true) {
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('nome, valor, categoria, numero')
+          .eq('user_id', session.user.id)
+          .order('nome')
+          .range(currentPage * exportPageSize, (currentPage + 1) * exportPageSize - 1);
 
-      const ws = XLSX.utils.json_to_sheet(data || []);
+        if (error) throw error;
+
+        if (!data || data.length === 0) break;
+
+        allProducts = [...allProducts, ...data];
+        currentPage++;
+        console.log(`Exporting page ${currentPage}, products fetched: ${allProducts.length}`);
+      }
+
+      if (allProducts.length === 0) {
+        toast.error('Nenhum produto encontrado para exportar');
+        return;
+      }
+
+      console.log(`Total products exported: ${allProducts.length}`);
+      const ws = XLSX.utils.json_to_sheet(allProducts);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
-      XLSX.writeFile(wb, 'produtos.xlsx');
+      XLSX.writeFile(wb, `produtos_${new Date().toISOString().split('T')[0]}.xlsx`);
       
-      toast.success('Produtos exportados com sucesso!');
+      toast.success(`Todos os ${allProducts.length} produtos exportados com sucesso!`);
     } catch (error) {
       console.error('Erro ao exportar produtos:', error);
-      toast.error('Erro ao exportar produtos');
+      toast.error('Erro ao exportar produtos. Verifique o console para mais detalhes.');
     }
   };
 
@@ -429,7 +449,7 @@ export function Products() {
           return;
         }
 
-        const { maxNumberData, error: maxNumberError } = await supabase
+        const { data: maxNumberData, error: maxNumberError } = await supabase
           .from('produtos')
           .select('numero')
           .eq('user_id', session.user.id)
@@ -517,11 +537,11 @@ export function Products() {
               className="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
             >
               <Save className="h-4 w-4 mr-2" />
-              Exportar Produtos
+              Exportar Todos os Produtos
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="space-y-4">
             <div>
               <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Nome do Produto
@@ -531,7 +551,7 @@ export function Products() {
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Ex: Água Mineral 500ml"
               />
             </div>
@@ -544,13 +564,13 @@ export function Products() {
                 type="number"
                 value={productValue}
                 onChange={(e) => setProductValue(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="0.00"
                 step="0.01"
                 min="0"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
                 Categoria (opcional)
               </label>
@@ -559,11 +579,11 @@ export function Products() {
                 type="text"
                 value={productCategory}
                 onChange={(e) => setProductCategory(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Ex: Bebidas"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label htmlFor="product-file" className="block text-sm font-medium text-gray-700 mb-1">
                 Importar Produtos (XLS, XLSX, CSV)
               </label>
@@ -582,21 +602,21 @@ export function Products() {
               )}
             </div>
           </div>
-          <div className="mt-6 flex justify-between items-center">
+          <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <button
               onClick={deleteAllProducts}
               disabled={saving || products.length === 0}
-              className="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Apagar Todos
+              Apagar Todos os Produtos
             </button>
-            <div className="flex gap-3">
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
               {editingProduct && (
                 <button
                   onClick={cancelEditing}
                   disabled={saving}
-                  className="flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
+                  className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -605,7 +625,7 @@ export function Products() {
               <button
                 onClick={editingProduct ? saveEdit : addProduct}
                 disabled={saving}
-                className="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {saving ? (
                   <svg
@@ -654,7 +674,7 @@ export function Products() {
                   id="category-select"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 >
                   <option value="Todas">Todas</option>
                   {categories.map(category => (
@@ -673,7 +693,7 @@ export function Products() {
                   type="text"
                   value={editSearchTerm}
                   onChange={(e) => setEditSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="Buscar produto..."
                 />
                 {editSearchTerm && (
