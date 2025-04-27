@@ -4,9 +4,12 @@ import { Link } from 'react-router-dom';
 import { Menu, X, Package, BarChart2, Settings, MapPin, Truck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { MobileMenuProps } from '@/types';
 
-const MobileMenu: FC<MobileMenuProps> = ({ pathname, className }) => {
+export interface MobileMenuProps {
+  pathname: string;
+}
+
+const MobileMenu: FC<MobileMenuProps> = ({ pathname }) => {
   const [open, setOpen] = useState(false);
   
   const links = [
@@ -22,7 +25,7 @@ const MobileMenu: FC<MobileMenuProps> = ({ pathname, className }) => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className={`md:hidden ${className || ''}`}>
+        <Button variant="ghost" size="icon" className="md:hidden">
           <Menu />
           <span className="sr-only">Abrir menu</span>
         </Button>

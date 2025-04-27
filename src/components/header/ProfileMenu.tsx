@@ -12,14 +12,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { LogOut, User, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Profile } from '../../types/database';
-import { ProfileMenuProps } from '@/types';
+
+export interface ProfileMenuProps {
+  profile: Profile | null;
+  onSignOut: () => Promise<void>;
+  showMenu: boolean;
+  setShowMenu: (show: boolean) => void;
+}
 
 const ProfileMenu: FC<ProfileMenuProps> = ({ 
   profile, 
   onSignOut, 
   showMenu, 
-  setShowMenu,
-  className
+  setShowMenu 
 }) => {
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2)
@@ -28,7 +33,7 @@ const ProfileMenu: FC<ProfileMenuProps> = ({
   return (
     <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
       <DropdownMenuTrigger asChild>
-        <Avatar className={`h-8 w-8 cursor-pointer border border-border ${className || ''}`}>
+        <Avatar className="h-8 w-8 cursor-pointer border border-border">
           <AvatarImage src={profile?.avatar_url || ''} alt="Avatar" />
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
         </Avatar>
