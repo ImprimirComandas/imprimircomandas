@@ -36,15 +36,15 @@ const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string 
 };
 
 /**
- * Truncates product name to prevent line breaks
+ * Truncates product name to prevent overly long text, allowing enough length for two lines
  */
-const truncateProductName = (name: string, maxLength: number = 20): string => {
+const truncateProductName = (name: string, maxLength: number = 40): string => {
   if (name.length <= maxLength) return name;
   return name.slice(0, maxLength - 3) + '...';
 };
 
 /**
- * Generates CSS styles for a professional fiscal receipt with original font sizes
+ * Generates CSS styles for a professional fiscal receipt with support for two-line product names
  */
 const generatePrintStyles = (): string => `
   @page {
@@ -55,13 +55,13 @@ const generatePrintStyles = (): string => `
     margin: 0;
     padding: 2mm;
     font-family: Arial, sans-serif;
-    font-size: 16px; /* Original */
+    font-size: 16px;
     width: 75mm;
     color: #000;
     line-height: 1.2;
   }
   .store-logo {
-    width: 40mm; /* Fixed size */
+    width: 40mm;
     height: 40mm;
     margin: 0 auto 2mm;
     display: block;
@@ -73,11 +73,11 @@ const generatePrintStyles = (): string => `
   }
   .header-title {
     font-weight: bold;
-    font-size: 16px; /* Original */
+    font-size: 16px;
     margin-bottom: 1mm;
   }
   .header-info {
-    font-size: 14px; /* Original */
+    font-size: 14px;
   }
   .divider {
     border-top: 1px dashed #000;
@@ -85,13 +85,13 @@ const generatePrintStyles = (): string => `
   }
   .section-title {
     font-weight: bold;
-    font-size: 16px; /* Original body size */
+    font-size: 16px;
     margin-bottom: 2mm;
     text-transform: uppercase;
   }
   .customer-info div {
     margin-bottom: 1mm;
-    font-size: 16px; /* Original */
+    font-size: 16px;
   }
   .product-table {
     margin-bottom: 2mm;
@@ -106,13 +106,18 @@ const generatePrintStyles = (): string => `
   .product-row {
     display: flex;
     margin-bottom: 1mm;
+    align-items: flex-start; /* Align items to top for multi-line text */
   }
   .col-item {
     flex: 2.5;
-    white-space: nowrap;
+    max-width: 45mm;
+    white-space: normal; /* Allow text wrapping */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 45mm; /* Limits width to prevent wrapping */
+    line-height: 1.4; /* Adjust line height for better readability */
   }
   .col-qtd {
     flex: 0.8;
@@ -130,7 +135,7 @@ const generatePrintStyles = (): string => `
     display: flex;
     justify-content: space-between;
     margin-bottom: 1mm;
-    font-size: 16px; /* Original */
+    font-size: 16px;
   }
   .total-row.total {
     font-weight: bold;
@@ -143,17 +148,17 @@ const generatePrintStyles = (): string => `
   }
   .payment-section div {
     margin-bottom: 1mm;
-    font-size: 16px; /* Original */
+    font-size: 16px;
   }
   .payment-status {
     text-align: center;
     font-weight: bold;
-    font-size: 26px; /* Original */
+    font-size: 26px;
     margin: 2mm 0;
   }
   .footer {
     text-align: center;
-    font-size: 14px; /* Original footer size */
+    font-size: 14px;
     margin-top: 2mm;
   }
   .cut-line {
@@ -162,7 +167,7 @@ const generatePrintStyles = (): string => `
   }
   .cut-text {
     text-align: center;
-    font-size: 10px; /* Original */
+    font-size: 10px;
   }
 `;
 
@@ -220,25 +225,24 @@ const createProductsSection = (comanda: Comanda): string => {
  * Creates the totals section
  */
 const createTotalsSection = (comanda: Comanda): string => {
-  // Calcular o subtotal corretamente como soma dos produtos
   const subtotal = comanda.produtos.reduce((sum, produto) => sum + (produto.valor * produto.quantidade), 0);
   
   return `
-  <div class="totals-section">
-    <div class="total-row">
-      <span>Subtotal:</span>
-      <span>R$ ${subtotal.toFixed(2)}</span>
+    <div class="totals-section">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>R$ ${subtotal.toFixed(2)}</span>
+      </div>
+      <div class="total-row">
+        <span>Taxa de Entrega:</span>
+        <span>R$ ${comanda.taxaentrega.toFixed(2)}</span>
+      </div>
+      <div class="total-row total">
+        <span>Total:</span>
+        <span>R$ ${(subtotal + comanda.taxaentrega).toFixed(2)}</span>
+      </div>
     </div>
-    <div class="total-row">
-      <span>Taxa de Entrega:</span>
-      <span>R$ ${comanda.taxaentrega.toFixed(2)}</span>
-    </div>
-    <div class="total-row total">
-      <span>Total:</span>
-      <span>R$ ${(subtotal + comanda.taxaentrega).toFixed(2)}</span>
-    </div>
-  </div>
-`;
+  `;
 };
 
 /**
