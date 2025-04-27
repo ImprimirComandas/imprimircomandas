@@ -1,14 +1,15 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Truck, Search, Save } from 'lucide-react';
 import { debounce } from 'lodash';
 import { Comanda, BairroTaxa } from '../types/database';
-import { Motoboy, Entrega } from '../types'; // Updated import path
+import { Motoboy, Entrega } from '../types';
 import { Checkbox } from './ui/checkbox';
 
 interface DeliveryFormProps {
-  onDeliveryAdded: () => void; // Obrigatória
+  onDeliveryAdded: () => void;
 }
 
 export default function DeliveryForm({ onDeliveryAdded }: DeliveryFormProps) {
@@ -108,7 +109,7 @@ export default function DeliveryForm({ onDeliveryAdded }: DeliveryFormProps) {
 
       const { data, error } = await supabase
         .from('motoboys')
-        .select('id, nome')
+        .select('*')
         .eq('user_id', user.id)
         .eq('status', 'ativo')
         .in('id', activeMotoboyIds)

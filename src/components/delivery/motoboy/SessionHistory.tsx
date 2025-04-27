@@ -10,7 +10,7 @@ import {
   TableCell 
 } from '../../ui/table';
 import { Button } from '../../ui/button';
-import { Package, X, Info } from 'lucide-react';
+import { Package, X, Info, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'sonner';
 import {
@@ -22,23 +22,8 @@ import {
   DialogFooter,
 } from '../../ui/dialog';
 
-// Tipos
-interface Motoboy {
-  id: string;
-  nome: string;
-  telefone: string;
-  user_id: string;
-  created_at: string;
-}
-
-interface MotoboySession {
-  id: string;
-  motoboy_id: string;
-  start_time: string;
-  end_time: string | null;
-  user_id: string;
-}
-
+// Import correct types from central types
+import type { Motoboy, MotoboySession } from '../../../types';
 interface Delivery {
   id: string;
   motoboy_id: string;
@@ -48,12 +33,14 @@ interface Delivery {
   forma_pagamento: string;
   origem: string;
   comanda_id: string | null;
+  status?: string;
+  entregue?: boolean; // optional, to indicate delivered status
 }
 
 interface SessionHistoryProps {
   sessions: MotoboySession[];
   motoboys: Motoboy[];
-  onRefresh: () => void; // Callback para atualizar a lista de sessões/entregas
+  onRefresh?: () => void;
 }
 
 // Função utilitária para formatar data
@@ -73,23 +60,18 @@ const calculateSessionDuration = (start: string, end: string | null) => {
 
 // Função para calcular o pagamento do motoboy
 const calculateMotoboyPayment = (session: MotoboySession, deliveries: Delivery[]): number => {
-  // Calcula a duração da sessão em horas
   const startTime = new Date(session.start_time);
   const endTime = session.end_time ? new Date(session.end_time) : new Date();
   const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
-  // Base: R$90,00 (≤ 6 horas) ou R$110,00 (> 6 horas) para até 10 entregas
   const basePayment = durationHours <= 6 ? 90 : 110;
   const totalDeliveries = deliveries.length;
 
-  // Soma os valores das entregas
   const deliveryValues = deliveries.reduce((sum, delivery) => sum + delivery.valor_entrega, 0);
 
-  // Ajusta o pagamento: base para até 10 entregas, valores completos para mais entregas
   if (totalDeliveries <= 10) {
     return basePayment;
   } else {
-    // Subtrai o valor base das primeiras 10 entregas e usa os valores reais
     const baseForFirstTen = deliveries
       .slice(0, 10)
       .reduce((sum, delivery) => sum + delivery.valor_entrega, 0);
@@ -103,6 +85,7 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null); // delivery being confirmed
 
   const fetchDeliveries = async (sessionId: string) => {
     setLoadingDeliveries(true);
@@ -138,6 +121,56 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
   const viewDeliveryDetails = (delivery: Delivery) => {
     setSelectedDelivery(delivery);
     setDialogOpen(true);
+  };
+
+  const handleConfirmDelivery = async (delivery: Delivery) => {
+    setConfirmingId(delivery.id);
+    try {
+      // Update entregue status in entregas table
+      const { error } = await supabase
+        .from('entregas')
+        .update({ status: 'entregue' })
+        .eq('id', delivery.id);
+
+      if (error) throw error;
+
+      toast.success('Entrega confirmada como entregue!');
+      // Se houver comanda vinculada, atualizar status (ajuste caso queira mais lógica)
+      // Aqui apenas para indicar vínculo visualmente, pois não está claro a lógica desejada para comanda
+
+      // Refresh deliveries/UI
+      fetchDeliveries(expandedSession!);
+      if (onRefresh && typeof onRefresh === 'function') {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Erro ao confirmar entrega:', error);
+      toast.error('Erro ao confirmar entrega');
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  const handleDeliveryStatusChange = async (delivery: Delivery) => {
+    try {
+      // Update delivery status
+      const { error } = await supabase
+        .from('entregas')
+        .update({ status: delivery.status === 'entregue' ? 'pendente' : 'entregue' })
+        .eq('id', delivery.id);
+        
+      if (error) throw error;
+      
+      toast.success('Status da entrega atualizado com sucesso');
+      
+      // Refresh data if needed
+      if (onRefresh && typeof onRefresh === 'function') {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status da entrega:', error);
+      toast.error('Erro ao atualizar status da entrega');
+    }
   };
 
   if (!sessions || sessions.length === 0) {
@@ -279,6 +312,7 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
                                   <TableHead className="text-xs">Valor</TableHead>
                                   <TableHead className="text-xs">Data/Hora</TableHead>
                                   <TableHead className="text-xs">Ações</TableHead>
+                                  <TableHead className="text-xs">Entregue</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -307,6 +341,31 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
                                       >
                                         <Info className="h-3.5 w-3.5" />
                                       </Button>
+                                    </TableCell>
+                                    <TableCell>
+                                      {delivery.status === 'entregue' ? (
+                                        <span className="inline-flex items-center text-green-600">
+                                          <Check className="h-4 w-4 mr-1" /> Entregue
+                                        </span>
+                                      ) : (
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          disabled={!!confirmingId}
+                                          onClick={() => handleConfirmDelivery(delivery)}
+                                        >
+                                          {confirmingId === delivery.id ? (
+                                            <span className="animate-spin">
+                                              <Check className="h-4 w-4" />
+                                            </span>
+                                          ) : (
+                                            <>
+                                              <Check className="h-4 w-4 mr-1" />
+                                              Confirmar
+                                            </>
+                                          )}
+                                        </Button>
+                                      )}
                                     </TableCell>
                                   </TableRow>
                                 ))}

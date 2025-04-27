@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useBairros } from './useBairros';
-import { useProdutos } from './useProdutos';
+import { useProdutoSearch } from './useProdutoSearch';
 import { usePagamento } from './usePagamento';
 import { useComandaState } from './useComandaState';
 import { useSalvarComanda } from './useSalvarComanda';
@@ -50,7 +50,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   } = usePagamento(totalComTaxa);
 
   const {
-    produtosCadastrados,
     pesquisaProduto,
     setPesquisaProduto,
     produtosFiltrados,
@@ -58,8 +57,9 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setEditingProduct,
     salvarProduto,
     editarProduto,
+    loading,
     startEditingProduct
-  } = useProdutos();
+  } = useProdutoSearch();
 
   const { salvando, salvarComanda } = useSalvarComanda(
     { ...comanda, forma_pagamento, pago },
@@ -93,6 +93,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     comanda: { ...comanda, forma_pagamento, pago },
     pesquisaProduto,
     produtosFiltrados,
+    loading,
     editingProduct,
     setEditingProduct,
     showTrocoModal,

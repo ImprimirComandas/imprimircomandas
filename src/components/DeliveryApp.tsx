@@ -39,6 +39,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     comanda,
     pesquisaProduto,
     produtosFiltrados,
+    loading,
     editingProduct,
     setEditingProduct,
     showTrocoModal,
@@ -98,6 +99,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
             salvando={salvando}
             totalComTaxa={totalComTaxa}
             bairrosDisponiveis={bairrosDisponiveis}
+            loading={loading}
             onRemoveProduto={removerProduto}
             onUpdateQuantidade={atualizarQuantidadeProduto}
             onSaveComanda={salvarComanda}

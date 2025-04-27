@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase'; // Ajuste o caminho conforme necessário
+import { supabase } from '../lib/supabase';
 import { startOfDay, endOfDay } from 'date-fns';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { TotaisPorStatusPagamentoProps } from '../types';
 
 interface Comanda {
   total: number;
@@ -11,12 +13,12 @@ interface Comanda {
   data: string;
 }
 
-export default function TotaisPorStatusPagamento() {
-  const [showValues, setShowValues] = useState(true);
+export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagamentoProps) {
+  const [showValues, setShowValues] = useState(props?.showValues ?? true);
   const [totais, setTotais] = useState({
-    confirmados: 0,
-    naoConfirmados: 0,
-    total: 0,
+    confirmados: props?.confirmados ?? 0,
+    naoConfirmados: props?.naoConfirmados ?? 0,
+    total: props?.total ?? 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -48,9 +50,10 @@ export default function TotaisPorStatusPagamento() {
       const total = confirmados + naoConfirmados;
 
       setTotais({ confirmados, naoConfirmados, total });
-    } catch (error: Error) {
-      console.error('Erro ao buscar totais:', error);
-      toast.error(error.message || 'Erro ao carregar totais');
+    } catch (error: unknown) {
+      console.error('Erro ao buscar pagamentos:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar totais';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -70,9 +73,10 @@ export default function TotaisPorStatusPagamento() {
       }
 
       setShowValues(data?.show_payment_values ?? true);
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao carregar configuração:', error);
-      toast.error(error.message || 'Erro ao carregar configuração');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar configuração';
+      toast.error(errorMessage);
     }
   };
 
@@ -87,23 +91,32 @@ export default function TotaisPorStatusPagamento() {
         );
 
       if (error) throw new Error(`Erro ao salvar configuração: ${error.message}`);
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao salvar configuração:', error);
-      toast.error(error.message || 'Erro ao salvar configuração');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar configuração';
+      toast.error(errorMessage);
     }
   };
 
   // Carregar totais e estado de showValues ao montar o componente
   useEffect(() => {
-    fetchTotaisDiaAtual();
-    loadShowValuesState();
-  }, []);
+    if (!props?.confirmados) {
+      fetchTotaisDiaAtual();
+    }
+    if (props?.showValues === undefined) {
+      loadShowValuesState();
+    }
+  }, [props]);
 
   // Função para alternar showValues e salvar no Supabase
   const toggleShowValues = () => {
     const newValue = !showValues;
     setShowValues(newValue);
-    saveShowValuesState(newValue);
+    if (props?.toggleShowValues) {
+      props.toggleShowValues();
+    } else {
+      saveShowValuesState(newValue);
+    }
   };
 
   return (

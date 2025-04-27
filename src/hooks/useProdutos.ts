@@ -1,12 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { debounce } from 'lodash';
 
 export const useProdutos = () => {
   const [produtosCadastrados, setProdutosCadastrados] = useState<{ id: string; nome: string; valor: number; numero?: number }[]>([]);
   const [pesquisaProduto, setPesquisaProduto] = useState('');
+  const [produtosFiltrados, setProdutosFiltrados] = useState<{ id: string; nome: string; valor: number; numero?: number }[]>([]);
   const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchProdutos();
@@ -71,11 +74,30 @@ export const useProdutos = () => {
       throw error;
     }
   };
-
-  const produtosFiltrados = produtosCadastrados.filter(p =>
-    p.nome.toLowerCase().includes(pesquisaProduto.toLowerCase()) ||
-    (p.numero !== undefined && p.numero !== null && p.numero.toString() && p.numero.toString().includes(pesquisaProduto))
+  
+  // Use debounce to filter products
+  const debouncedFilter = useCallback(
+    debounce((searchTerm: string) => {
+      const filtered = produtosCadastrados.filter(p =>
+        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.numero !== undefined && p.numero !== null && 
+         p.numero.toString() && p.numero.toString().includes(searchTerm))
+      );
+      setProdutosFiltrados(filtered);
+    }, 300),
+    [produtosCadastrados]
   );
+  
+  // Update search term
+  const updateSearchTerm = (term: string) => {
+    setPesquisaProduto(term);
+    debouncedFilter(term);
+  };
+
+  // Update filtered products when search term changes
+  useEffect(() => {
+    debouncedFilter(pesquisaProduto);
+  }, [pesquisaProduto, debouncedFilter]);
 
   const startEditingProduct = (produto: { id: string; nome: string; valor: number }) => {
     setEditingProduct(produto);
@@ -84,12 +106,13 @@ export const useProdutos = () => {
   return {
     produtosCadastrados,
     pesquisaProduto,
-    setPesquisaProduto,
+    setPesquisaProduto: updateSearchTerm,
     produtosFiltrados,
     editingProduct,
     setEditingProduct,
     salvarProduto,
     editarProduto,
     startEditingProduct,
+    loading,
   };
 };

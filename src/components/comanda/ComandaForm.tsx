@@ -1,21 +1,21 @@
 
 import React from 'react';
-import { useShopIsOpen } from '../hooks/useShopIsOpen';
+import { useShopIsOpen } from '../../hooks/useShopIsOpen';
 import { motion } from 'framer-motion';
 import { Save } from 'lucide-react';
-import type { Comanda } from '../types/database';
-import { ProductSearch } from './comanda/ProductSearch';
-import { ProductList } from './comanda/ProductList';
-import { AddressForm } from './comanda/AddressForm';
-import { PaymentSection } from './comanda/PaymentSection';
+import type { Comanda } from '../../types/database';
+import { ProductSearch } from './ProductSearch';
+import { ProductList } from './ProductList';
+import { AddressForm } from './AddressForm';
+import { PaymentSection } from './PaymentSection';
 import { toast } from 'sonner';
-import { useComandaValidation } from '../hooks/useComandaValidation';
+import { useComandaValidation } from '../../hooks/useComandaValidation';
 
 interface ComandaFormProps {
   comanda: Comanda;
   pesquisaProduto: string;
-  produtosFiltrados?: { id: string; nome: string; valor: number; numero?: number }[];
-  loading?: boolean;
+  produtosFiltrados: { id: string; nome: string; valor: number; numero?: number }[];
+  loading: boolean;
   salvando: boolean;
   totalComTaxa: number;
   bairrosDisponiveis: string[];
@@ -32,8 +32,8 @@ interface ComandaFormProps {
 const ComandaForm: React.FC<ComandaFormProps> = ({
   comanda,
   pesquisaProduto,
-  produtosFiltrados = [],
-  loading = false,
+  produtosFiltrados,
+  loading,
   salvando,
   totalComTaxa,
   bairrosDisponiveis,
@@ -44,6 +44,7 @@ const ComandaForm: React.FC<ComandaFormProps> = ({
   onBairroChange,
   onFormaPagamentoChange,
   selecionarProdutoCadastrado,
+  startEditingProduct,
 }) => {
   const { isShopOpen } = useShopIsOpen();
   const { validateComanda } = useComandaValidation();

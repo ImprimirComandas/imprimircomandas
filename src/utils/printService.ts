@@ -46,23 +46,23 @@ const truncateProductName = (name: string, maxLength: number = 20): string => {
 /**
  * Generates CSS styles for a professional fiscal receipt with original font sizes
  */
-const generatePrintStyles = (printSize: '80mm' | '58mm' = '80mm'): string => `
+const generatePrintStyles = (): string => `
   @page {
-    size: ${printSize} auto;
+    size: 80mm auto;
     margin: 0;
   }
   body {
     margin: 0;
     padding: 2mm;
     font-family: Arial, sans-serif;
-    font-size: ${printSize === '58mm' ? '14px' : '16px'};
-    width: ${printSize === '58mm' ? '54mm' : '75mm'};
+    font-size: 16px; /* Original */
+    width: 75mm;
     color: #000;
     line-height: 1.2;
   }
   .store-logo {
-    width: ${printSize === '58mm' ? '30mm' : '40mm'};
-    height: ${printSize === '58mm' ? '30mm' : '40mm'};
+    width: 40mm; /* Fixed size */
+    height: 40mm;
     margin: 0 auto 2mm;
     display: block;
     object-fit: contain;
@@ -352,22 +352,8 @@ const openPrintWindow = (printContent: string): Window | null => {
  */
 export const imprimirComanda = async (comanda: Comanda): Promise<void> => {
   const { storeName, avatarUrl } = await fetchStoreInfo();
-  const { data: { session } } = await supabase.auth.getSession();
-  let printSize: '80mm' | '58mm' = '80mm';
 
-  if (session) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('print_size')
-      .eq('id', session.user.id)
-      .single();
-
-    if (data?.print_size) {
-      printSize = data.print_size;
-    }
-  }
-
-  const styles = generatePrintStyles(printSize);
+  const styles = generatePrintStyles();
   const logoSection = createLogoSection(avatarUrl, storeName);
   const headerSection = createHeaderSection(storeName, comanda);
   const customerSection = createCustomerSection(comanda);

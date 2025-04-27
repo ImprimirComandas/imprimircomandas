@@ -1,6 +1,6 @@
 
 import { FC } from 'react';
-import ComandaForm from '../ComandaForm';
+import ComandaForm from '../comanda/ComandaForm';
 import type { Comanda } from '../../types/database';
 
 interface LeftColumnProps {
@@ -10,6 +10,7 @@ interface LeftColumnProps {
   salvando: boolean;
   totalComTaxa: number;
   bairrosDisponiveis: string[];
+  loading: boolean;
   onRemoveProduto: (index: number) => void;
   onUpdateQuantidade: (index: number, quantidade: number) => void;
   onSaveComanda: () => void;
@@ -23,9 +24,11 @@ interface LeftColumnProps {
 const LeftColumn: FC<LeftColumnProps> = ({
   comanda,
   pesquisaProduto,
+  produtosFiltrados,
   salvando,
   totalComTaxa,
   bairrosDisponiveis,
+  loading,
   onRemoveProduto,
   onUpdateQuantidade,
   onSaveComanda,
@@ -40,6 +43,8 @@ const LeftColumn: FC<LeftColumnProps> = ({
       <ComandaForm
         comanda={comanda}
         pesquisaProduto={pesquisaProduto}
+        produtosFiltrados={produtosFiltrados}
+        loading={loading}
         salvando={salvando}
         totalComTaxa={totalComTaxa}
         bairrosDisponiveis={bairrosDisponiveis}

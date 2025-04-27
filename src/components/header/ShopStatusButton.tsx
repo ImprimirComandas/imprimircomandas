@@ -3,19 +3,13 @@ import { FC } from 'react';
 import { useShopIsOpen } from '../../hooks/useShopIsOpen';
 import { Badge } from '../ui/badge';
 import { Switch } from '../ui/switch';
+import { ShopStatusButtonProps } from '@/types';
 
-export interface ShopStatusButtonProps {
-  isShopOpen?: boolean;
-  setIsShopOpen?: (isOpen: boolean) => void;
-  isLoading?: boolean;
-  setIsLoading?: (isLoading: boolean) => void;
-}
-
-const ShopStatusButton: FC<ShopStatusButtonProps> = () => {
+const ShopStatusButton: FC<ShopStatusButtonProps> = ({ className }) => {
   const { isShopOpen, setIsShopOpen, isLoading } = useShopIsOpen();
   
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center gap-2 ${className || ''}`}>
       <Badge 
         variant={isShopOpen ? "success" : "destructive"}
         className={`whitespace-nowrap ${isLoading ? 'opacity-50' : ''}`}
