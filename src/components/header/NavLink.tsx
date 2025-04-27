@@ -1,24 +1,41 @@
 
-import { FC, ReactNode } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { cn } from '../../lib/utils';
 
 export interface NavLinkProps {
   to: string;
   pathname: string;
-  children: ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onMouseEnter?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-const NavLink: FC<NavLinkProps> = ({ to, pathname, children }) => {
+const NavLink = ({ 
+  to, 
+  pathname, 
+  children, 
+  className,
+  style,
+  onMouseEnter,
+  onMouseLeave
+}: NavLinkProps) => {
   const isActive = pathname === to;
   
   return (
-    <Link
-      to={to}
-      className={`text-sm font-medium transition-colors hover:text-primary ${
-        isActive 
-          ? 'text-foreground font-semibold' 
-          : 'text-muted-foreground'
-      }`}
+    <Link 
+      to={to} 
+      className={cn(
+        "relative text-sm font-medium",
+        isActive ? "text-primary" : "text-foreground/80 hover:text-primary", 
+        "transition-colors duration-300",
+        className
+      )}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {children}
     </Link>

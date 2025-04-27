@@ -1,10 +1,11 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { MotoboySession, Delivery } from '../types/motoboy'; 
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-import { MotoboySession, Delivery } from './types'; // Ajuste conforme seus tipos
 
 export function calculateMotoboyPayment(session: MotoboySession, deliveries: Delivery[]): number {
   // Calcula a duração da sessão em horas

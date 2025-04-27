@@ -49,7 +49,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
           <option value="">Selecione o bairro</option>
           {bairrosDisponiveis.map((bairroOption) => (
             <option key={bairroOption} value={bairroOption}>
-              {bairroOption} (R$ {taxaentrega.toFixed(2)})
+              {bairroOption} {bairro === bairroOption && taxaentrega > 0 ? `(R$ ${taxaentrega.toFixed(2)})` : ''}
             </option>
           ))}
         </select>

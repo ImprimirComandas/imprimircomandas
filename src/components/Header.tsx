@@ -1,3 +1,4 @@
+
 import { Fragment, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -61,8 +62,14 @@ export default function Header({
                 color: 'var(--foreground-80)',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground-80)')}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                const target = e.currentTarget as HTMLAnchorElement;
+                target.style.color = 'var(--primary)';
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                const target = e.currentTarget as HTMLAnchorElement;
+                target.style.color = 'var(--foreground-80)';
+              }}
             >
               Delivery
               {location.pathname === '/delivery' && (
@@ -85,8 +92,14 @@ export default function Header({
                 color: 'var(--foreground-80)',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground-80)')}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                const target = e.currentTarget as HTMLAnchorElement;
+                target.style.color = 'var(--primary)';
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                const target = e.currentTarget as HTMLAnchorElement;
+                target.style.color = 'var(--foreground-80)';
+              }}
             >
               Produtos
               {location.pathname === '/products' && (

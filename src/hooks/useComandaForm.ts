@@ -19,10 +19,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     removerProduto,
     atualizarQuantidadeProduto,
     resetComanda
-  } = useComandaState(
-    Object.keys(bairroTaxas)[0] || 'Jardim Paraíso', 
-    Object.values(bairroTaxas)[0] || 6
-  );
+  } = useComandaState('', 0);
 
   const {
     forma_pagamento,
@@ -74,7 +71,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   );
 
   const onChange = (field: string, value: any) => {
-    // console.log('onChange:', field, value);
     if (field === 'pesquisaProduto') setPesquisaProduto(value);
     else if (field === 'endereco') updateComandaField('endereco', value);
     else if (field === 'pago') setPago(value);

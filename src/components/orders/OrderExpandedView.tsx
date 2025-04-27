@@ -1,9 +1,17 @@
 
 import { motion } from 'framer-motion';
-import { Comanda } from '@/types';
+import { Comanda, Produto } from '@/types';
+
+interface ExtendedProduto extends Produto {
+  observacao?: string;
+}
+
+interface ExtendedComanda extends Comanda {
+  observacoes?: string;
+}
 
 interface OrderExpandedViewProps {
-  comanda: Comanda;
+  comanda: ExtendedComanda;
   isEditing: boolean;
 }
 
@@ -18,21 +26,24 @@ export function OrderExpandedView({ comanda, isEditing }: OrderExpandedViewProps
       <div className="border-t pt-4">
         <h4 className="text-md font-medium mb-2">Detalhes do Pedido</h4>
         <div className="space-y-2">
-          {comanda.produtos?.map((produto, index) => (
-            <div key={index} className="flex justify-between items-center">
-              <span className="text-sm">
-                {produto.quantidade}x {produto.nome}
-                {produto.observacao && (
-                  <span className="text-gray-500 text-xs block ml-4">
-                    Obs: {produto.observacao}
-                  </span>
-                )}
-              </span>
-              <span className="text-sm font-medium">
-                R$ {(produto.valor * produto.quantidade).toFixed(2)}
-              </span>
-            </div>
-          ))}
+          {comanda.produtos?.map((produto, index) => {
+            const extendedProduto = produto as ExtendedProduto;
+            return (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-sm">
+                  {produto.quantidade}x {produto.nome}
+                  {extendedProduto.observacao && (
+                    <span className="text-gray-500 text-xs block ml-4">
+                      Obs: {extendedProduto.observacao}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm font-medium">
+                  R$ {(produto.valor * produto.quantidade).toFixed(2)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
       

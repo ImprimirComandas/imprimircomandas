@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 export const useShopIsOpen = () => {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkShopStatus = async () => {
@@ -15,6 +16,7 @@ export const useShopIsOpen = () => {
         
         if (!session) {
           setIsShopOpen(false);
+          setCurrentSessionId(null);
           return;
         }
 
@@ -27,9 +29,20 @@ export const useShopIsOpen = () => {
           .limit(1);
 
         if (error) throw error;
-        setIsShopOpen(data && data.length > 0);
+        
+        if (data && data.length > 0) {
+          console.log("Active shop session found:", data[0].id);
+          setIsShopOpen(true);
+          setCurrentSessionId(data[0].id);
+        } else {
+          console.log("No active shop session found");
+          setIsShopOpen(false);
+          setCurrentSessionId(null);
+        }
       } catch (error) {
         console.error('Erro ao verificar status da loja:', error);
+        setIsShopOpen(false);
+        setCurrentSessionId(null);
       } finally {
         setIsLoading(false);
       }
@@ -54,42 +67,62 @@ export const useShopIsOpen = () => {
       
       if (isOpen) {
         // Abrir a loja - criar nova sessão
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('shop_sessions')
           .insert({
             user_id: session.user.id,
             start_time: new Date().toISOString(),
-          });
+          })
+          .select();
         
         if (error) throw error;
-        toast.success('Loja aberta com sucesso');
-      } else {
-        // Fechar a loja - atualizar a sessão atual
-        const { data, error: fetchError } = await supabase
-          .from('shop_sessions')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .is('end_time', null)
-          .order('start_time', { ascending: false })
-          .limit(1);
-        
-        if (fetchError) throw fetchError;
         
         if (data && data.length > 0) {
-          const { error: updateError } = await supabase
-            .from('shop_sessions')
-            .update({ end_time: new Date().toISOString() })
-            .eq('id', data[0].id);
-          
-          if (updateError) throw updateError;
-          toast.success('Loja fechada com sucesso');
+          setCurrentSessionId(data[0].id);
+          console.log("New shop session created:", data[0].id);
+          setIsShopOpen(true);
+          toast.success('Loja aberta com sucesso');
         }
+      } else {
+        // Fechar a loja - atualizar a sessão atual
+        if (!currentSessionId) {
+          const { data, error: fetchError } = await supabase
+            .from('shop_sessions')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .is('end_time', null)
+            .order('start_time', { ascending: false })
+            .limit(1);
+          
+          if (fetchError) throw fetchError;
+          
+          if (data && data.length > 0) {
+            setCurrentSessionId(data[0].id);
+          } else {
+            toast.error('Não foi possível encontrar uma sessão aberta');
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        console.log("Closing shop session:", currentSessionId);
+        const { error: updateError } = await supabase
+          .from('shop_sessions')
+          .update({ end_time: new Date().toISOString() })
+          .eq('id', currentSessionId);
+        
+        if (updateError) {
+          console.error("Error closing shop:", updateError);
+          throw updateError;
+        }
+        
+        setIsShopOpen(false);
+        setCurrentSessionId(null);
+        toast.success('Loja fechada com sucesso');
       }
-      
-      setIsShopOpen(isOpen);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao alterar status da loja:', error);
-      toast.error('Erro ao alterar status da loja');
+      toast.error('Erro ao alterar status da loja: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsLoading(false);
     }
@@ -98,6 +131,7 @@ export const useShopIsOpen = () => {
   return { 
     isShopOpen, 
     setIsShopOpen: handleSetIsShopOpen, 
-    isLoading 
+    isLoading,
+    currentSessionId
   };
 };

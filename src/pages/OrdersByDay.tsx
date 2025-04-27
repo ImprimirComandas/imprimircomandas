@@ -58,7 +58,7 @@ const OrderCard = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedComanda, setEditedComanda] = useState<Partial<Comanda>>({});
+  const [editedComanda, setEditedComanda] = useState<Partial<Comanda>>({}); 
   const [pesquisaProduto, setPesquisaProduto] = useState('');
   const [produtosFiltrados, setProdutosFiltrados] = useState<ProdutoFiltrado[]>([]);
   const [loadingProdutos, setLoadingProdutos] = useState(false);
@@ -674,7 +674,8 @@ export default function OrdersByDay() {
       setComandas(data || []);
     } catch (error: unknown) {
       console.error('Erro ao carregar pedidos:', error);
-      toast.error(error.message || 'Erro ao carregar pedidos');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar pedidos';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -684,7 +685,6 @@ export default function OrdersByDay() {
     fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
   }, [dateRange]);
 
-  // Fechar calendário ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
@@ -721,9 +721,10 @@ export default function OrdersByDay() {
 
       fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success(`Pagamento ${!comanda.pago ? 'confirmado' : 'desmarcado'}!`);
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao atualizar pagamento:', error);
-      toast.error(error.message || 'Erro ao atualizar pagamento');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar pagamento';
+      toast.error(errorMessage);
     }
   };
 
@@ -757,9 +758,10 @@ export default function OrdersByDay() {
 
       await imprimirComanda(formattedComanda);
       toast.success('Comanda enviada para impressão');
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao reimprimir comanda:', error);
-      toast.error(`Erro ao reimprimir comanda: ${error.message || 'Erro desconhecido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao reimprimir comanda: ${errorMessage}`);
     }
   };
 
@@ -776,9 +778,10 @@ export default function OrdersByDay() {
 
       fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success('Pedido excluído com sucesso!');
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao excluir pedido:', error);
-      toast.error(error.message || 'Erro ao excluir pedido');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir pedido';
+      toast.error(errorMessage);
     }
   };
 
@@ -793,9 +796,10 @@ export default function OrdersByDay() {
 
       fetchOrdersByPeriod(dateRange[0].startDate, dateRange[0].endDate);
       toast.success('Comanda atualizada com sucesso!');
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('Erro ao salvar alterações:', error);
-      toast.error(error.message || 'Erro ao salvar alterações');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar alterações';
+      toast.error(errorMessage);
     }
   };
 

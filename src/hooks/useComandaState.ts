@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import type { Comanda, Produto } from '../types/database';
 
-export const useComandaState = (initialBairro: string = 'Jardim Paraíso', initialTaxa: number = 6) => {
+export const useComandaState = (initialBairro: string = '', initialTaxa: number = 0) => {
   const [comanda, setComanda] = useState<Comanda>({
     produtos: [],
     total: 0,
@@ -79,7 +78,7 @@ export const useComandaState = (initialBairro: string = 'Jardim Paraíso', initi
     });
   };
 
-  const resetComanda = (bairro: string, taxa: number) => {
+  const resetComanda = (bairro: string = '', taxa: number = 0) => {
     setComanda({
       produtos: [],
       total: 0,
