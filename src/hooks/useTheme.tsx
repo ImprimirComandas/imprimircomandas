@@ -1,20 +1,23 @@
 
 import { useContext } from 'react';
-import { ThemeContext } from '../contexts/ThemeContext';
-import type { Theme } from '../contexts/ThemeContext';
+import { ThemeContext, Theme } from '../contexts/ThemeContext';
 
 export function useTheme() {
-  const { theme, setTheme } = useContext(ThemeContext);
+  const context = useContext(ThemeContext);
+  
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
   
   // Função para mudar o tema
   const changeTheme = (newTheme: Theme) => {
-    setTheme(newTheme);
+    context.setTheme(newTheme);
   };
   
   return {
-    theme,
+    theme: context.theme,
     changeTheme,
-    isLight: !theme.includes('dark'),
-    isDark: theme.includes('dark'),
+    isLight: !context.theme.includes('dark'),
+    isDark: context.theme.includes('dark'),
   };
 }

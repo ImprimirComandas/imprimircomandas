@@ -1,14 +1,18 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Theme } from './ThemeContext';
 import { supabase } from '../lib/supabase';
+
+export type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple';
+
+export interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
 
 const defaultTheme: Theme = 'light';
 
-export const ThemeContext = createContext<{
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-}>({
+// Create the context with proper TypeScript type definition
+export const ThemeContext = createContext<ThemeContextType>({
   theme: defaultTheme,
   setTheme: () => {},
 });
