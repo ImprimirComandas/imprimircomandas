@@ -1,9 +1,26 @@
 
 import { motion } from 'framer-motion';
 import { useShopIsOpen } from '../../hooks/useShopIsOpen';
+import { useTheme } from '../../hooks/useTheme';
+import { getThemeClasses } from '../../lib/theme';
 
 export default function DeliveryHeader() {
   const { isShopOpen } = useShopIsOpen();
+  const { theme } = useTheme();
+  
+  const titleClasses = getThemeClasses(theme, {
+    light: "text-gray-900",
+    dark: "text-gray-100",
+    lightBlue: "text-blue-900", 
+    darkPurple: "text-purple-100"
+  });
+  
+  const descriptionClasses = getThemeClasses(theme, {
+    light: "text-gray-600",
+    dark: "text-gray-400",
+    lightBlue: "text-blue-700",
+    darkPurple: "text-purple-300"
+  });
   
   return (
     <motion.div
@@ -14,10 +31,10 @@ export default function DeliveryHeader() {
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between">
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900">
+          <h1 className={`text-4xl font-extrabold ${titleClasses}`}>
             Gerenciamento de Delivery
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className={`mt-2 ${descriptionClasses}`}>
             Crie pedidos, gerencie motoboys e acompanhe entregas
           </p>
         </div>
@@ -32,4 +49,4 @@ export default function DeliveryHeader() {
       </div>
     </motion.div>
   );
-}
+};

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
