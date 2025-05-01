@@ -127,7 +127,7 @@ export function Products() {
 
       let allProducts: { nome: string; valor: number; categoria: string | null; numero: number }[] = [];
       let currentPage = 0;
-      const exportPageSize = 1000;
+      const exportPageSize = 3000;
 
       // Paginate to fetch all products
       while (true) {
