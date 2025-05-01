@@ -1,23 +1,52 @@
 
-import { useContext } from 'react';
-import { ThemeContext, Theme } from '../contexts/ThemeContext';
+import { useEffect, useState } from 'react';
+
+type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple';
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check local storage first
+    const storedTheme = localStorage.getItem('app-theme');
+    if (storedTheme && ['light', 'dark', 'light-blue', 'dark-purple'].includes(storedTheme)) {
+      return storedTheme as Theme;
+    }
+    
+    // If no stored preference, check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light-blue)').matches) {
+      return 'dark';
+    }
+    
+    // Default to light theme
+    return 'light';
+  });
   
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  useEffect(() => {
+    // Save theme preference to localStorage
+    localStorage.setItem('app-theme', theme);
+    
+    // Remove all theme classes first
+    document.documentElement.classList.remove('theme-light', 'theme-dark', 'theme-light-blue', 'theme-dark-purple');
+    
+    // Add the selected theme class
+    document.documentElement.classList.add(`theme-${theme}`);
+    
+    // Set the data attribute for tailwind dark mode
+    if (theme.includes('dark')) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
   
-  // Função para mudar o tema
+  // Function to change the theme
   const changeTheme = (newTheme: Theme) => {
-    context.setTheme(newTheme);
+    setTheme(newTheme);
   };
   
   return {
-    theme: context.theme,
+    theme,
     changeTheme,
-    isLight: !context.theme.includes('dark'),
-    isDark: context.theme.includes('dark'),
+    isLight: !theme.includes('dark'),
+    isDark: theme.includes('dark'),
   };
 }

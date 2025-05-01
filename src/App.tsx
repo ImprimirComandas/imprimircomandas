@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
@@ -13,7 +14,6 @@ import { Toaster } from 'sonner';
 import Header from './components/Header';
 import { useProfileMenu } from './hooks/useProfileMenu';
 import DeliveryManagement from './components/DeliveryManagement';
-import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -65,7 +65,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -73,7 +73,7 @@ function App() {
   const isResetPassword = window.location.hash === '#reset-password';
 
   return (
-    <ThemeProvider>
+    <>
       <Toaster position="top-right" richColors />
       {!session ? (
         isResetPassword ? <ResetPassword /> : <Auth />
@@ -96,7 +96,7 @@ function App() {
           </Routes>
         </>
       )}
-    </ThemeProvider>
+    </>
   );
 }
 
