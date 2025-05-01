@@ -8,13 +8,8 @@ export interface BairroTaxa {
   user_id: string;
 }
 
-// Default rates as fallback
-const defaultBairroTaxas = {
-  'Jardim Paraíso': 6,
-  'Aventureiro': 9,
-  'Jardim Sofia': 9,
-  'Cubatão': 9,
-};
+// Empty default rates as fallback
+const defaultBairroTaxas = {};
 
 export async function getBairroTaxas(): Promise<Record<string, number>> {
   try {
@@ -36,7 +31,7 @@ export async function getBairroTaxas(): Promise<Record<string, number>> {
     }
 
     if (!data || data.length === 0) {
-      console.log('Nenhuma taxa encontrada, usando padrão');
+      console.log('Nenhuma taxa encontrada');
       return defaultBairroTaxas;
     }
 

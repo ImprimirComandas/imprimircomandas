@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import defaultBairroTaxas, { getBairroTaxas } from '../constants/bairroTaxas';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
@@ -18,8 +17,7 @@ export const useBairros = () => {
         
         if (!session) {
           console.error('Usuário não autenticado para buscar bairros');
-          setBairroTaxas(defaultBairroTaxas);
-          setBairrosDisponiveis(Object.keys(defaultBairroTaxas));
+          toast.error('Você precisa estar autenticado para buscar bairros');
           return;
         }
         
@@ -45,14 +43,18 @@ export const useBairros = () => {
           setBairroTaxas(taxas);
           setBairrosDisponiveis(Object.keys(taxas));
         } else {
-          console.log('Nenhum bairro encontrado, usando defaults');
-          setBairroTaxas(defaultBairroTaxas);
-          setBairrosDisponiveis(Object.keys(defaultBairroTaxas));
+          console.log('Nenhum bairro encontrado');
+          // Empty objects instead of default values
+          setBairroTaxas({});
+          setBairrosDisponiveis([]);
+          toast.warning('Nenhum bairro cadastrado. Adicione bairros nas configurações.');
         }
       } catch (error) {
         console.error('Erro ao carregar taxas de bairros:', error);
-        setBairroTaxas(defaultBairroTaxas);
-        setBairrosDisponiveis(Object.keys(defaultBairroTaxas));
+        toast.error('Erro ao carregar taxas de bairros');
+        // Empty objects instead of default values
+        setBairroTaxas({});
+        setBairrosDisponiveis([]);
       } finally {
         setLoading(false);
       }
