@@ -8,7 +8,7 @@ import { useSalvarComanda } from './useSalvarComanda';
 import { toast } from 'sonner';
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
-  const { bairroTaxas, bairrosDisponiveis, loading: bairrosLoading } = useBairros();
+  const { bairroTaxas, bairrosDisponiveis, loading: bairrosLoading, refreshBairros } = useBairros();
   
   const {
     comanda,
@@ -126,5 +126,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
+    refreshBairros,
   };
 };
