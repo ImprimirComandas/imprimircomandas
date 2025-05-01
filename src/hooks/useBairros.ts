@@ -61,6 +61,28 @@ export const useBairros = () => {
   
   useEffect(() => {
     fetchBairroTaxas();
+
+    // Set up real-time subscription
+    const bairrosChannel = supabase
+      .channel('bairros_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bairros_taxas'
+        },
+        (payload) => {
+          console.log('Real-time update from bairros_taxas:', payload);
+          fetchBairroTaxas();
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(bairrosChannel);
+    };
   }, []);
 
   return {

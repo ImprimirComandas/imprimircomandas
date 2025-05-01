@@ -50,9 +50,28 @@ export const useShopIsOpen = () => {
 
     checkShopStatus();
     
-    // Atualizar a cada minuto
-    const interval = setInterval(checkShopStatus, 60 * 1000);
-    return () => clearInterval(interval);
+    // Set up real-time subscription
+    const shopSessionsChannel = supabase
+      .channel('shop_sessions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shop_sessions'
+        },
+        async (payload) => {
+          console.log('Real-time update from shop_sessions:', payload);
+          // Refresh the shop status when changes occur
+          await checkShopStatus();
+        }
+      )
+      .subscribe();
+    
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(shopSessionsChannel);
+    };
   }, []);
 
   const handleSetIsShopOpen = async (isOpen: boolean) => {

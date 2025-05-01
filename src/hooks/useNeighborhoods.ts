@@ -78,7 +78,6 @@ export function useNeighborhoods() {
 
       console.log('Bairro added successfully:', data);
       toast.success('Bairro adicionado com sucesso');
-      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao adicionar bairro:', error);
       toast.error(`Erro ao adicionar bairro: ${error.message}`);
@@ -119,7 +118,6 @@ export function useNeighborhoods() {
       }
 
       toast.success('Bairro atualizado com sucesso');
-      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao atualizar bairro:', error);
       toast.error(`Erro ao atualizar bairro: ${error.message}`);
@@ -149,7 +147,6 @@ export function useNeighborhoods() {
       }
 
       toast.success('Bairro excluído com sucesso');
-      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao excluir bairro:', error);
       toast.error(`Erro ao excluir bairro: ${error.message}`);
@@ -158,6 +155,28 @@ export function useNeighborhoods() {
 
   useEffect(() => {
     fetchBairros();
+
+    // Set up real-time subscription
+    const bairrosChannel = supabase
+      .channel('neighborhoods_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bairros_taxas'
+        },
+        (payload) => {
+          console.log('Real-time update from neighborhoods:', payload);
+          fetchBairros();
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(bairrosChannel);
+    };
   }, []);
 
   return {
