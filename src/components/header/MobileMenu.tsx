@@ -64,7 +64,7 @@ const MobileMenu: FC<MobileMenuProps> = ({ pathname, className }) => {
           </nav>
           
           <div className="mt-auto pt-4 text-center text-xs text-muted-foreground">
-            DeliveryApp © {new Date().getFullYear()}
+            <a href="https://t.me/Dig0nada"> DigoNada © {new Date().getFullYear()} </a>
           </div>
         </div>
       </SheetContent>
