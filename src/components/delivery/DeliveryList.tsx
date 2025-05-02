@@ -33,62 +33,6 @@ export default function DeliveryList() {
     fetchMotoboys();
     fetchActiveSessions();
     fetchDeliveries();
-    
-    // Set up real-time subscriptions
-    const deliveriesChannel = supabase
-      .channel('deliveries_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'entregas'
-        },
-        (payload) => {
-          console.log('Real-time update from entregas:', payload);
-          fetchDeliveries();
-        }
-      )
-      .subscribe();
-      
-    const motoboySessionsChannel = supabase
-      .channel('motoboy_sessions_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'motoboy_sessions'
-        },
-        (payload) => {
-          console.log('Real-time update from motoboy_sessions:', payload);
-          fetchActiveSessions();
-        }
-      )
-      .subscribe();
-      
-    const motoboysChannel = supabase
-      .channel('motoboys_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'motoboys'
-        },
-        (payload) => {
-          console.log('Real-time update from motoboys:', payload);
-          fetchMotoboys();
-        }
-      )
-      .subscribe();
-      
-    // Clean up subscriptions
-    return () => {
-      supabase.removeChannel(deliveriesChannel);
-      supabase.removeChannel(motoboySessionsChannel);
-      supabase.removeChannel(motoboysChannel);
-    };
   }, [selectedDate]);
 
   const fetchBairros = async () => {

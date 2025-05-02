@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { Comanda } from '../types/database';
@@ -43,32 +43,6 @@ export const useComandas = () => {
     }
   };
 
-  useEffect(() => {
-    carregarComandas();
-    
-    // Set up real-time subscription
-    const comandasChannel = supabase
-      .channel('comandas_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comandas'
-        },
-        (payload) => {
-          console.log('Real-time update from comandas:', payload);
-          carregarComandas();
-        }
-      )
-      .subscribe();
-      
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(comandasChannel);
-    };
-  }, []);
-
   const toggleExpandComanda = (id: string) => {
     setExpandedComandas(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -105,6 +79,7 @@ export const useComandas = () => {
         .update({ pago: !comandaSelecionada.pago })
         .eq('id', comandaSelecionada.id);
       if (error) throw error;
+      await carregarComandas();
       setShowPaymentConfirmation(false);
       toast.success(`Pedido marcado como ${!comandaSelecionada.pago ? 'PAGO' : 'NÃO PAGO'}!`);
     } catch (error) {

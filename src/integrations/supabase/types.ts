@@ -13,7 +13,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          is_default: boolean | null
           nome: string
           taxa: number
           user_id: string
@@ -21,7 +20,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          is_default?: boolean | null
           nome: string
           taxa?: number
           user_id: string
@@ -29,7 +27,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          is_default?: boolean | null
           nome?: string
           taxa?: number
           user_id?: string
@@ -143,45 +140,39 @@ export type Database = {
           comanda_id: string | null
           created_at: string | null
           data: string | null
-          forma_pagamento: string | null
+          endereco: string
           id: string
           motoboy_id: string
           origem: string
-          pago: string | null
           status: string | null
           user_id: string
           valor_entrega: number
-          valor_pedido: number | null
         }
         Insert: {
           bairro: string
           comanda_id?: string | null
           created_at?: string | null
           data?: string | null
-          forma_pagamento?: string | null
+          endereco: string
           id?: string
           motoboy_id: string
           origem: string
-          pago?: string | null
           status?: string | null
           user_id: string
           valor_entrega?: number
-          valor_pedido?: number | null
         }
         Update: {
           bairro?: string
           comanda_id?: string | null
           created_at?: string | null
           data?: string | null
-          forma_pagamento?: string | null
+          endereco?: string
           id?: string
           motoboy_id?: string
           origem?: string
-          pago?: string | null
           status?: string | null
           user_id?: string
           valor_entrega?: number
-          valor_pedido?: number | null
         }
         Relationships: [
           {
@@ -193,38 +184,6 @@ export type Database = {
           },
           {
             foreignKeyName: "entregas_motoboy_id_fkey"
-            columns: ["motoboy_id"]
-            isOneToOne: false
-            referencedRelation: "motoboys"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      motoboy_sessions: {
-        Row: {
-          end_time: string | null
-          id: string
-          motoboy_id: string
-          start_time: string
-          user_id: string
-        }
-        Insert: {
-          end_time?: string | null
-          id?: string
-          motoboy_id: string
-          start_time?: string
-          user_id: string
-        }
-        Update: {
-          end_time?: string | null
-          id?: string
-          motoboy_id?: string
-          start_time?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_motoboy"
             columns: ["motoboy_id"]
             isOneToOne: false
             referencedRelation: "motoboys"
@@ -299,10 +258,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
-          print_size: string | null
-          show_values: boolean | null
           store_name: string | null
-          theme: string | null
           updated_at: string | null
         }
         Insert: {
@@ -311,10 +267,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
-          print_size?: string | null
-          show_values?: boolean | null
           store_name?: string | null
-          theme?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -323,10 +276,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
-          print_size?: string | null
-          show_values?: boolean | null
           store_name?: string | null
-          theme?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -355,70 +305,12 @@ export type Database = {
         }
         Relationships: []
       }
-      user_settings: {
-        Row: {
-          show_payment_values: boolean | null
-          user_id: string
-        }
-        Insert: {
-          show_payment_values?: boolean | null
-          user_id: string
-        }
-        Update: {
-          show_payment_values?: boolean | null
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      search_comandas_by_last_8: {
-        Args: Record<PropertyKey, never> | { search_term: string }
-        Returns: {
-          id: string
-          bairro: string
-          taxaentrega: number
-          total: number
-          quantiapaga: number
-          forma_pagamento: string
-          troco: number
-        }[]
-      }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -539,3 +431,47 @@ export const Constants = {
     Enums: {},
   },
 } as const
+export interface Motoboy {
+  id: string;
+  nome: string;
+  telefone?: string;
+  user_id?: string;
+  created_at?: string;
+  status?: string;
+}
+
+export interface MotoboySession {
+  id: string;
+  motoboy_id: string;
+  start_time: string;
+  end_time: string | null;
+  user_id: string;
+}
+
+export interface Delivery {
+  id?: string;
+  motoboy_id: string;
+  comanda_id?: string | null;
+  bairro: string;
+  origem: string;
+  valor_entrega: number; // Taxa do bairro
+  valor_pedido?: number; // Valor total do pedido (comanda)
+  forma_pagamento?: string;
+  created_at?: string;
+  user_id?: string;
+}
+
+export interface Comanda {
+  id?: string;
+  bairro?: string;
+  taxaentrega?: number;
+  total?: number;
+  quantiapaga?: number | null;
+  forma_pagamento?: string;
+  troco?: number | null;
+}
+
+export interface BairroTaxa {
+  nome: string;
+  taxa: number;
+}

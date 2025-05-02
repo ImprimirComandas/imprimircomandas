@@ -39,26 +39,20 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
           Bairro
         </label>
-        {bairrosDisponiveis.length > 0 ? (
-          <select
-            id="bairro"
-            value={bairro}
-            onChange={(e) => onBairroChange(e.target.value)}
-            className="w-full p-2 border rounded text-sm"
-            required
-          >
-            <option value="">Selecione o bairro</option>
-            {bairrosDisponiveis.map((bairroOption) => (
-              <option key={bairroOption} value={bairroOption}>
-                {bairroOption} {bairro === bairroOption && taxaentrega > 0 ? `(R$ ${taxaentrega.toFixed(2)})` : ''}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div className="text-sm text-amber-600 bg-amber-100 p-2 rounded">
-            Nenhum bairro cadastrado. Por favor, adicione bairros nas configurações.
-          </div>
-        )}
+        <select
+          id="bairro"
+          value={bairro}
+          onChange={(e) => onBairroChange(e.target.value)}
+          className="w-full p-2 border rounded text-sm"
+          required
+        >
+          <option value="">Selecione o bairro</option>
+          {bairrosDisponiveis.map((bairroOption) => (
+            <option key={bairroOption} value={bairroOption}>
+              {bairroOption} {bairro === bairroOption && taxaentrega > 0 ? `(R$ ${taxaentrega.toFixed(2)})` : ''}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

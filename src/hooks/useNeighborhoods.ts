@@ -10,7 +10,6 @@ export function useNeighborhoods() {
 
   const fetchBairros = async () => {
     try {
-      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar autenticado');
@@ -30,7 +29,7 @@ export function useNeighborhoods() {
         throw error;
       }
       
-      console.log('Bairros fetched:', data ? data.length : 0, data);
+      console.log('Bairros fetched:', data ? data.length : 0);
       setBairros(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar bairros:', error);
@@ -58,9 +57,7 @@ export function useNeighborhoods() {
         return;
       }
 
-      console.log('Adding bairro:', nome, taxa);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('bairros_taxas')
         .insert([
           {
@@ -68,16 +65,15 @@ export function useNeighborhoods() {
             taxa,
             user_id: session.user.id,
           },
-        ])
-        .select();
+        ]);
 
       if (error) {
         console.error('Insert error details:', error);
         throw error;
       }
 
-      console.log('Bairro added successfully:', data);
       toast.success('Bairro adicionado com sucesso');
+      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao adicionar bairro:', error);
       toast.error(`Erro ao adicionar bairro: ${error.message}`);
@@ -102,15 +98,14 @@ export function useNeighborhoods() {
         return;
       }
 
-      console.log('Updating bairro:', bairro);
-
       const { error } = await supabase
         .from('bairros_taxas')
         .update({
           nome: bairro.nome,
           taxa: bairro.taxa,
         })
-        .eq('id', bairro.id);
+        .eq('id', bairro.id)
+        .eq('user_id', session.user.id);
 
       if (error) {
         console.error('Erro ao atualizar bairro:', error);
@@ -118,6 +113,7 @@ export function useNeighborhoods() {
       }
 
       toast.success('Bairro atualizado com sucesso');
+      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao atualizar bairro:', error);
       toast.error(`Erro ao atualizar bairro: ${error.message}`);
@@ -134,12 +130,11 @@ export function useNeighborhoods() {
         return;
       }
 
-      console.log('Deleting bairro:', id);
-
       const { error } = await supabase
         .from('bairros_taxas')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', session.user.id);
 
       if (error) {
         console.error('Erro ao excluir bairro:', error);
@@ -147,6 +142,7 @@ export function useNeighborhoods() {
       }
 
       toast.success('Bairro excluído com sucesso');
+      await fetchBairros();
     } catch (error: any) {
       console.error('Erro ao excluir bairro:', error);
       toast.error(`Erro ao excluir bairro: ${error.message}`);
@@ -155,28 +151,6 @@ export function useNeighborhoods() {
 
   useEffect(() => {
     fetchBairros();
-
-    // Set up real-time subscription
-    const bairrosChannel = supabase
-      .channel('neighborhoods_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bairros_taxas'
-        },
-        (payload) => {
-          console.log('Real-time update from neighborhoods:', payload);
-          fetchBairros();
-        }
-      )
-      .subscribe();
-
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(bairrosChannel);
-    };
   }, []);
 
   return {
@@ -184,7 +158,6 @@ export function useNeighborhoods() {
     loading,
     addBairro,
     updateBairro,
-    deleteBairro,
-    refreshBairros: fetchBairros
+    deleteBairro
   };
 }

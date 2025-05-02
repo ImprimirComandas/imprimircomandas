@@ -11,9 +11,12 @@ export const useProdutos = () => {
   const [editingProduct, setEditingProduct] = useState<{ id: string; nome: string; valor: number } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetchProdutos();
+  }, []);
+
   const fetchProdutos = async () => {
     try {
-      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       
@@ -25,39 +28,11 @@ export const useProdutos = () => {
         
       if (error) throw error;
       setProdutosCadastrados(data || []);
-      setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast.error('Erro ao carregar produtos cadastrados.');
-      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProdutos();
-
-    // Set up real-time subscription
-    const produtosChannel = supabase
-      .channel('produtos_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'produtos'
-        },
-        (payload) => {
-          console.log('Real-time update from produtos:', payload);
-          fetchProdutos();
-        }
-      )
-      .subscribe();
-      
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(produtosChannel);
-    };
-  }, []);
 
   const salvarProduto = async (nome: string, valor: string) => {
     try {

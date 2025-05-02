@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useBairros } from './useBairros';
 import { useProdutoSearch } from './useProdutoSearch';
@@ -8,7 +7,7 @@ import { useSalvarComanda } from './useSalvarComanda';
 import { toast } from 'sonner';
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
-  const { bairroTaxas, bairrosDisponiveis, loading: bairrosLoading, refreshBairros } = useBairros();
+  const { bairroTaxas, bairrosDisponiveis } = useBairros();
   
   const {
     comanda,
@@ -54,7 +53,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     setEditingProduct,
     salvarProduto,
     editarProduto,
-    loading: produtosLoading,
+    loading,
     startEditingProduct
   } = useProdutoSearch();
 
@@ -83,24 +82,14 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   };
 
   const onBairroChange = (bairro: string) => {
-    if (!bairro) {
-      toast.warning('Selecione um bairro válido');
-      return;
-    }
-    
-    if (!bairroTaxas[bairro] && bairroTaxas[bairro] !== 0) {
-      toast.error(`Taxa não encontrada para o bairro ${bairro}`);
-      return;
-    }
-    
     updateBairro(bairro, bairroTaxas);
   };
 
   return {
-    comanda,
+    comanda: { ...comanda, forma_pagamento, pago },
     pesquisaProduto,
     produtosFiltrados,
-    loading: produtosLoading || bairrosLoading,
+    loading,
     editingProduct,
     setEditingProduct,
     showTrocoModal,
@@ -126,6 +115,5 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
-    refreshBairros,
   };
 };

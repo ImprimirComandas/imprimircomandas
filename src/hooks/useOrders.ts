@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { startOfDay, endOfDay } from 'date-fns';
 import { toast } from 'sonner';
@@ -33,40 +33,6 @@ export const useOrders = () => {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    // Set up real-time subscription for orders
-    const ordersChannel = supabase
-      .channel('orders_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comandas'
-        },
-        (payload) => {
-          console.log('Real-time update from orders:', payload);
-          // If dateRange is available, refresh the orders
-          if (comandas.length > 0) {
-            // Create a minimal dateRange object for the refresh
-            const today = new Date();
-            const dateRange: DateRange[] = [{
-              startDate: startOfDay(today),
-              endDate: endOfDay(today),
-              key: 'selection'
-            }];
-            fetchOrdersByPeriod(dateRange);
-          }
-        }
-      )
-      .subscribe();
-      
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(ordersChannel);
-    };
-  }, [comandas.length, fetchOrdersByPeriod]);
 
   const togglePayment = async (comanda: Comanda) => {
     try {
