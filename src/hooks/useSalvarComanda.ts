@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -39,13 +40,18 @@ export const useSalvarComanda = (
       return false;
     }
     
-    if (comanda.forma_pagamento === 'dinheiro' && needsTroco && (quantiapagaInput === null || quantiapagaInput <= totalComTaxa)) {
-      toast.error('Informe uma quantia válida para o troco (maior que o total).');
+    if (comanda.forma_pagamento === 'dinheiro' && needsTroco && (quantiapagaInput === null || quantiapagaInput <= 0)) {
+      toast.error('Informe uma quantia válida para o troco (maior que zero).');
       return false;
     }
     
-    // Removendo a validação que exigia valores exatos para pagamento misto
-    // Agora permitimos que haja troco no pagamento misto
+    if (comanda.forma_pagamento === 'misto') {
+      const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
+      if (totalValores < totalComTaxa) {
+        toast.error('O valor total do pagamento misto deve ser pelo menos igual ao valor do pedido.');
+        return false;
+      }
+    }
     
     return true;
   };
@@ -70,7 +76,7 @@ export const useSalvarComanda = (
       } else if (comanda.forma_pagamento === 'misto' && valorDinheiroInput) {
         // Para pagamentos mistos, calcula o valor necessário em dinheiro
         const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
-        const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
+        const valorNecessarioEmDinheiro = Math.max(0, totalComTaxa - valorOutrasFormas);
         
         // Se o valor em dinheiro for maior que o necessário, calcula o troco
         if (valorDinheiroInput > valorNecessarioEmDinheiro) {

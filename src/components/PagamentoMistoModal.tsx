@@ -37,21 +37,20 @@ export default function PagamentoMistoModal({
     ? valorDinheiroAtual - valorNecessarioEmDinheiro
     : 0;
   
-  // Agora consideramos a confirmação válida se o valor total é pelo menos o valor da taxa
-  // ou se houver troco (o que significa que o pagamento é suficiente)
-  const confirmacaoValida = totalAtual >= totalComTaxa || troco > 0;
+  // Consideramos a confirmação válida se o valor total é pelo menos o valor da taxa
+  const confirmacaoValida = totalAtual >= totalComTaxa;
 
   // Efeito para confirmar automaticamente quando o valor estiver correto
   useEffect(() => {
-    if (confirmacaoValida && Math.abs(diferenca) < 0.01) {
+    if (confirmacaoValida && Math.abs(diferenca) < 0.01 && !troco) {
       // Delay pequeno para dar feedback visual ao usuário antes de confirmar
       const timer = setTimeout(() => {
         onConfirm();
-      }, 500);
+      }, 800);
       
       return () => clearTimeout(timer);
     }
-  }, [confirmacaoValida, diferenca, onConfirm]);
+  }, [confirmacaoValida, diferenca, troco, onConfirm]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -107,7 +106,7 @@ export default function PagamentoMistoModal({
             Total a pagar: R$ {totalComTaxa.toFixed(2)}
           </div>
           
-          {!confirmacaoValida && (
+          {diferenca > 0 && (
             <div className="font-semibold text-orange-500">
               Faltando: R$ {diferenca.toFixed(2)}
             </div>

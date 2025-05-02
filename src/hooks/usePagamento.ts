@@ -45,12 +45,14 @@ export function usePagamento(totalComTaxa: number) {
 
   // Wrap the original closeTrocoModal to provide resetPagamento
   const handleCloseTrocoModal = () => {
-    closeTrocoModal(resetPagamento);
+    const resetFunc = () => setFormaPagamento('');
+    closeTrocoModal(resetFunc);
   };
 
   // Wrap the original closePagamentoMistoModal to provide resetPagamento
   const handleClosePagamentoMistoModal = () => {
-    closePagamentoMistoModal(resetPagamento);
+    const resetFunc = () => setFormaPagamento('');
+    closePagamentoMistoModal(resetFunc);
   };
 
   return {
