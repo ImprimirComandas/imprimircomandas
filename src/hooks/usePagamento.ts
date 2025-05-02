@@ -43,6 +43,16 @@ export function usePagamento(totalComTaxa: number) {
     handleFormaPagamentoChange(forma, setFormaPagamento);
   };
 
+  // Wrap the original closeTrocoModal to provide resetPagamento
+  const handleCloseTrocoModal = () => {
+    closeTrocoModal(resetPagamento);
+  };
+
+  // Wrap the original closePagamentoMistoModal to provide resetPagamento
+  const handleClosePagamentoMistoModal = () => {
+    closePagamentoMistoModal(resetPagamento);
+  };
+
   return {
     forma_pagamento,
     pago,
@@ -61,9 +71,9 @@ export function usePagamento(totalComTaxa: number) {
     setValorPixInput,
     onFormaPagamentoChange,
     handleTrocoConfirm,
-    closeTrocoModal,
+    closeTrocoModal: handleCloseTrocoModal,
     handlePagamentoMistoConfirm,
-    closePagamentoMistoModal,
+    closePagamentoMistoModal: handleClosePagamentoMistoModal,
     resetPagamento
   };
 }

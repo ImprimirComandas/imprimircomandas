@@ -55,9 +55,12 @@ export function usePaymentHandling(totalComTaxa: number) {
     return true;
   };
 
-  const closeTrocoModal = (resetFormaPagamento: () => void) => {
+  // Modified to make resetFormaPagamento optional
+  const closeTrocoModal = (resetFormaPagamento?: () => void) => {
     setShowTrocoModal(false);
-    resetFormaPagamento();
+    if (resetFormaPagamento) {
+      resetFormaPagamento();
+    }
     setQuantiapagaInput(null);
     setNeedsTroco(null);
   };
@@ -81,9 +84,12 @@ export function usePaymentHandling(totalComTaxa: number) {
     return false;
   };
 
-  const closePagamentoMistoModal = (resetFormaPagamento: () => void) => {
+  // Modified to make resetFormaPagamento optional
+  const closePagamentoMistoModal = (resetFormaPagamento?: () => void) => {
     setShowPagamentoMistoModal(false);
-    resetFormaPagamento();
+    if (resetFormaPagamento) {
+      resetFormaPagamento();
+    }
     setValorCartaoInput(null);
     setValorDinheiroInput(null);
     setValorPixInput(null);
