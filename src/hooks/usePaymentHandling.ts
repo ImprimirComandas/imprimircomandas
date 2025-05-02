@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function usePaymentHandling(totalComTaxa: number) {
   const [showTrocoModal, setShowTrocoModal] = useState(false);
@@ -22,6 +22,10 @@ export function usePaymentHandling(totalComTaxa: number) {
       setNeedsTroco(null);
     } else if (forma === 'misto') {
       setShowPagamentoMistoModal(true);
+      // Reset valores ao abrir o modal
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
     } else {
       setShowTrocoModal(false);
       setShowPagamentoMistoModal(false);

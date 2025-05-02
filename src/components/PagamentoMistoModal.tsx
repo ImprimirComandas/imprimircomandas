@@ -26,6 +26,7 @@ export default function PagamentoMistoModal({
   
   const totalAtual = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
   const diferenca = totalComTaxa - totalAtual;
+  const valoresCompletos = Math.abs(diferenca) < 0.01;
   
   // Calculando o troco automaticamente se o pagamento em dinheiro for maior que o necessário
   const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
@@ -33,6 +34,18 @@ export default function PagamentoMistoModal({
   const troco = (valorDinheiroInput || 0) > valorNecessarioEmDinheiro && valorDinheiroInput 
     ? valorDinheiroInput - valorNecessarioEmDinheiro 
     : 0;
+
+  // Efeito para confirmar automaticamente quando todos os valores estiverem preenchidos corretamente
+  useEffect(() => {
+    if (valoresCompletos) {
+      // Delay pequeno para dar feedback visual ao usuário antes de confirmar
+      const timer = setTimeout(() => {
+        onConfirm();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [valoresCompletos, onConfirm]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -87,10 +100,10 @@ export default function PagamentoMistoModal({
           <div className="font-semibold text-gray-700">
             Total a pagar: R$ {totalComTaxa.toFixed(2)}
           </div>
-          <div className={`font-semibold ${Math.abs(diferenca) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-            {Math.abs(diferenca) < 0.01
+          <div className={`font-semibold ${valoresCompletos ? 'text-green-600' : 'text-orange-500'}`}>
+            {valoresCompletos
               ? 'Valores conferem!'
-              : `Diferença: R$ ${diferenca.toFixed(2)} ${diferenca > 0 ? '(faltando)' : '(excedente)'}`}
+              : `Faltando: R$ ${diferenca.toFixed(2)}`}
           </div>
 
           {troco > 0 && (
@@ -110,8 +123,12 @@ export default function PagamentoMistoModal({
             <button
               type="button"
               onClick={onConfirm}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md"
-              disabled={Math.abs(diferenca) >= 0.01}
+              className={`py-2 px-4 rounded-md ${
+                valoresCompletos 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              disabled={!valoresCompletos}
             >
               Confirmar
             </button>
