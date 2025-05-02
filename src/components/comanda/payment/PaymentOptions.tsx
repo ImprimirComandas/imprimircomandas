@@ -32,7 +32,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
           {['pix', 'dinheiro', 'cartao', 'misto'].map((forma) => (
             <label 
               key={forma} 
-              className={`flex items-center p-2 rounded-md transition-colors duration-200 ${
+              className={`flex items-center p-2 rounded-md transition-colors duration-200 cursor-pointer ${
                 selectedOption === forma ? 'bg-blue-50 border border-blue-200' : 'border border-gray-200'
               }`}
             >

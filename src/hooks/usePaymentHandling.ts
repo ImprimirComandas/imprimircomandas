@@ -79,9 +79,15 @@ export function usePaymentHandling(totalComTaxa: number) {
       // Se houver pagamento em dinheiro e for maior que o valor atribuído a esta forma,
       // calculamos o troco automaticamente
       if ((valorDinheiroInput || 0) > 0) {
-        // Não precisamos mostrar o modal de troco aqui, pois o valor já foi especificado
-        setQuantiapagaInput(valorDinheiroInput);
-        setNeedsTroco(false);
+        // Calcula apenas o valor necessário em dinheiro, considerando as outras formas
+        const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
+        const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
+        
+        // Se o dinheiro for maior que o necessário, configura o troco automaticamente
+        if (valorDinheiroInput > valorNecessarioEmDinheiro) {
+          setQuantiapagaInput(valorDinheiroInput);
+          setNeedsTroco(true);
+        }
       }
       return true;
     }

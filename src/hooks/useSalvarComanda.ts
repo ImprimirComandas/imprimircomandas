@@ -23,27 +23,35 @@ export const useSalvarComanda = (
       toast.error('Adicione pelo menos um produto.');
       return false;
     }
-    if (!comanda.forma_pagamento) {
+    
+    // Verifica se uma forma de pagamento foi selecionada
+    if (!comanda.forma_pagamento || comanda.forma_pagamento === '') {
       toast.error('Selecione a forma de pagamento.');
       return false;
     }
+    
     if (!comanda.endereco || !comanda.bairro) {
       toast.error('Preencha o endereço e o bairro.');
       return false;
     }
+    
     if (comanda.forma_pagamento === 'dinheiro' && needsTroco === null) {
       return false;
     }
+    
     if (comanda.forma_pagamento === 'dinheiro' && needsTroco && (quantiapagaInput === null || quantiapagaInput <= totalComTaxa)) {
       toast.error('Informe uma quantia válida para o troco (maior que o total).');
       return false;
     }
+    
     if (comanda.forma_pagamento === 'misto') {
       const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
       if (Math.abs(totalValores - totalComTaxa) > 0.01) {
+        toast.error('Os valores do pagamento misto não somam o total correto.');
         return false;
       }
     }
+    
     return true;
   };
 
@@ -57,6 +65,25 @@ export const useSalvarComanda = (
 
       const subtotal = comanda.produtos.reduce((sum, item) => sum + (item.valor * item.quantidade), 0);
       
+      // Calcula o troco para pagamentos em dinheiro ou mistos com excedente em dinheiro
+      let trocoValue = 0;
+      let quantiaPaga = totalComTaxa;
+      
+      if (comanda.forma_pagamento === 'dinheiro' && needsTroco && quantiapagaInput) {
+        trocoValue = quantiapagaInput - totalComTaxa;
+        quantiaPaga = quantiapagaInput;
+      } else if (comanda.forma_pagamento === 'misto' && valorDinheiroInput) {
+        // Para pagamentos mistos, calcula o valor necessário em dinheiro
+        const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
+        const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
+        
+        // Se o valor em dinheiro for maior que o necessário, calcula o troco
+        if (valorDinheiroInput > valorNecessarioEmDinheiro) {
+          trocoValue = valorDinheiroInput - valorNecessarioEmDinheiro;
+          quantiaPaga = totalComTaxa + trocoValue; // Quantia paga é o total + troco
+        }
+      }
+      
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
@@ -67,8 +94,8 @@ export const useSalvarComanda = (
         bairro: comanda.bairro,
         taxaentrega: comanda.taxaentrega,
         pago: comanda.pago,
-        quantiapaga: needsTroco ? quantiapagaInput || 0 : totalComTaxa,
-        troco: needsTroco && quantiapagaInput ? quantiapagaInput - totalComTaxa : 0,
+        quantiapaga: quantiaPaga,
+        troco: trocoValue,
         valor_cartao: valorCartaoInput || 0,
         valor_dinheiro: valorDinheiroInput || 0,
         valor_pix: valorPixInput || 0,
