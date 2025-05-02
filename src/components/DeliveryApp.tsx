@@ -59,9 +59,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     onFormaPagamentoChange,
     onChange,
     handleTrocoConfirm,
-    closeTrocoModal, // This now expects no parameters
+    closeTrocoModal,
     handlePagamentoMistoConfirm,
-    closePagamentoMistoModal, // This now expects no parameters
+    closePagamentoMistoModal,
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
@@ -136,7 +136,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           needsTroco={needsTroco}
           quantiapagaInput={quantiapagaInput}
           totalComTaxa={totalComTaxa}
-          onClose={closeTrocoModal} // No parameter needed now
+          onClose={closeTrocoModal}
           onConfirm={handleTrocoConfirm}
           onChange={onChange}
         />
@@ -146,7 +146,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           valorCartaoInput={valorCartaoInput}
           valorDinheiroInput={valorDinheiroInput}
           valorPixInput={valorPixInput}
-          onClose={closePagamentoMistoModal} // No parameter needed now
+          onClose={closePagamentoMistoModal}
           onConfirm={handlePagamentoMistoConfirm}
           onChange={onChange}
         />

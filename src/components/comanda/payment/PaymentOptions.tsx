@@ -10,7 +10,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   forma_pagamento,
   onFormaPagamentoChange,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<'' | 'pix' | 'dinheiro' | 'cartao' | 'misto'>(forma_pagamento);
+  const [selectedOption, setSelectedOption] = useState(forma_pagamento);
   
   // Update component state when prop changes (for real-time updates)
   useEffect(() => {
@@ -26,16 +26,14 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Forma de Pagamento <span className="text-red-500">*</span>
+          Forma de Pagamento
         </label>
         <div className="mt-2 flex flex-wrap gap-4">
           {['pix', 'dinheiro', 'cartao', 'misto'].map((forma) => (
             <label 
               key={forma} 
-              className={`flex items-center p-2 rounded-md transition-colors duration-200 cursor-pointer ${
-                selectedOption === forma 
-                  ? 'bg-blue-100 border border-blue-500 font-medium' 
-                  : 'border border-gray-200 hover:bg-gray-50'
+              className={`flex items-center p-2 rounded-md transition-colors duration-200 ${
+                selectedOption === forma ? 'bg-blue-50 border border-blue-200' : ''
               }`}
             >
               <input
@@ -44,9 +42,10 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 value={forma}
                 checked={selectedOption === forma}
                 onChange={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
-                className="mr-2 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
+                required
               />
-              <span className="text-sm capitalize">{forma}</span>
+              <span className="text-sm">{forma.charAt(0).toUpperCase() + forma.slice(1)}</span>
             </label>
           ))}
         </div>

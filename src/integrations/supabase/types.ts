@@ -262,57 +262,6 @@ export type Database = {
         }
         Relationships: []
       }
-      orders: {
-        Row: {
-          cash_amount: number | null
-          created_at: string | null
-          customer_address: string | null
-          customer_name: string
-          customer_neighborhood: string | null
-          customer_notes: string | null
-          customer_phone: string | null
-          delivery_option: string
-          id: string
-          items: Json
-          payment_method: string
-          total: number
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          cash_amount?: number | null
-          created_at?: string | null
-          customer_address?: string | null
-          customer_name: string
-          customer_neighborhood?: string | null
-          customer_notes?: string | null
-          customer_phone?: string | null
-          delivery_option: string
-          id?: string
-          items: Json
-          payment_method: string
-          total: number
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          cash_amount?: number | null
-          created_at?: string | null
-          customer_address?: string | null
-          customer_name?: string
-          customer_neighborhood?: string | null
-          customer_notes?: string | null
-          customer_phone?: string | null
-          delivery_option?: string
-          id?: string
-          items?: Json
-          payment_method?: string
-          total?: number
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       produtos: {
         Row: {
           categoria: string | null
