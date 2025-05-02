@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface PagamentoMistoModalProps {
   show: boolean;
@@ -27,6 +27,13 @@ export default function PagamentoMistoModal({
   const totalAtual = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
   const diferenca = totalComTaxa - totalAtual;
   
+  // Calculando o troco automaticamente se o pagamento em dinheiro for maior que o necessário
+  const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
+  const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
+  const troco = (valorDinheiroInput || 0) > valorNecessarioEmDinheiro && valorDinheiroInput 
+    ? valorDinheiroInput - valorNecessarioEmDinheiro 
+    : 0;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -85,6 +92,13 @@ export default function PagamentoMistoModal({
               ? 'Valores conferem!'
               : `Diferença: R$ ${diferenca.toFixed(2)} ${diferenca > 0 ? '(faltando)' : '(excedente)'}`}
           </div>
+
+          {troco > 0 && (
+            <div className="font-semibold text-green-600">
+              Troco: R$ {troco.toFixed(2)}
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2 mt-4">
             <button
               type="button"

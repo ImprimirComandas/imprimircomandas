@@ -33,7 +33,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
             <label 
               key={forma} 
               className={`flex items-center p-2 rounded-md transition-colors duration-200 ${
-                selectedOption === forma ? 'bg-blue-50 border border-blue-200' : ''
+                selectedOption === forma ? 'bg-blue-50 border border-blue-200' : 'border border-gray-200'
               }`}
             >
               <input
@@ -43,7 +43,6 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 checked={selectedOption === forma}
                 onChange={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
                 className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
-                required
               />
               <span className="text-sm">{forma.charAt(0).toUpperCase() + forma.slice(1)}</span>
             </label>
