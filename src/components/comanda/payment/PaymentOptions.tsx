@@ -26,7 +26,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Forma de Pagamento
+          Forma de Pagamento <span className="text-red-500">*</span>
         </label>
         <div className="mt-2 flex flex-wrap gap-4">
           {['pix', 'dinheiro', 'cartao', 'misto'].map((forma) => (

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 interface PagamentoMistoModalProps {
   show: boolean;
@@ -26,18 +26,24 @@ export default function PagamentoMistoModal({
   
   const totalAtual = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
   const diferenca = totalComTaxa - totalAtual;
-  const valoresCompletos = Math.abs(diferenca) < 0.01;
   
   // Calculando o troco automaticamente se o pagamento em dinheiro for maior que o necessário
   const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
-  const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
-  const troco = (valorDinheiroInput || 0) > valorNecessarioEmDinheiro && valorDinheiroInput 
-    ? valorDinheiroInput - valorNecessarioEmDinheiro 
+  const valorNecessarioEmDinheiro = Math.max(0, totalComTaxa - valorOutrasFormas);
+  const valorDinheiroAtual = valorDinheiroInput || 0;
+  
+  // Se o dinheiro for maior que o necessário, calcula o troco
+  const troco = valorDinheiroAtual > valorNecessarioEmDinheiro
+    ? valorDinheiroAtual - valorNecessarioEmDinheiro
     : 0;
+  
+  // Agora consideramos a confirmação válida se o valor total é pelo menos o valor da taxa
+  // ou se houver troco (o que significa que o pagamento é suficiente)
+  const confirmacaoValida = totalAtual >= totalComTaxa || troco > 0;
 
-  // Efeito para confirmar automaticamente quando todos os valores estiverem preenchidos corretamente
+  // Efeito para confirmar automaticamente quando o valor estiver correto
   useEffect(() => {
-    if (valoresCompletos) {
+    if (confirmacaoValida && Math.abs(diferenca) < 0.01) {
       // Delay pequeno para dar feedback visual ao usuário antes de confirmar
       const timer = setTimeout(() => {
         onConfirm();
@@ -45,7 +51,7 @@ export default function PagamentoMistoModal({
       
       return () => clearTimeout(timer);
     }
-  }, [valoresCompletos, onConfirm]);
+  }, [confirmacaoValida, diferenca, onConfirm]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -100,11 +106,12 @@ export default function PagamentoMistoModal({
           <div className="font-semibold text-gray-700">
             Total a pagar: R$ {totalComTaxa.toFixed(2)}
           </div>
-          <div className={`font-semibold ${valoresCompletos ? 'text-green-600' : 'text-orange-500'}`}>
-            {valoresCompletos
-              ? 'Valores conferem!'
-              : `Faltando: R$ ${diferenca.toFixed(2)}`}
-          </div>
+          
+          {!confirmacaoValida && (
+            <div className="font-semibold text-orange-500">
+              Faltando: R$ {diferenca.toFixed(2)}
+            </div>
+          )}
 
           {troco > 0 && (
             <div className="font-semibold text-green-600">
@@ -124,11 +131,11 @@ export default function PagamentoMistoModal({
               type="button"
               onClick={onConfirm}
               className={`py-2 px-4 rounded-md ${
-                valoresCompletos 
+                confirmacaoValida 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
-              disabled={!valoresCompletos}
+              disabled={!confirmacaoValida}
             >
               Confirmar
             </button>

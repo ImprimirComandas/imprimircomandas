@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -36,6 +35,7 @@ export const useSalvarComanda = (
     }
     
     if (comanda.forma_pagamento === 'dinheiro' && needsTroco === null) {
+      toast.error('Confirme se precisa de troco.');
       return false;
     }
     
@@ -44,13 +44,8 @@ export const useSalvarComanda = (
       return false;
     }
     
-    if (comanda.forma_pagamento === 'misto') {
-      const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
-      if (Math.abs(totalValores - totalComTaxa) > 0.01) {
-        toast.error('Os valores do pagamento misto não somam o total correto.');
-        return false;
-      }
-    }
+    // Removendo a validação que exigia valores exatos para pagamento misto
+    // Agora permitimos que haja troco no pagamento misto
     
     return true;
   };

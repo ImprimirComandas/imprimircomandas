@@ -20,17 +20,27 @@ export function usePaymentHandling(totalComTaxa: number) {
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
       setNeedsTroco(null);
+      // Limpar outros valores de pagamento misto
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
     } else if (forma === 'misto') {
       setShowPagamentoMistoModal(true);
       // Reset valores ao abrir o modal
       setValorCartaoInput(null);
       setValorDinheiroInput(null);
       setValorPixInput(null);
+      setNeedsTroco(null);
+      setQuantiapagaInput(null);
     } else {
+      // Para outras formas de pagamento, limpar todos os valores
       setShowTrocoModal(false);
       setShowPagamentoMistoModal(false);
       setNeedsTroco(null);
       setQuantiapagaInput(null);
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
     }
   };
 
@@ -59,7 +69,6 @@ export function usePaymentHandling(totalComTaxa: number) {
     return true;
   };
 
-  // Modified to make resetFormaPagamento optional
   const closeTrocoModal = (resetFormaPagamento?: () => void) => {
     setShowTrocoModal(false);
     if (resetFormaPagamento) {
@@ -72,8 +81,8 @@ export function usePaymentHandling(totalComTaxa: number) {
   const handlePagamentoMistoConfirm = () => {
     const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
     
-    // Verifica se o total está correto (permitindo uma pequena margem de erro)
-    if (Math.abs(totalValores - totalComTaxa) < 0.01) {
+    // Agora permitimos confirmar pagamento mesmo com troco
+    if (totalValores >= totalComTaxa) {
       setShowPagamentoMistoModal(false);
       
       // Se houver pagamento em dinheiro e for maior que o valor atribuído a esta forma,
@@ -81,10 +90,10 @@ export function usePaymentHandling(totalComTaxa: number) {
       if ((valorDinheiroInput || 0) > 0) {
         // Calcula apenas o valor necessário em dinheiro, considerando as outras formas
         const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
-        const valorNecessarioEmDinheiro = totalComTaxa - valorOutrasFormas;
+        const valorNecessarioEmDinheiro = Math.max(0, totalComTaxa - valorOutrasFormas);
         
         // Se o dinheiro for maior que o necessário, configura o troco automaticamente
-        if (valorDinheiroInput > valorNecessarioEmDinheiro) {
+        if ((valorDinheiroInput || 0) > valorNecessarioEmDinheiro) {
           setQuantiapagaInput(valorDinheiroInput);
           setNeedsTroco(true);
         }
@@ -94,7 +103,6 @@ export function usePaymentHandling(totalComTaxa: number) {
     return false;
   };
 
-  // Modified to make resetFormaPagamento optional
   const closePagamentoMistoModal = (resetFormaPagamento?: () => void) => {
     setShowPagamentoMistoModal(false);
     if (resetFormaPagamento) {
