@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function usePaymentHandling(totalComTaxa: number) {
   const [showTrocoModal, setShowTrocoModal] = useState(false);

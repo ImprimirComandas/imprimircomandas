@@ -37,13 +37,14 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                   ? 'bg-green-100 border-2 border-green-500 font-medium shadow-sm' 
                   : 'border border-gray-300 hover:bg-gray-50'
               }`}
+              onClick={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
             >
               <input
                 type="radio"
                 name="formaPagamento"
                 value={forma}
                 checked={selectedOption === forma}
-                onChange={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
+                onChange={() => {}} // Controlled via the onClick handler on the label
                 className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
               />
               <span className="text-sm capitalize">{forma}</span>
