@@ -3,7 +3,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { PaymentTotal } from './payment/PaymentTotal';
 import { PaymentOptions } from './payment/PaymentOptions';
-import { Switch } from '../ui/switch';
+import { Checkbox } from '../ui/checkbox';
 
 interface PaymentSectionProps {
   subtotal: number;
@@ -45,7 +45,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       />
 
       <div className="flex items-center gap-2 mt-4">
-        <Switch
+        <Checkbox
           id="pago"
           checked={pago}
           onCheckedChange={handlePagoChange}
