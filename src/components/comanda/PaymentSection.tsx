@@ -3,7 +3,6 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { PaymentTotal } from './payment/PaymentTotal';
 import { PaymentOptions } from './payment/PaymentOptions';
-import { Switch } from '../ui/switch';
 
 interface PaymentSectionProps {
   subtotal: number;
@@ -26,9 +25,9 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   onFormaPagamentoChange,
   onChange,
 }) => {
-  const handlePagoChange = (checked: boolean) => {
-    console.log("Payment status changed to:", checked);
-    onChange('pago', checked);
+  const handlePagoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Payment status changed to:", e.target.checked);
+    onChange('pago', e.target.checked);
   };
 
   return (
@@ -45,10 +44,12 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       />
 
       <div className="flex items-center gap-2 mt-4">
-        <Switch
+        <input
+          type="checkbox"
           id="pago"
           checked={pago}
-          onCheckedChange={handlePagoChange}
+          onChange={handlePagoChange}
+          className="h-5 w-5 text-green-600 rounded focus:ring-green-500 cursor-pointer"
         />
         <label htmlFor="pago" className="text-sm font-medium text-gray-700 cursor-pointer">
           Pedido Pago

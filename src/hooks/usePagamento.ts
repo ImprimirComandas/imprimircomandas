@@ -30,6 +30,7 @@ export function usePagamento(totalComTaxa: number) {
   } = usePaymentHandling(totalComTaxa);
 
   const resetPagamento = () => {
+    console.log("Resetting payment data");
     setFormaPagamento('');
     setPago(false);
     setNeedsTroco(null);
