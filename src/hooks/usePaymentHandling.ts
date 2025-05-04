@@ -14,6 +14,8 @@ export function usePaymentHandling(totalComTaxa: number) {
     forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '',
     setComandaFormaPagamento: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void
   ) => {
+    console.log("Payment method selected in handler:", forma);
+    
     // Update the payment method in the parent component first
     setComandaFormaPagamento(forma);
     

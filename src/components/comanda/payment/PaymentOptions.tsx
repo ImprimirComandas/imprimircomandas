@@ -34,7 +34,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
               key={forma} 
               className={`flex items-center p-3 rounded-md transition-colors duration-200 cursor-pointer ${
                 selectedOption === forma 
-                  ? 'bg-blue-100 border-2 border-blue-500 font-medium shadow-sm' 
+                  ? 'bg-green-100 border-2 border-green-500 font-medium shadow-sm' 
                   : 'border border-gray-300 hover:bg-gray-50'
               }`}
             >
@@ -44,7 +44,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 value={forma}
                 checked={selectedOption === forma}
                 onChange={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
-                className="mr-2 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
               />
               <span className="text-sm capitalize">{forma}</span>
             </label>

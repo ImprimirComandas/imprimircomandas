@@ -40,6 +40,8 @@ export function usePagamento(totalComTaxa: number) {
   };
 
   const onFormaPagamentoChange = (forma: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto') => {
+    console.log("Payment method selected:", forma);
+    setFormaPagamento(forma);
     handlePaymentChange(forma, setFormaPagamento);
   };
 
