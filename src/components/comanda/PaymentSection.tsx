@@ -25,11 +25,6 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   onFormaPagamentoChange,
   onChange,
 }) => {
-  const handlePagoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Payment status changed to:", e.target.checked);
-    onChange('pago', e.target.checked);
-  };
-
   return (
     <div className="mb-6">
       <PaymentTotal
@@ -48,10 +43,10 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           type="checkbox"
           id="pago"
           checked={pago}
-          onChange={handlePagoChange}
-          className="h-5 w-5 text-green-600 rounded focus:ring-green-500 cursor-pointer"
+          onChange={(e) => onChange('pago', e.target.checked)}
+          className="h-4 w-4 text-green-600 border-gray-300 rounded"
         />
-        <label htmlFor="pago" className="text-sm font-medium text-gray-700 cursor-pointer">
+        <label htmlFor="pago" className="text-sm font-medium text-gray-700">
           Pedido Pago
         </label>
       </div>

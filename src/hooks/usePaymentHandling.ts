@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function usePaymentHandling(totalComTaxa: number) {
   const [showTrocoModal, setShowTrocoModal] = useState(false);
@@ -14,12 +14,9 @@ export function usePaymentHandling(totalComTaxa: number) {
     forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '',
     setComandaFormaPagamento: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void
   ) => {
-    console.log("Payment method selected in handler:", forma);
-    
-    // Update the payment method in the parent component first
+    // Always update the payment method immediately
     setComandaFormaPagamento(forma);
     
-    // Handle specific logic based on payment type
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
       setNeedsTroco(null);
@@ -37,15 +34,6 @@ export function usePaymentHandling(totalComTaxa: number) {
       setQuantiapagaInput(null);
     } else if (forma === 'pix' || forma === 'cartao') {
       // For other payment methods, clear all values
-      setShowTrocoModal(false);
-      setShowPagamentoMistoModal(false);
-      setNeedsTroco(null);
-      setQuantiapagaInput(null);
-      setValorCartaoInput(null);
-      setValorDinheiroInput(null);
-      setValorPixInput(null);
-    } else if (forma === '') {
-      // Handle case when payment method is cleared
       setShowTrocoModal(false);
       setShowPagamentoMistoModal(false);
       setNeedsTroco(null);
@@ -86,6 +74,8 @@ export function usePaymentHandling(totalComTaxa: number) {
     if (resetFormaPagamento) {
       resetFormaPagamento();
     }
+    setQuantiapagaInput(null);
+    setNeedsTroco(null);
   };
 
   const handlePagamentoMistoConfirm = () => {
@@ -117,6 +107,9 @@ export function usePaymentHandling(totalComTaxa: number) {
     if (resetFormaPagamento) {
       resetFormaPagamento();
     }
+    setValorCartaoInput(null);
+    setValorDinheiroInput(null);
+    setValorPixInput(null);
   };
 
   return {

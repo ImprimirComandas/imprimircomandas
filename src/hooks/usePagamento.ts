@@ -21,16 +21,15 @@ export function usePagamento(totalComTaxa: number) {
     setValorDinheiroInput,
     valorPixInput,
     setValorPixInput,
-    handleFormaPagamentoChange: handlePaymentChange,
+    handleFormaPagamentoChange,
     handleInputChange,
     handleTrocoConfirm,
-    closeTrocoModal: closeChange,
+    closeTrocoModal,
     handlePagamentoMistoConfirm,
-    closePagamentoMistoModal: closeMixed,
+    closePagamentoMistoModal,
   } = usePaymentHandling(totalComTaxa);
 
   const resetPagamento = () => {
-    console.log("Resetting payment data");
     setFormaPagamento('');
     setPago(false);
     setNeedsTroco(null);
@@ -41,21 +40,19 @@ export function usePagamento(totalComTaxa: number) {
   };
 
   const onFormaPagamentoChange = (forma: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto') => {
-    console.log("Payment method selected:", forma);
-    setFormaPagamento(forma);
-    handlePaymentChange(forma, setFormaPagamento);
+    handleFormaPagamentoChange(forma, setFormaPagamento);
   };
 
   // Wrap the original closeTrocoModal to provide resetPagamento
   const handleCloseTrocoModal = () => {
     const resetFunc = () => setFormaPagamento('');
-    closeChange(resetFunc);
+    closeTrocoModal(resetFunc);
   };
 
   // Wrap the original closePagamentoMistoModal to provide resetPagamento
   const handleClosePagamentoMistoModal = () => {
     const resetFunc = () => setFormaPagamento('');
-    closeMixed(resetFunc);
+    closePagamentoMistoModal(resetFunc);
   };
 
   return {

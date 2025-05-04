@@ -8,6 +8,7 @@ import { ProductSearch } from './ProductSearch';
 import { ProductList } from './ProductList';
 import { AddressForm } from './AddressForm';
 import { PaymentSection } from './PaymentSection';
+import { toast } from 'sonner';
 import { useComandaValidation } from '../../hooks/useComandaValidation';
 
 interface ComandaFormProps {
@@ -49,12 +50,8 @@ const ComandaForm: React.FC<ComandaFormProps> = ({
   const { validateComanda } = useComandaValidation();
 
   const handleSaveComanda = () => {
-    console.log("Save button clicked, current comanda state:", comanda);
     if (validateComanda(comanda, isShopOpen)) {
-      console.log("Validation passed, proceeding with save");
       onSaveComanda();
-    } else {
-      console.log("Validation failed");
     }
   };
 

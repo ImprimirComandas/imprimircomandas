@@ -24,10 +24,9 @@ export const useSalvarComanda = (
       return false;
     }
     
-    // Validate payment method is selected
-    if (!comanda.forma_pagamento || comanda.forma_pagamento === '') {
+    // Verifica se uma forma de pagamento foi selecionada
+    if (!comanda.forma_pagamento) {
       toast.error('Selecione a forma de pagamento.');
-      console.error('Payment validation failed:', comanda.forma_pagamento);
       return false;
     }
     
@@ -58,8 +57,6 @@ export const useSalvarComanda = (
   };
 
   const salvarComanda = async () => {
-    console.log("Attempting to save comanda with payment:", comanda.forma_pagamento, "pago:", comanda.pago);
-    
     if (!validarComanda()) return;
 
     setSalvando(true);
@@ -104,8 +101,6 @@ export const useSalvarComanda = (
         valor_dinheiro: valorDinheiroInput || 0,
         valor_pix: valorPixInput || 0,
       };
-
-      console.log("Sending to database:", novaComanda);
 
       const { data, error } = await supabase.from('comandas').insert([novaComanda]).select().single();
       if (error) throw error;

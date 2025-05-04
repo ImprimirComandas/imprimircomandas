@@ -21,7 +21,7 @@ export const PaymentTotal: React.FC<PaymentTotalProps> = ({ subtotal, taxaentreg
   }, [subtotal, taxaentrega, total]);
   
   return (
-    <div className="mb-5 border rounded-lg p-3 bg-gray-50">
+    <div>
       <div className={`flex justify-between items-center mb-2 transition-colors duration-300 ${isUpdating ? 'bg-blue-50' : ''}`}>
         <h2 className="text-base font-semibold">Subtotal:</h2>
         <span className="text-lg font-bold">R$ {subtotal.toFixed(2)}</span>
@@ -30,7 +30,7 @@ export const PaymentTotal: React.FC<PaymentTotalProps> = ({ subtotal, taxaentreg
         <h3 className="text-base">Entrega:</h3>
         <span className="text-base font-bold">R$ {taxaentrega.toFixed(2)}</span>
       </div>
-      <div className={`flex justify-between items-center p-2 rounded bg-green-50 transition-all duration-300 ${isUpdating ? 'scale-105' : ''}`}>
+      <div className={`flex justify-between items-center mb-4 bg-green-50 p-2 rounded transition-all duration-300 ${isUpdating ? 'scale-105' : ''}`}>
         <h2 className="text-base font-semibold">Total:</h2>
         <span className="text-lg font-bold text-green-700">R$ {total.toFixed(2)}</span>
       </div>
