@@ -24,8 +24,8 @@ export const useSalvarComanda = (
       return false;
     }
     
-    // Verifica se uma forma de pagamento foi selecionada
-    if (!comanda.forma_pagamento) {
+    // Validate payment method is selected - using empty string check
+    if (comanda.forma_pagamento === '') {
       toast.error('Selecione a forma de pagamento.');
       return false;
     }

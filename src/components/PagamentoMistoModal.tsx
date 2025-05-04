@@ -55,7 +55,7 @@ export default function PagamentoMistoModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <h2 className="text-lg font-bold mb-4">Pagamento Misto</h2>
+        <h2 className="text-xl font-bold mb-4">Pagamento Misto</h2>
         <div className="space-y-4">
           <div>
             <label htmlFor="valorCartaoInput" className="block text-sm font-medium text-gray-700">
@@ -102,23 +102,30 @@ export default function PagamentoMistoModal({
               step="0.01"
             />
           </div>
-          <div className="font-semibold text-gray-700">
-            Total a pagar: R$ {totalComTaxa.toFixed(2)}
-          </div>
           
-          {diferenca > 0 && (
-            <div className="font-semibold text-orange-500">
-              Faltando: R$ {diferenca.toFixed(2)}
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <div className="font-semibold text-gray-700 mb-1">
+              Total a pagar: R$ {totalComTaxa.toFixed(2)}
             </div>
-          )}
-
-          {troco > 0 && (
-            <div className="font-semibold text-green-600">
-              Troco: R$ {troco.toFixed(2)}
+            
+            <div className="font-semibold text-gray-700 mb-1">
+              Total informado: R$ {totalAtual.toFixed(2)}
             </div>
-          )}
+            
+            {diferenca > 0 && (
+              <div className="font-semibold text-orange-500">
+                Faltando: R$ {diferenca.toFixed(2)}
+              </div>
+            )}
 
-          <div className="flex justify-end space-x-2 mt-4">
+            {troco > 0 && (
+              <div className="font-semibold text-green-600">
+                Troco: R$ {troco.toFixed(2)}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-4">
             <button
               type="button"
               onClick={onClose}
