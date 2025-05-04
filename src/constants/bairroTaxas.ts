@@ -8,20 +8,13 @@ export interface BairroTaxa {
   user_id: string;
 }
 
-// Default rates as fallback
-const defaultBairroTaxas = {
-  'Jardim Paraíso': 6,
-  'Aventureiro': 9,
-  'Jardim Sofia': 9,
-  'Cubatão': 9,
-};
-
+// Remover os bairros padrões já que agora vamos sempre buscar do banco de dados
 export async function getBairroTaxas(): Promise<Record<string, number>> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.log('Sessão não encontrada, usando taxas padrão');
-      return defaultBairroTaxas;
+      console.log('Sessão não encontrada, retornando objeto vazio');
+      return {};
     }
 
     console.log('Buscando taxas para o usuário:', session.user.id);
@@ -36,8 +29,8 @@ export async function getBairroTaxas(): Promise<Record<string, number>> {
     }
 
     if (!data || data.length === 0) {
-      console.log('Nenhuma taxa encontrada, usando padrão');
-      return defaultBairroTaxas;
+      console.log('Nenhuma taxa encontrada');
+      return {};
     }
 
     const taxas: Record<string, number> = {};
@@ -49,8 +42,9 @@ export async function getBairroTaxas(): Promise<Record<string, number>> {
     return taxas;
   } catch (error) {
     console.error('Error loading neighborhood rates:', error);
-    return defaultBairroTaxas;
+    return {};
   }
 }
 
-export default defaultBairroTaxas;
+// Exportar um objeto vazio como fallback
+export default {};

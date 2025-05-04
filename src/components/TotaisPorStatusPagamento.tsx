@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { startOfDay, endOfDay } from 'date-fns';
 import { Eye, EyeOff } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { TotaisPorStatusPagamentoProps } from '../types';
 
@@ -21,6 +21,7 @@ export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagament
     total: props?.total ?? 0,
   });
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   // Função para buscar totais do dia atual
   const fetchTotaisDiaAtual = async () => {
@@ -48,6 +49,14 @@ export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagament
         .reduce((sum, comanda) => sum + (comanda.total || 0), 0);
 
       const total = confirmados + naoConfirmados;
+      
+      // Visual feedback for updates
+      if (totais.confirmados !== confirmados || 
+          totais.naoConfirmados !== naoConfirmados ||
+          totais.total !== total) {
+        setUpdating(true);
+        setTimeout(() => setUpdating(false), 1000);
+      }
 
       setTotais({ confirmados, naoConfirmados, total });
     } catch (error: unknown) {
@@ -106,6 +115,28 @@ export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagament
     if (props?.showValues === undefined) {
       loadShowValuesState();
     }
+    
+    // Set up real-time subscription
+    const comandasChannel = supabase
+      .channel('pagamentos_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comandas'
+        },
+        (payload) => {
+          console.log('Real-time update from comandas for totals:', payload);
+          fetchTotaisDiaAtual();
+        }
+      )
+      .subscribe();
+      
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(comandasChannel);
+    };
   }, [props]);
 
   // Função para alternar showValues e salvar no Supabase
@@ -146,24 +177,38 @@ export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagament
           transition={{ duration: 0.3 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <p className="text-sm font-medium text-green-800">Confirmados</p>
-            <p className="text-lg font-bold text-green-900">
-              {showValues ? `R$ ${totais.confirmados.toFixed(2)}` : '****'}
-            </p>
-          </div>
-          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-            <p className="text-sm font-medium text-red-800">Não Confirmados</p>
-            <p className="text-lg font-bold text-red-900">
-              {showValues ? `R$ ${totais.naoConfirmados.toFixed(2)}` : '****'}
-            </p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <p className="text-sm font-medium text-gray-600">Total</p>
-            <p className="text-lg font-bold text-gray-900">
-              {showValues ? `R$ ${totais.total.toFixed(2)}` : '****'}
-            </p>
-          </div>
+          <AnimatePresence>
+            <motion.div 
+              animate={{ scale: updating ? 1.05 : 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-green-50 p-4 rounded-lg border border-green-200"
+            >
+              <p className="text-sm font-medium text-green-800">Confirmados</p>
+              <p className="text-lg font-bold text-green-900">
+                {showValues ? `R$ ${totais.confirmados.toFixed(2)}` : '****'}
+              </p>
+            </motion.div>
+            <motion.div 
+              animate={{ scale: updating ? 1.05 : 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-red-50 p-4 rounded-lg border border-red-200"
+            >
+              <p className="text-sm font-medium text-red-800">Não Confirmados</p>
+              <p className="text-lg font-bold text-red-900">
+                {showValues ? `R$ ${totais.naoConfirmados.toFixed(2)}` : '****'}
+              </p>
+            </motion.div>
+            <motion.div 
+              animate={{ scale: updating ? 1.05 : 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+            >
+              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-lg font-bold text-gray-900">
+                {showValues ? `R$ ${totais.total.toFixed(2)}` : '****'}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       )}
     </div>

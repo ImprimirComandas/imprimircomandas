@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function usePaymentHandling(totalComTaxa: number) {
   const [showTrocoModal, setShowTrocoModal] = useState(false);
@@ -14,18 +14,33 @@ export function usePaymentHandling(totalComTaxa: number) {
     forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '',
     setComandaFormaPagamento: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void
   ) => {
+    // Always update the payment method immediately
     setComandaFormaPagamento(forma);
     
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
       setNeedsTroco(null);
+      // Clear other mixed payment values
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
     } else if (forma === 'misto') {
       setShowPagamentoMistoModal(true);
-    } else {
+      // Reset values when opening modal
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
+      setNeedsTroco(null);
+      setQuantiapagaInput(null);
+    } else if (forma === 'pix' || forma === 'cartao') {
+      // For other payment methods, clear all values
       setShowTrocoModal(false);
       setShowPagamentoMistoModal(false);
       setNeedsTroco(null);
       setQuantiapagaInput(null);
+      setValorCartaoInput(null);
+      setValorDinheiroInput(null);
+      setValorPixInput(null);
     }
   };
 
@@ -47,36 +62,51 @@ export function usePaymentHandling(totalComTaxa: number) {
     if (needsTroco === null) {
       return false;
     }
-    if (needsTroco && (quantiapagaInput === null || quantiapagaInput <= totalComTaxa)) {
+    if (needsTroco && (quantiapagaInput === null || quantiapagaInput <= 0)) {
       return false;
     }
     setShowTrocoModal(false);
     return true;
   };
 
-  const closeTrocoModal = (resetFormaPagamento: () => void) => {
+  const closeTrocoModal = (resetFormaPagamento?: () => void) => {
     setShowTrocoModal(false);
-    resetFormaPagamento();
+    if (resetFormaPagamento) {
+      resetFormaPagamento();
+    }
     setQuantiapagaInput(null);
     setNeedsTroco(null);
   };
 
   const handlePagamentoMistoConfirm = () => {
     const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
-    if (Math.abs(totalValores - totalComTaxa) < 0.01) {
+    
+    // Allow confirmation if total is at least equal to the required amount
+    if (totalValores >= totalComTaxa) {
       setShowPagamentoMistoModal(false);
       
-      if ((valorDinheiroInput || 0) > 0 && needsTroco === null) {
-        setShowTrocoModal(true);
+      // If there's cash payment and it's more than needed, calculate change automatically
+      if ((valorDinheiroInput || 0) > 0) {
+        // Calculate only the amount needed in cash, considering other payment methods
+        const valorOutrasFormas = (valorCartaoInput || 0) + (valorPixInput || 0);
+        const valorNecessarioEmDinheiro = Math.max(0, totalComTaxa - valorOutrasFormas);
+        
+        // If cash is more than needed, set up change automatically
+        if ((valorDinheiroInput || 0) > valorNecessarioEmDinheiro) {
+          setQuantiapagaInput(valorDinheiroInput);
+          setNeedsTroco(true);
+        }
       }
       return true;
     }
     return false;
   };
 
-  const closePagamentoMistoModal = (resetFormaPagamento: () => void) => {
+  const closePagamentoMistoModal = (resetFormaPagamento?: () => void) => {
     setShowPagamentoMistoModal(false);
-    resetFormaPagamento();
+    if (resetFormaPagamento) {
+      resetFormaPagamento();
+    }
     setValorCartaoInput(null);
     setValorDinheiroInput(null);
     setValorPixInput(null);

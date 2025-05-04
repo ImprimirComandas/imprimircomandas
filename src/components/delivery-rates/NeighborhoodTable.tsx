@@ -27,6 +27,11 @@ export function NeighborhoodTable({ bairros, onSave, onDelete }: NeighborhoodTab
     );
   }
 
+  const handleSave = async (bairro: BairroTaxa) => {
+    await onSave(bairro);
+    setEditingBairro(null);
+  };
+
   return (
     <table className="min-w-full divide-y divide-gray-200">
       <thead className="bg-gray-50">
@@ -87,7 +92,7 @@ export function NeighborhoodTable({ bairros, onSave, onDelete }: NeighborhoodTab
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       <button
-                        onClick={() => onSave(editingBairro)}
+                        onClick={() => handleSave(editingBairro)}
                         className="p-2 rounded-full text-green-600 hover:bg-green-100 transition-colors duration-200"
                       >
                         <Save className="h-5 w-5" />

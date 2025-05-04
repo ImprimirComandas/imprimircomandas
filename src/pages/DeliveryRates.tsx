@@ -1,14 +1,19 @@
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { NeighborhoodTable } from '../components/delivery-rates/NeighborhoodTable';
 import { AddNeighborhoodForm } from '../components/delivery-rates/AddNeighborhoodForm';
 import { useNeighborhoods } from '../hooks/useNeighborhoods';
 
 export default function DeliveryRates() {
-  const { bairros, loading, addBairro, updateBairro, deleteBairro } = useNeighborhoods();
+  const { bairros, loading, addBairro, updateBairro, deleteBairro, refreshBairros } = useNeighborhoods();
   const [showAddForm, setShowAddForm] = useState(false);
+
+  const handleAddBairro = async (nome: string, taxa: number) => {
+    await addBairro(nome, taxa);
+    setShowAddForm(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
@@ -19,9 +24,18 @@ export default function DeliveryRates() {
           transition={{ duration: 0.5 }}
           className="mb-10"
         >
-          <h1 className="text-4xl font-extrabold text-gray-900">
-            Taxas de Entrega por Bairro
-          </h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-extrabold text-gray-900">
+              Taxas de Entrega por Bairro
+            </h1>
+            <button
+              onClick={() => refreshBairros()}
+              className="flex items-center px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors duration-200"
+              title="Atualizar lista de bairros"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
           <p className="mt-2 text-gray-600">
             Gerencie as taxas de entrega para diferentes bairros
           </p>
@@ -29,7 +43,7 @@ export default function DeliveryRates() {
 
         {showAddForm && (
           <AddNeighborhoodForm
-            onAdd={addBairro}
+            onAdd={handleAddBairro}
             onCancel={() => setShowAddForm(false)}
           />
         )}

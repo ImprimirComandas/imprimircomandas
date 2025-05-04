@@ -50,9 +50,28 @@ export const useShopIsOpen = () => {
 
     checkShopStatus();
     
-    // Atualizar a cada minuto
-    const interval = setInterval(checkShopStatus, 60 * 1000);
-    return () => clearInterval(interval);
+    // Set up real-time subscription
+    const shopSessionsChannel = supabase
+      .channel('shop_sessions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shop_sessions'
+        },
+        async (payload) => {
+          console.log('Real-time update from shop_sessions:', payload);
+          // Refresh the shop status when changes occur
+          await checkShopStatus();
+        }
+      )
+      .subscribe();
+    
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(shopSessionsChannel);
+    };
   }, []);
 
   const handleSetIsShopOpen = async (isOpen: boolean) => {
@@ -86,6 +105,7 @@ export const useShopIsOpen = () => {
       } else {
         // Fechar a loja - atualizar a sessão atual
         if (!currentSessionId) {
+          console.log("Attempting to find current session to close");
           const { data, error: fetchError } = await supabase
             .from('shop_sessions')
             .select('id')
@@ -94,22 +114,29 @@ export const useShopIsOpen = () => {
             .order('start_time', { ascending: false })
             .limit(1);
           
-          if (fetchError) throw fetchError;
+          if (fetchError) {
+            console.error("Error finding open session:", fetchError);
+            throw fetchError;
+          }
           
           if (data && data.length > 0) {
+            console.log("Found open session to close:", data[0].id);
             setCurrentSessionId(data[0].id);
           } else {
+            console.error("No open shop session found to close");
             toast.error('Não foi possível encontrar uma sessão aberta');
             setIsLoading(false);
             return;
           }
         }
         
-        console.log("Closing shop session:", currentSessionId);
+        const sessionIdToClose = currentSessionId;
+        console.log("Closing shop session:", sessionIdToClose);
+        
         const { error: updateError } = await supabase
           .from('shop_sessions')
           .update({ end_time: new Date().toISOString() })
-          .eq('id', currentSessionId);
+          .eq('id', sessionIdToClose);
         
         if (updateError) {
           console.error("Error closing shop:", updateError);
