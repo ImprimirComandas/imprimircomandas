@@ -10,8 +10,15 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   forma_pagamento,
   onFormaPagamentoChange,
 }) => {
+  const [selectedOption, setSelectedOption] = useState<'' | 'pix' | 'dinheiro' | 'cartao' | 'misto'>(forma_pagamento);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setSelectedOption(forma_pagamento);
+  }, [forma_pagamento]);
+  
   const handleOptionChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
-    console.log("Selecting payment method:", forma);
+    setSelectedOption(forma);
     onFormaPagamentoChange(forma);
   };
   
@@ -26,7 +33,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
             <label 
               key={forma} 
               className={`flex items-center p-3 rounded-md transition-colors duration-200 cursor-pointer ${
-                forma_pagamento === forma 
+                selectedOption === forma 
                   ? 'bg-green-100 border-2 border-green-500 font-medium shadow-sm' 
                   : 'border border-gray-300 hover:bg-gray-50'
               }`}
@@ -36,7 +43,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 type="radio"
                 name="formaPagamento"
                 value={forma}
-                checked={forma_pagamento === forma}
+                checked={selectedOption === forma}
                 onChange={() => {}} // Controlled via the onClick handler on the label
                 className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
               />
