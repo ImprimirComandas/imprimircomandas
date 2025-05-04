@@ -12,7 +12,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
 }) => {
   const [selectedOption, setSelectedOption] = useState<'' | 'pix' | 'dinheiro' | 'cartao' | 'misto'>(forma_pagamento);
   
-  // Update component state when prop changes (for real-time updates)
+  // Update local state when prop changes
   useEffect(() => {
     setSelectedOption(forma_pagamento);
   }, [forma_pagamento]);
@@ -28,14 +28,14 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
         <label className="block text-sm font-medium text-gray-700">
           Forma de Pagamento <span className="text-red-500">*</span>
         </label>
-        <div className="mt-2 flex flex-wrap gap-4">
+        <div className="mt-2 flex flex-wrap gap-3">
           {['pix', 'dinheiro', 'cartao', 'misto'].map((forma) => (
             <label 
               key={forma} 
-              className={`flex items-center p-2 rounded-md transition-colors duration-200 cursor-pointer ${
+              className={`flex items-center p-3 rounded-md transition-colors duration-200 cursor-pointer ${
                 selectedOption === forma 
-                  ? 'bg-blue-100 border border-blue-500 font-medium' 
-                  : 'border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-blue-100 border-2 border-blue-500 font-medium shadow-sm' 
+                  : 'border border-gray-300 hover:bg-gray-50'
               }`}
             >
               <input
