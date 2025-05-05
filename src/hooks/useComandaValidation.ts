@@ -24,8 +24,8 @@ export const useComandaValidation = () => {
       return false;
     }
     
-    // Check if payment method is not selected - this was failing before
-    if (!comanda.forma_pagamento || comanda.forma_pagamento === '') {
+    // Check if payment method is not selected - Fixed type comparison issue
+    if (comanda.forma_pagamento === '') {
       console.log('Forma de pagamento is empty');
       toast.error('Selecione uma forma de pagamento');
       return false;
