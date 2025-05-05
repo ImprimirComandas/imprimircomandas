@@ -30,6 +30,7 @@ export function usePagamento(totalComTaxa: number) {
   } = usePaymentHandling(totalComTaxa);
 
   const resetPagamento = () => {
+    console.log('Resetting payment form');
     setFormaPagamento('');
     setPago(false);
     setNeedsTroco(null);
@@ -40,6 +41,7 @@ export function usePagamento(totalComTaxa: number) {
   };
 
   const onFormaPagamentoChange = (forma: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto') => {
+    console.log('Payment method being set to:', forma);
     handlePaymentChange(forma, setFormaPagamento);
   };
 

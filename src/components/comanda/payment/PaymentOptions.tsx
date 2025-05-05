@@ -19,6 +19,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   }, [forma_pagamento]);
   
   const handleOptionChange = (forma: Comanda['forma_pagamento']) => {
+    console.log('Payment option selected:', forma);
     setSelectedOption(forma);
     onFormaPagamentoChange(forma);
   };

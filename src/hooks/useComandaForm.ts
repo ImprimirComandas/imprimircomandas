@@ -72,9 +72,13 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
   );
 
   const onChange = (field: string, value: any) => {
+    console.log(`Change detected: ${field} = ${value}`);
     if (field === 'pesquisaProduto') setPesquisaProduto(value);
     else if (field === 'endereco') updateComandaField('endereco', value);
-    else if (field === 'pago') setPago(value);
+    else if (field === 'pago') {
+      console.log('Setting pago to:', value);
+      setPago(value);
+    }
     else if (field === 'quantiapagaInput') setQuantiapagaInput(value ? Number(value) : null);
     else if (field === 'needsTroco') setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
     else if (field === 'valorCartaoInput') setValorCartaoInput(value ? Number(value) : null);

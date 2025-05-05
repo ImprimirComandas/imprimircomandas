@@ -26,7 +26,9 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   onChange,
 }) => {
   const handlePagoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange('pago', e.target.checked);
+    const isChecked = e.target.checked;
+    console.log('Payment status changed to:', isChecked);
+    onChange('pago', isChecked);
   };
 
   return (

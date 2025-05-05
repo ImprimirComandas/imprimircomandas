@@ -19,13 +19,17 @@ export const useSalvarComanda = (
   const [salvando, setSalvando] = useState(false);
 
   const validarComanda = () => {
+    console.log('Validating comanda before save:', comanda);
+    console.log('Payment method:', comanda.forma_pagamento);
+    console.log('Is paid:', comanda.pago);
+    
     if (comanda.produtos.length === 0) {
       toast.error('Adicione pelo menos um produto.');
       return false;
     }
     
-    // Using a more type-safe way to check for empty forma_pagamento
-    if (!comanda.forma_pagamento) {
+    // Fixed validation for payment method
+    if (comanda.forma_pagamento === '') {
       toast.error('Selecione a forma de pagamento.');
       return false;
     }
@@ -85,6 +89,11 @@ export const useSalvarComanda = (
         }
       }
       
+      console.log('Saving comanda with:', {
+        forma_pagamento: comanda.forma_pagamento,
+        pago: comanda.pago
+      });
+
       const novaComanda = {
         user_id: session.user.id,
         produtos: comanda.produtos,
