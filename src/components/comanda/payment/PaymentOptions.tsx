@@ -1,23 +1,24 @@
 
 import React, { useEffect, useState } from 'react';
+import type { Comanda } from '../../../types/database';
 
 interface PaymentOptionsProps {
-  forma_pagamento: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto';
-  onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void;
+  forma_pagamento: Comanda['forma_pagamento'];
+  onFormaPagamentoChange: (forma: Comanda['forma_pagamento']) => void;
 }
 
 export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   forma_pagamento,
   onFormaPagamentoChange,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<'' | 'pix' | 'dinheiro' | 'cartao' | 'misto'>(forma_pagamento);
+  const [selectedOption, setSelectedOption] = useState<Comanda['forma_pagamento']>(forma_pagamento);
   
   // Update local state when prop changes
   useEffect(() => {
     setSelectedOption(forma_pagamento);
   }, [forma_pagamento]);
   
-  const handleOptionChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
+  const handleOptionChange = (forma: Comanda['forma_pagamento']) => {
     setSelectedOption(forma);
     onFormaPagamentoChange(forma);
   };
@@ -43,7 +44,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 name="formaPagamento"
                 value={forma}
                 checked={selectedOption === forma}
-                onChange={() => handleOptionChange(forma as 'pix' | 'dinheiro' | 'cartao' | 'misto')}
+                onChange={() => handleOptionChange(forma as Comanda['forma_pagamento'])}
                 className="mr-2 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
               />
               <span className="text-sm capitalize">{forma}</span>

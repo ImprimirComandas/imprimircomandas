@@ -20,7 +20,8 @@ export const useComandaValidation = () => {
       toast.error('Informe o endereço');
       return false;
     }
-    if (!comanda.forma_pagamento || comanda.forma_pagamento === '') {
+    // Using a more type-safe way to check for empty forma_pagamento
+    if (!comanda.forma_pagamento) {
       toast.error('Selecione uma forma de pagamento');
       return false;
     }
