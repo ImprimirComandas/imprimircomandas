@@ -113,6 +113,22 @@ export default function Header({
               )}
             </NavLink>
             <NavLink
+              to="/delivery-rates"
+              pathname={location.pathname}
+              className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
+            >
+              Bairros
+              {location.pathname === '/delivery-rates' && (
+                <motion.div
+                  className=" "
+                  layoutId="underline"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
+            </NavLink>
+            <NavLink
               to="/orders-by-day"
               pathname={location.pathname}
               className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
