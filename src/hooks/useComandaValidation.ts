@@ -5,6 +5,7 @@ import type { Comanda } from '../types/database';
 export const useComandaValidation = () => {
   const validateComanda = (comanda: Comanda, isShopOpen: boolean): boolean => {
     console.log('Validating comanda:', comanda);
+    console.log('Payment method:', comanda.forma_pagamento);
     
     if (!isShopOpen) {
       toast.error('A loja está fechada. Não é possível cadastrar novos pedidos.');
@@ -23,8 +24,8 @@ export const useComandaValidation = () => {
       return false;
     }
     
-    // Fixed validation for payment method - null check is sufficient
-    if (comanda.forma_pagamento === '') {
+    // Check if payment method is not selected - this was failing before
+    if (!comanda.forma_pagamento || comanda.forma_pagamento === '') {
       console.log('Forma de pagamento is empty');
       toast.error('Selecione uma forma de pagamento');
       return false;

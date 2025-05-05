@@ -28,8 +28,8 @@ export const useSalvarComanda = (
       return false;
     }
     
-    // Fixed validation for payment method
-    if (comanda.forma_pagamento === '') {
+    // Corrected validation for payment method
+    if (!comanda.forma_pagamento) {
       toast.error('Selecione a forma de pagamento.');
       return false;
     }

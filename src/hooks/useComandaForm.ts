@@ -58,8 +58,15 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     startEditingProduct
   } = useProdutoSearch();
 
+  // Update the comanda object with the current payment method and status
+  const comandaWithPayment = {
+    ...comanda,
+    forma_pagamento,
+    pago
+  };
+
   const { salvando, salvarComanda } = useSalvarComanda(
-    { ...comanda, forma_pagamento, pago },
+    comandaWithPayment,  // Pass the updated comanda with current payment info
     totalComTaxa,
     needsTroco,
     quantiapagaInput,
@@ -77,8 +84,10 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     else if (field === 'endereco') updateComandaField('endereco', value);
     else if (field === 'pago') {
       console.log('Setting pago to:', value);
-      // Ensure boolean value is passed to setPago
-      setPago(Boolean(value));
+      // Ensure boolean value is passed to setPago and update the comanda state
+      const boolValue = Boolean(value);
+      setPago(boolValue);
+      updateComandaField('pago', boolValue);
     }
     else if (field === 'quantiapagaInput') setQuantiapagaInput(value ? Number(value) : null);
     else if (field === 'needsTroco') setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
@@ -101,8 +110,14 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     updateBairro(bairro, bairroTaxas);
   };
 
+  // Ensure payment method is synced with comanda state
+  const handleFormaPagamentoChange = (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => {
+    onFormaPagamentoChange(forma);
+    updateComandaField('forma_pagamento', forma);
+  };
+
   return {
-    comanda,
+    comanda: comandaWithPayment, // Return the updated comanda with payment info
     pesquisaProduto,
     produtosFiltrados,
     loading: produtosLoading || bairrosLoading,
@@ -122,7 +137,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     editarProduto,
     removerProduto,
     atualizarQuantidadeProduto,
-    onFormaPagamentoChange,
+    onFormaPagamentoChange: handleFormaPagamentoChange,
     onChange,
     handleTrocoConfirm,
     closeTrocoModal,

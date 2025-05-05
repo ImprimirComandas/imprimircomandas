@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePaymentHandling } from './usePaymentHandling';
 
 export function usePagamento(totalComTaxa: number) {
@@ -42,6 +42,7 @@ export function usePagamento(totalComTaxa: number) {
 
   const onFormaPagamentoChange = (forma: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto') => {
     console.log('Payment method being set to:', forma);
+    setFormaPagamento(forma); // Directly set the state first for immediate UI feedback
     handlePaymentChange(forma, setFormaPagamento);
   };
 
@@ -56,6 +57,16 @@ export function usePagamento(totalComTaxa: number) {
     const resetFunc = () => setFormaPagamento('');
     closeMixed(resetFunc);
   };
+
+  // Debug log whenever forma_pagamento changes
+  useEffect(() => {
+    console.log('Current payment method state:', forma_pagamento);
+  }, [forma_pagamento]);
+
+  // Debug log whenever pago changes
+  useEffect(() => {
+    console.log('Current payment status state:', pago);
+  }, [pago]);
 
   return {
     forma_pagamento,
