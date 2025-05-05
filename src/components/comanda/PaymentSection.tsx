@@ -28,6 +28,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   const handlePagoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     console.log('Payment status changed to:', isChecked);
+    // Use boolean value directly to avoid type conversion issues
     onChange('pago', isChecked);
   };
 

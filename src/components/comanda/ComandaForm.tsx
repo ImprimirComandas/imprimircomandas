@@ -8,7 +8,6 @@ import { ProductSearch } from './ProductSearch';
 import { ProductList } from './ProductList';
 import { AddressForm } from './AddressForm';
 import { PaymentSection } from './PaymentSection';
-import { toast } from 'sonner';
 import { useComandaValidation } from '../../hooks/useComandaValidation';
 
 interface ComandaFormProps {

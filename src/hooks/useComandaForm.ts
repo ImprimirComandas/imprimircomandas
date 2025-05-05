@@ -77,7 +77,8 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     else if (field === 'endereco') updateComandaField('endereco', value);
     else if (field === 'pago') {
       console.log('Setting pago to:', value);
-      setPago(value);
+      // Ensure boolean value is passed to setPago
+      setPago(Boolean(value));
     }
     else if (field === 'quantiapagaInput') setQuantiapagaInput(value ? Number(value) : null);
     else if (field === 'needsTroco') setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
