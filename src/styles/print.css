@@ -22,7 +22,7 @@
   
   @page {
     size: 80mm auto;
-    margin: 5mm;
+    margin: 0mm; /* Reduced from 5mm to 0mm to eliminate unnecessary margins */
   }
 }
 
