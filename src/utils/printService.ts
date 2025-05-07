@@ -1,4 +1,3 @@
-
 import type { Comanda } from '../types/database';
 import { supabase } from '../lib/supabase';
 
@@ -39,7 +38,7 @@ const fetchStoreInfo = async (): Promise<{ storeName: string; avatarUrl: string 
 /**
  * Truncates product name to prevent overly long text, allowing enough length for two lines
  */
-const truncateProductName = (name: string, maxLength: number = 35): string => {
+const truncateProductName = (name: string, maxLength: number = 40): string => {
   if (name.length <= maxLength) return name;
   return name.slice(0, maxLength - 3) + '...';
 };
@@ -54,16 +53,16 @@ const generatePrintStyles = (): string => `
   }
   body {
     margin: 0;
-    padding: 1mm;
+    padding: 2mm;
     font-family: Arial, sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     width: 75mm;
     color: #000;
     line-height: 1.2;
   }
   .store-logo {
-    width: 35mm;
-    height: 35mm;
+    width: 40mm;
+    height: 40mm;
     margin: 0 auto 2mm;
     display: block;
     object-fit: contain;
@@ -86,22 +85,16 @@ const generatePrintStyles = (): string => `
   }
   .section-title {
     font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 1mm;
-    text-transform: uppercase;
-  }
-  .customer-info {
+    font-size: 16px;
     margin-bottom: 2mm;
+    text-transform: uppercase;
   }
   .customer-info div {
     margin-bottom: 1mm;
-    font-size: 14px;
-    white-space: normal;
-    word-break: break-word;
+    font-size: 16px;
   }
   .product-table {
     margin-bottom: 2mm;
-    width: 100%;
   }
   .product-header {
     display: flex;
@@ -109,37 +102,31 @@ const generatePrintStyles = (): string => `
     border-bottom: 1px solid #000;
     padding-bottom: 1mm;
     margin-bottom: 2mm;
-    font-size: 12px;
   }
   .product-row {
     display: flex;
     margin-bottom: 1mm;
-    align-items: flex-start;
-    width: 100%;
+    align-items: flex-start; /* Align items to top for multi-line text */
   }
   .col-item {
-    flex: 2;
-    max-width: 40mm;
-    white-space: normal;
-    word-break: break-word;
+    flex: 2.5;
+    max-width: 45mm;
+    white-space: normal; /* Allow text wrapping */
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
-    font-size: 12px;
+    line-height: 1.4; /* Adjust line height for better readability */
   }
   .col-qtd {
-    flex: 0.6;
+    flex: 0.8;
     text-align: center;
-    font-size: 12px;
   }
   .col-valor {
-    flex: 1;
+    flex: 1.2;
     text-align: right;
     font-weight: bold;
-    font-size: 12px;
   }
   .totals-section {
     margin: 2mm 0;
@@ -148,32 +135,30 @@ const generatePrintStyles = (): string => `
     display: flex;
     justify-content: space-between;
     margin-bottom: 1mm;
-    font-size: 14px;
+    font-size: 16px;
   }
   .total-row.total {
     font-weight: bold;
     font-size: 16px;
     border-top: 1px solid #000;
-    padding-top: 1mm;
+    padding-top: 2mm;
   }
   .payment-section {
     margin-bottom: 2mm;
   }
   .payment-section div {
     margin-bottom: 1mm;
-    font-size: 14px;
+    font-size: 16px;
   }
   .payment-status {
     text-align: center;
     font-weight: bold;
-    font-size: 22px;
+    font-size: 26px;
     margin: 2mm 0;
-    padding: 1mm;
-    border: 1px solid #000;
   }
   .footer {
     text-align: center;
-    font-size: 12px;
+    font-size: 14px;
     margin-top: 2mm;
   }
   .cut-line {
@@ -199,13 +184,7 @@ const createHeaderSection = (storeName: string, comanda: Comanda): string => `
   <div class="header">
     <div class="header-title">${storeName}</div>
     <div class="header-info">Pedido #${getUltimos8Digitos(comanda.id)}</div>
-    <div class="header-info">Data: ${new Date(comanda.data).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}</div>
+    <div class="header-info">Data: ${new Date(comanda.data).toLocaleString('pt-BR')}</div>
   </div>
 `;
 
@@ -227,9 +206,9 @@ const createProductsSection = (comanda: Comanda): string => {
     .map(
       (produto) => `
         <div class="product-row">
-          <div class="col-qtd">${produto.quantidade}x</div>
+          <div class="col-qtd">${produto.quantidade}</div>
           <div class="col-item">${truncateProductName(produto.nome)}</div>
-          <div class="col-valor">R$${(produto.valor * produto.quantidade).toFixed(2)}</div>
+          <div class="col-valor">R$ ${(produto.valor * produto.quantidade).toFixed(2)}</div>
         </div>
       `
     )
@@ -252,15 +231,15 @@ const createTotalsSection = (comanda: Comanda): string => {
     <div class="totals-section">
       <div class="total-row">
         <span>Subtotal:</span>
-        <span>R$${subtotal.toFixed(2)}</span>
+        <span>R$ ${subtotal.toFixed(2)}</span>
       </div>
       <div class="total-row">
         <span>Taxa de Entrega:</span>
-        <span>R$${comanda.taxaentrega.toFixed(2)}</span>
+        <span>R$ ${comanda.taxaentrega.toFixed(2)}</span>
       </div>
       <div class="total-row total">
         <span>Total:</span>
-        <span>R$${(subtotal + comanda.taxaentrega).toFixed(2)}</span>
+        <span>R$ ${(subtotal + comanda.taxaentrega).toFixed(2)}</span>
       </div>
     </div>
   `;
@@ -274,16 +253,16 @@ const createPaymentSection = (comanda: Comanda): string => {
 
   if (comanda.forma_pagamento === 'misto') {
     paymentDetails += `
-      ${comanda.valor_cartao ? `<div>Cartão: R$${comanda.valor_cartao.toFixed(2)}</div>` : ''}
-      ${comanda.valor_dinheiro ? `<div>Dinheiro: R$${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
-      ${comanda.valor_pix ? `<div>PIX: R$${comanda.valor_pix.toFixed(2)}</div>` : ''}
+      ${comanda.valor_cartao ? `<div>Cartão: R$ ${comanda.valor_cartao.toFixed(2)}</div>` : ''}
+      ${comanda.valor_dinheiro ? `<div>Dinheiro: R$ ${comanda.valor_dinheiro.toFixed(2)}</div>` : ''}
+      ${comanda.valor_pix ? `<div>PIX: R$ ${comanda.valor_pix.toFixed(2)}</div>` : ''}
     `;
   }
 
   if (comanda.quantiapaga && comanda.troco && comanda.quantiapaga > 0) {
     paymentDetails += `
-      <div>Troco para: R$${comanda.quantiapaga.toFixed(2)}</div>
-      <div>Troco: R$${comanda.troco.toFixed(2)}</div>
+      <div>Troco para: R$ ${comanda.quantiapaga.toFixed(2)}</div>
+      <div class="payment-status"><h2>Troco: R$ ${comanda.troco.toFixed(2)}</h2></div>
     `;
   }
 
@@ -291,6 +270,7 @@ const createPaymentSection = (comanda: Comanda): string => {
     <div class="payment-section">
       ${paymentDetails}
     </div>
+    <div class="divider"></div>
     <div class="payment-status">${comanda.pago ? 'PAGO' : 'NÃO PAGO'}</div>
   `;
 };
@@ -338,7 +318,6 @@ const assembleHtmlContent = (
   <html>
     <head>
       <title>Cupom Fiscal</title>
-      <meta charset="UTF-8">
       <style>${styles}</style>
     </head>
     <body>
