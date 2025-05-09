@@ -36,19 +36,25 @@ export interface Motoboy {
   created_at?: string;
 }
 
-// Add missing type definitions
+// Update Entrega interface with all required properties
 export interface Entrega {
   id: string;
   motoboy_id: string;
-  comanda_id?: string;
-  data_entrega: string;
-  valor: number;
+  comanda_id?: string | null;
+  data_entrega?: string;
+  valor?: number;
   bairro?: string;
+  origem?: string;
   status?: string;
   nome_cliente?: string;
   endereco?: string;
   motoboy_nome?: string;
   created_at?: string;
+  valor_entrega?: number;
+  valor_pedido?: number;
+  forma_pagamento?: string;
+  pago?: boolean;
+  user_id?: string;
 }
 
 export interface GroupedDeliveries {
@@ -61,25 +67,43 @@ export interface GroupedDeliveries {
   };
 }
 
+// Update DeliveryTableProps interface to include all required properties
 export interface DeliveryTableProps {
   deliveries: Entrega[];
-  onEdit: (delivery: Entrega) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (delivery: Entrega) => void;
+  onDelete?: (id: string) => void;
+  onDeleteDelivery?: (delivery: Entrega) => void;
+  onEditDelivery?: (delivery: Entrega) => void;
+  showDeleteButton?: boolean;
 }
 
+// Update DeliveryTableRowProps interface to include all required properties
 export interface DeliveryTableRowProps {
   delivery: Entrega;
   onEdit: (delivery: Entrega) => void;
   onDelete: (id: string) => void;
+  showDeleteButton?: boolean;
 }
 
+// Update EditDeliveryDialogProps interface to include all required properties
 export interface EditDeliveryDialogProps {
-  delivery: Entrega;
-  isOpen: boolean;
-  onClose: () => void;
+  delivery: Entrega | null;
+  isOpen?: boolean;
+  open?: boolean;
+  loading?: boolean;
+  bairros?: any[];
+  motoboys?: any[];
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   onSave: (delivery: Entrega) => void;
 }
 
+// Update TotaisPorStatusPagamentoProps interface to include all required properties
 export interface TotaisPorStatusPagamentoProps {
-  comandas: any[];
+  comandas?: any[];
+  confirmados?: number;
+  naoConfirmados?: number;
+  total?: number;
+  showValues?: boolean;
+  toggleShowValues?: () => void;
 }

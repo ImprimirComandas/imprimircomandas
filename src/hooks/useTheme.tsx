@@ -1,6 +1,6 @@
 
 import { useContext } from 'react';
-import { useThemeContext, Theme } from '../contexts/ThemeContext';
+import { useThemeContext, Theme } from '../contexts/ThemeContext.tsx';
 import { getThemeClasses, isDarkTheme as isThemeDark } from '../lib/theme';
 
 export function useTheme() {
