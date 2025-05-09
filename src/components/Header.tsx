@@ -44,7 +44,7 @@ export default function Header({
                 delay: 0.1,
               }}
             >
-              <span className="font-bold text-2xl tracking-tight text-foreground bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <span className="font-bold text-2xl tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {profile?.store_name || 'Dom Luiz Bebidas'}
               </span>
             </motion.div>
@@ -55,26 +55,12 @@ export default function Header({
             <NavLink
               to="/delivery"
               pathname={location.pathname}
-              style={{
-                position: 'relative',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: 'var(--foreground-80)',
-                transition: 'color 0.3s',
-              }}
-              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                const target = e.currentTarget as HTMLAnchorElement;
-                target.style.color = 'var(--primary)';
-              }}
-              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                const target = e.currentTarget as HTMLAnchorElement;
-                target.style.color = 'var(--foreground-80)';
-              }}
+              className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
             >
               Delivery
               {location.pathname === '/delivery' && (
                 <motion.div
-                  className=" "
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -85,26 +71,12 @@ export default function Header({
             <NavLink
               to="/products"
               pathname={location.pathname}
-              style={{
-                position: 'relative',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: 'var(--foreground-80)',
-                transition: 'color 0.3s',
-              }}
-              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                const target = e.currentTarget as HTMLAnchorElement;
-                target.style.color = 'var(--primary)';
-              }}
-              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                const target = e.currentTarget as HTMLAnchorElement;
-                target.style.color = 'var(--foreground-80)';
-              }}
+              className="relative text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300"
             >
               Produtos
               {location.pathname === '/products' && (
                 <motion.div
-                  className=" "
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -120,7 +92,7 @@ export default function Header({
               Bairros
               {location.pathname === '/delivery-rates' && (
                 <motion.div
-                  className=" "
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -136,7 +108,7 @@ export default function Header({
               Relatórios
               {location.pathname === '/orders-by-day' && (
                 <motion.div
-                  className=" "
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
                   layoutId="underline"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

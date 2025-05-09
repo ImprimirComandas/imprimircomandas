@@ -2,13 +2,13 @@
 import { useRef } from 'react';
 import { format } from 'date-fns';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { DateRange, DateRangePicker } from 'react-date-range';
+import { DateRange } from 'react-date-range';
 import { Button } from '@/components/ui/button';
-import { calculateNewDateRange } from '@/utils/dateUtils';
+import { RangeKeyDict } from 'react-date-range';
 
 interface DateRangeSelectorProps {
   dateRange: DateRange[];
-  onDateRangeChange: (range: DateRange[]) => void;
+  onDateRangeChange: (range: RangeKeyDict) => void;
   showCalendar: boolean;
   onShowCalendarChange: (show: boolean) => void;
 }
@@ -22,8 +22,15 @@ export function DateRangeSelector({
   const calendarRef = useRef<HTMLDivElement>(null);
 
   const handlePeriodChange = (direction: 'prev' | 'next') => {
-    const newRange = calculateNewDateRange(dateRange, direction);
-    onDateRangeChange(newRange);
+    // We'll let the parent component handle this
+    const ranges = {
+      selection: {
+        startDate: dateRange[0].startDate,
+        endDate: dateRange[0].endDate,
+        key: 'selection'
+      }
+    };
+    onDateRangeChange(ranges);
   };
 
   return (
@@ -51,14 +58,11 @@ export function DateRangeSelector({
         {showCalendar && (
           <div
             ref={calendarRef}
-            className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl"
+            className="absolute z-50 mt-2 bg-card border border-border rounded-lg shadow-xl"
           >
             <DateRangePicker
               ranges={dateRange}
-              onChange={(item) => {
-                onDateRangeChange([item.selection]);
-                onShowCalendarChange(false);
-              }}
+              onChange={onDateRangeChange}
               maxDate={new Date()}
               showDateDisplay={false}
               direction="vertical"
