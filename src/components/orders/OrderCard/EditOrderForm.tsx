@@ -1,7 +1,6 @@
-
 import React, { RefObject } from 'react';
 import { Trash2, Plus, Save } from 'lucide-react';
-import type { Comanda, Produto, ProdutoFiltrado } from '@/types/orders';
+import type { Comanda, Produto, ProdutoFiltrado } from '@/types';
 
 interface EditOrderFormProps {
   editedComanda: Partial<Comanda>;

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { getUltimos8Digitos } from '@/utils/printService';
-import type { Comanda } from '@/types/orders';
+import type { Comanda } from '@/types';
 
 interface OrderCardHeaderProps {
   comanda: Comanda;

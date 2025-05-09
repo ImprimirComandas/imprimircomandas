@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { CheckCircle, XCircle, Edit2, Printer } from 'lucide-react';
-import type { Comanda, Produto } from '@/types/orders';
+import type { Comanda, Produto } from '@/types';
 
 interface OrderCardDetailsProps {
   comanda: Comanda;
