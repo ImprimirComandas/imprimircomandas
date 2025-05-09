@@ -2,14 +2,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
-import { Motoboy } from '@/types';
-
-interface ExtendedMotoboySession {
-  motoboy_id: string;
-  start_time: string;
-  end_time: string | null;
-  duration?: string;
-}
+import { Motoboy, ExtendedMotoboySession } from '@/types';
 
 interface DeliveryStatsWorkSessionsProps {
   workSessions: ExtendedMotoboySession[];
