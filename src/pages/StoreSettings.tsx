@@ -11,7 +11,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { PageContainer } from '@/components/layouts/PageContainer';
+import { Section } from '@/components/layouts/Section';
 
 export default function StoreSettings() {
   const [loading, setLoading] = useState(false);
@@ -141,7 +143,7 @@ export default function StoreSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+    <PageContainer>
       <div className="max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -150,36 +152,31 @@ export default function StoreSettings() {
           className="mb-10 flex items-center justify-between"
         >
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900">
+            <h1 className="text-4xl font-extrabold text-foreground">
               Configurações da Loja
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-muted-foreground">
               Personalize o nome e a logo da sua loja
             </p>
           </div>
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
+            className="flex items-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors duration-200"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             Voltar
           </button>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl p-6"
-        >
+        <Section>
           {loading && !profile ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-primary"></div>
             </div>
           ) : (
             <div className="space-y-8">
               <div className="flex flex-col items-center">
-                <div className="mb-4 h-32 w-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                <div className="mb-4 h-32 w-32 rounded-full overflow-hidden bg-secondary flex items-center justify-center">
                   {avatarUrl ? (
                     <img
                       src={avatarUrl}
@@ -187,14 +184,14 @@ export default function StoreSettings() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <Store size={64} className="text-gray-400" />
+                    <Store size={64} className="text-muted-foreground" />
                   )}
                 </div>
                 <label
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-primary-foreground transition-colors duration-200 ${
                     uploading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                      ? 'bg-muted cursor-not-allowed'
+                      : 'bg-primary hover:bg-primary/90 cursor-pointer'
                   }`}
                 >
                   <Upload size={18} />
@@ -212,7 +209,7 @@ export default function StoreSettings() {
               <div>
                 <label
                   htmlFor="store-name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-foreground mb-1"
                 >
                   Nome da Loja
                 </label>
@@ -222,12 +219,12 @@ export default function StoreSettings() {
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   placeholder="Digite o nome da sua loja"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2 rounded-lg border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <Printer className="w-4 h-4" />
                   Tamanho da Impressão
                 </label>
@@ -243,7 +240,7 @@ export default function StoreSettings() {
                     <SelectItem value="58mm">58mm (Compacto)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Escolha o tamanho do papel da sua impressora térmica
                 </p>
               </div>
@@ -251,12 +248,12 @@ export default function StoreSettings() {
               <button
                 onClick={updateProfile}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors duration-200"
               >
                 {loading ? (
                   <>
                     <svg
-                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      className="animate-spin h-5 w-5 mr-2 text-current"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -283,8 +280,8 @@ export default function StoreSettings() {
               </button>
             </div>
           )}
-        </motion.div>
+        </Section>
       </div>
-    </div>
+    </PageContainer>
   );
 }

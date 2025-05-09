@@ -14,12 +14,14 @@ import { Toaster } from 'sonner';
 import Header from './components/Header';
 import { useProfileMenu } from './hooks/useProfileMenu';
 import DeliveryManagement from './components/DeliveryManagement';
+import { useTheme } from './hooks/useTheme';
 
 function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
+  const { theme, changeTheme } = useTheme();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -55,6 +57,11 @@ function App() {
 
       if (error) throw error;
       setProfile(data);
+      
+      // Set the user's preferred theme if available
+      if (data?.theme) {
+        changeTheme(data.theme);
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
@@ -64,8 +71,8 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }

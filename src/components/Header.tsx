@@ -8,6 +8,7 @@ import ProfileMenu from './header/ProfileMenu';
 import NavLink from './header/NavLink';
 import MobileMenu from './header/MobileMenu';
 import ThemeSelector from './ThemeSelector';
+import { useTheme } from '../hooks/useTheme';
 
 interface HeaderProps {
   profile: Profile | null;
@@ -23,13 +24,14 @@ export default function Header({
   setShowProfileMenu,
 }: HeaderProps) {
   const location = useLocation();
+  const { isDark } = useTheme();
 
   useEffect(() => {
     setShowProfileMenu(false);
   }, [location.pathname, setShowProfileMenu]);
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-lg bg-background/90 border-b border-border/50 shadow-sm">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-lg bg-background/90 border-b border-border/50 shadow-sm transition-colors duration-300">
       <div className="container mx-auto flex items-center justify-between h-16 px-4 md:px-8 lg:px-12">
         {/* Logo e Navegação */}
         <div className="flex items-center gap-8">

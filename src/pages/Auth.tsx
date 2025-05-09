@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Store } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'sonner';
+import { useTheme } from '../hooks/useTheme';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 
 export function Auth() {
   const { signIn, signUp, resetPassword, loading } = useAuth();
@@ -9,6 +13,7 @@ export function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const { theme } = useTheme();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -89,49 +94,53 @@ export function Auth() {
     }
   };
 
+  const isDarkTheme = theme.includes('dark');
+
   if (passwordResetSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg text-center transition-all duration-300">
-          <Store className="mx-auto h-12 w-12 text-indigo-600 animate-pulse" />
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">Verifique seu e-mail</h2>
-          <p className="mt-2 text-gray-600 leading-relaxed">
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="max-w-md w-full p-8 text-center transition-all duration-300">
+          <Store className="mx-auto h-12 w-12 text-primary animate-pulse" />
+          <h2 className="mt-6 text-2xl font-bold text-foreground">Verifique seu e-mail</h2>
+          <p className="mt-2 text-muted-foreground leading-relaxed">
             Enviamos instruções para redefinir sua senha para{' '}
             <span className="font-semibold">{formData.email}</span>. Por favor, verifique sua caixa
             de entrada.
           </p>
-          <button
+          <Button
             onClick={() => setPasswordResetSent(false)}
-            className="mt-6 w-full py-3 px-4 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
+            className="mt-6 w-full py-3"
             aria-label="Voltar para o login"
           >
             Voltar para o login
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg transition-all duration-300">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="max-w-md w-full space-y-8 p-8 transition-all duration-300">
         <div className="text-center">
-          <Store className="mx-auto h-12 w-12 text-indigo-600 animate-pulse" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 tracking-tight">
+          <Store className="mx-auto h-12 w-12 text-primary animate-pulse" />
+          <h2 className="mt-6 text-3xl font-bold text-foreground tracking-tight">
             {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
           </h2>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             {isLogin ? 'Entre para acessar sua loja' : 'Comece agora e gerencie sua loja com facilidade'}
           </p>
         </div>
 
         {error && (
-          <div
-            className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg animate-slide-in"
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border-l-4 border-destructive text-destructive-foreground px-4 py-3 rounded-lg"
             role="alert"
           >
             {error}
-          </div>
+          </motion.div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -140,7 +149,7 @@ export function Auth() {
               <div>
                 <label
                   htmlFor="fullName"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-foreground"
                 >
                   Nome Completo
                 </label>
@@ -149,7 +158,7 @@ export function Auth() {
                   name="fullName"
                   type="text"
                   required
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="mt-1 block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   aria-required="true"
@@ -157,7 +166,7 @@ export function Auth() {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="phone" className="block text-sm font-medium text-foreground">
                   Telefone
                 </label>
                 <input
@@ -165,7 +174,7 @@ export function Auth() {
                   name="phone"
                   type="tel"
                   required
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="mt-1 block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={formData.phone}
                   onChange={handlePhoneChange}
                   placeholder="(XX) XXXXX-XXXX"
@@ -177,7 +186,7 @@ export function Auth() {
               <div>
                 <label
                   htmlFor="storeName"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-foreground"
                 >
                   Nome da Loja
                 </label>
@@ -186,7 +195,7 @@ export function Auth() {
                   name="storeName"
                   type="text"
                   required
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="mt-1 block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={formData.storeName}
                   onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                   aria-required="true"
@@ -196,7 +205,7 @@ export function Auth() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground">
               Endereço de E-mail
             </label>
             <input
@@ -205,7 +214,7 @@ export function Auth() {
               type="email"
               autoComplete="email"
               required
-              className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="mt-1 block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               aria-required="true"
@@ -213,7 +222,7 @@ export function Auth() {
           </div>
 
           <div className="relative">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground">
               Senha
             </label>
             <div className="mt-1 relative">
@@ -223,7 +232,7 @@ export function Auth() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 aria-required="true"
@@ -235,9 +244,9 @@ export function Auth() {
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                  <EyeOff className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                  <Eye className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
                 )}
               </button>
             </div>
@@ -247,7 +256,7 @@ export function Auth() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-foreground"
               >
                 Confirmar Senha
               </label>
@@ -256,7 +265,7 @@ export function Auth() {
                 name="confirmPassword"
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="mt-1 block w-full px-4 py-3 border border-input rounded-lg shadow-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={formData.confirmPassword}
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
@@ -269,7 +278,7 @@ export function Auth() {
           <div className="flex items-center justify-between text-sm">
             <button
               type="button"
-              className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
+              className="font-medium text-primary hover:text-primary/80 transition-colors duration-200"
               onClick={() => setIsLogin(!isLogin)}
               aria-label={isLogin ? 'Ir para cadastro' : 'Ir para login'}
             >
@@ -278,7 +287,7 @@ export function Auth() {
             {isLogin && (
               <button
                 type="button"
-                className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
+                className="font-medium text-primary hover:text-primary/80 transition-colors duration-200"
                 onClick={handleForgotPassword}
                 aria-label="Recuperar senha"
               >
@@ -287,10 +296,10 @@ export function Auth() {
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full"
             aria-label={isLogin ? 'Entrar na conta' : 'Criar conta'}
           >
             {loading ? (
@@ -322,9 +331,9 @@ export function Auth() {
             ) : (
               'Cadastrar'
             )}
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

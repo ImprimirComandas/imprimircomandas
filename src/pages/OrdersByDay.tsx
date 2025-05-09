@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { format, startOfDay, endOfDay, subDays, addDays } from 'date-fns';
 import { motion } from 'framer-motion';
 import { DateRange, RangeKeyDict } from 'react-date-range';
@@ -10,6 +10,7 @@ import 'react-date-range/dist/theme/default.css';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { OrderStats } from '@/components/orders/OrderStats';
 import { OrderFilters } from '@/components/orders/OrderFilters';
+import { PageContainer } from '@/components/layouts/PageContainer';
 
 // Hooks
 import { useOrdersData } from '@/hooks/useOrdersData';
@@ -62,7 +63,7 @@ export default function OrdersByDay() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8">
+    <PageContainer>
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -106,9 +107,9 @@ export default function OrdersByDay() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="bg-card rounded-xl shadow-lg p-8 text-center"
+              className="bg-card rounded-xl border border-border shadow-md p-8 text-center"
             >
-              <p className="text-card-foreground text-lg font-medium">
+              <p className="text-foreground text-lg font-medium">
                 Nenhum pedido encontrado para este período.
               </p>
             </motion.div>
@@ -126,6 +127,6 @@ export default function OrdersByDay() {
           )}
         </motion.div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

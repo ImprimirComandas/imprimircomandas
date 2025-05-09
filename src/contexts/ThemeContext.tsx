@@ -1,36 +1,64 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Theme, ThemeContextType } from './ThemeContext';
 import { supabase } from '../lib/supabase';
+
+export type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple' | string;
+
+export interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  isDarkTheme: boolean;
+}
 
 const defaultTheme: Theme = 'light';
 
 export const ThemeContext = createContext<ThemeContextType>({
   theme: defaultTheme,
   setTheme: () => {},
+  isDarkTheme: false,
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
 
   useEffect(() => {
     // Load theme from local storage or user preferences
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme) {
       setTheme(savedTheme);
+    } else {
+      // Check system preference
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme('dark');
+      }
     }
   }, []);
+
+  useEffect(() => {
+    const isDark = theme.includes('dark');
+    setIsDarkTheme(isDark);
+    
+    // Apply theme class to document
+    const root = window.document.documentElement;
+    
+    // Remove all theme classes first
+    root.classList.remove('theme-light', 'theme-dark', 'theme-light-blue', 'theme-dark-purple');
+    
+    // Add the selected theme class
+    root.classList.add(`theme-${theme}`);
+    
+    // Set the data attribute for tailwind dark mode
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
 
   const handleSetTheme = (newTheme: Theme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
-    
-    // Apply theme class to document
-    const root = window.document.documentElement;
-    const isDark = newTheme.includes('dark');
-    
-    root.classList.remove('light', 'dark');
-    root.classList.add(isDark ? 'dark' : 'light');
     
     // Save to user profile if logged in
     const saveThemeToProfile = async () => {
@@ -47,7 +75,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme, isDarkTheme }}>
       {children}
     </ThemeContext.Provider>
   );
