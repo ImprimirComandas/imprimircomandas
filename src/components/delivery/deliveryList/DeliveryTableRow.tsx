@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { DeliveryTableRowProps } from "@/types";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function DeliveryTableRow({ 
   delivery, 
@@ -11,8 +12,10 @@ export default function DeliveryTableRow({
   onEdit,
   showDeleteButton 
 }: DeliveryTableRowProps) {
+  const { isDark } = useTheme();
+  
   return (
-    <TableRow key={delivery.id}>
+    <TableRow key={delivery.id} className={`${isDark ? 'border-border' : ''}`}>
       <TableCell>
         {format(new Date(delivery.created_at || ''), 'HH:mm')}
       </TableCell>
@@ -27,7 +30,7 @@ export default function DeliveryTableRow({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+            className={`text-blue-500 hover:text-blue-700 ${isDark ? 'hover:bg-accent' : 'hover:bg-blue-50'}`}
             onClick={() => onEdit(delivery)}
           >
             <Edit className="h-4 w-4" />
@@ -37,7 +40,7 @@ export default function DeliveryTableRow({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              className={`text-red-500 hover:text-red-700 ${isDark ? 'hover:bg-accent' : 'hover:bg-red-50'}`}
               onClick={() => onDelete(delivery)}
             >
               <Trash2 className="h-4 w-4" />

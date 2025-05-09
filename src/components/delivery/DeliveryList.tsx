@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +9,8 @@ import DeleteDeliveryDialog from './deliveryList/DeleteDeliveryDialog';
 import EditDeliveryDialog from './deliveryList/EditDeliveryDialog';
 import { format } from 'date-fns';
 import { Entrega, GroupedDeliveries } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
+import { ThemedSection } from '@/components/ui/theme-provider';
 
 export default function DeliveryList() {
   const [deliveries, setDeliveries] = useState<Entrega[]>([]);
@@ -27,6 +28,7 @@ export default function DeliveryList() {
   const [deliveryToEdit, setDeliveryToEdit] = useState<Entrega | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     fetchBairros();
@@ -285,15 +287,15 @@ export default function DeliveryList() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
+    <ThemedSection className="mb-0">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Entregas por Motoboy</h2>
+        <h2 className="text-2xl font-semibold text-foreground">Entregas por Motoboy</h2>
         <DeliveryDatePicker
           selectedDate={selectedDate}
           onDateSelect={setSelectedDate}
@@ -337,6 +339,6 @@ export default function DeliveryList() {
         onOpenChange={setEditDialogOpen}
         onSave={handleSaveEditedDelivery}
       />
-    </div>
+    </ThemedSection>
   );
 }

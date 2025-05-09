@@ -22,7 +22,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   const bgClasses = withGradient 
     ? isDark
       ? 'bg-gradient-to-br from-background/95 via-background to-background/90'
-      : 'bg-gradient-to-br from-blue-100/50 via-white to-gray-100/50'
+      : 'bg-gradient-to-br from-blue-100/50 via-background to-gray-100/50'
     : 'bg-background';
     
   return (

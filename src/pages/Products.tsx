@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import type { Profile } from '../types/database';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PageContainer } from '../components/layouts/PageContainer';
+import { ThemedSection } from '../components/ui/theme-provider';
+import { useTheme } from '../hooks/useTheme';
 
 interface Product {
   id: string;
@@ -29,6 +32,7 @@ export function Products() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 20;
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     getProfile();
@@ -506,7 +510,7 @@ export function Products() {
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+    <PageContainer>
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -514,22 +518,17 @@ export function Products() {
           transition={{ duration: 0.5 }}
           className="mb-10"
         >
-          <h1 className="text-4xl font-extrabold text-gray-900 text-center sm:text-left">
+          <h1 className="text-4xl font-extrabold text-foreground text-center sm:text-left">
             Gerenciamento de Produtos
           </h1>
-          <p className="mt-2 text-gray-600 text-center sm:text-left">
+          <p className="mt-2 text-muted-foreground text-center sm:text-left">
             Adicione, edite e organize seus produtos com facilidade
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl p-6 mb-8"
-        >
+        <ThemedSection>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-xl font-semibold text-foreground">
               {editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}
             </h2>
             <button
@@ -543,7 +542,7 @@ export function Products() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="product-name" className="block text-sm font-medium text-foreground mb-1">
                 Nome do Produto
               </label>
               <input
@@ -551,12 +550,12 @@ export function Products() {
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                 placeholder="Ex: Água Mineral 500ml"
               />
             </div>
             <div>
-              <label htmlFor="product-value" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="product-value" className="block text-sm font-medium text-foreground mb-1">
                 Valor (R$)
               </label>
               <input
@@ -564,14 +563,14 @@ export function Products() {
                 type="number"
                 value={productValue}
                 onChange={(e) => setProductValue(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                 placeholder="0.00"
                 step="0.01"
                 min="0"
               />
             </div>
             <div>
-              <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="product-category" className="block text-sm font-medium text-foreground mb-1">
                 Categoria (opcional)
               </label>
               <input
@@ -579,12 +578,12 @@ export function Products() {
                 type="text"
                 value={productCategory}
                 onChange={(e) => setProductCategory(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                 placeholder="Ex: Bebidas"
               />
             </div>
             <div>
-              <label htmlFor="product-file" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="product-file" className="block text-sm font-medium text-foreground mb-1">
                 Importar Produtos (XLS, XLSX, CSV)
               </label>
               <input
@@ -593,10 +592,10 @@ export function Products() {
                 accept=".xls,.xlsx,.csv"
                 onChange={handleFileUpload}
                 disabled={saving}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               />
               {uploadedFile && (
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Arquivo selecionado: {uploadedFile.name}
                 </p>
               )}
@@ -606,7 +605,7 @@ export function Products() {
             <button
               onClick={deleteAllProducts}
               disabled={saving || products.length === 0}
-              className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors duration-200"
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
               Apagar Todos os Produtos
@@ -616,7 +615,7 @@ export function Products() {
                 <button
                   onClick={cancelEditing}
                   disabled={saving}
-                  className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors duration-200"
+                  className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors duration-200"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -625,11 +624,11 @@ export function Products() {
               <button
                 onClick={editingProduct ? saveEdit : addProduct}
                 disabled={saving}
-                className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="w-full sm:w-auto flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {saving ? (
                   <svg
-                    className="animate-spin h-4 w-4 mr-2 text-white"
+                    className="animate-spin h-4 w-4 mr-2"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -655,26 +654,21 @@ export function Products() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </ThemedSection>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white rounded-2xl shadow-xl p-6"
-        >
+        <ThemedSection className="mt-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <h2 className="text-xl font-semibold text-gray-800">Produtos Cadastrados</h2>
+            <h2 className="text-xl font-semibold text-foreground">Produtos Cadastrados</h2>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <div className="w-full sm:w-48">
-                <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="category-select" className="block text-sm font-medium text-foreground mb-1">
                   Categoria
                 </label>
                 <select
                   id="category-select"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                 >
                   <option value="Todas">Todas</option>
                   {categories.map(category => (
@@ -686,20 +680,20 @@ export function Products() {
               </div>
               <div className="relative w-full sm:w-64">
                 <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
                   size={20}
                 />
                 <input
                   type="text"
                   value={editSearchTerm}
                   onChange={(e) => setEditSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                   placeholder="Buscar produto..."
                 />
                 {editSearchTerm && (
                   <button
                     onClick={() => setEditSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X size={16} />
                   </button>
@@ -710,39 +704,39 @@ export function Products() {
 
           {loading && products.length === 0 ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-primary"></div>
             </div>
           ) : filteredProducts.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="bg-gray-50 p-8 rounded-lg text-center"
+              className="bg-muted/50 p-8 rounded-lg text-center"
             >
-              <p className="text-gray-600 text-lg font-medium">
+              <p className="text-muted-foreground text-lg font-medium">
                 Nenhum produto encontrado.
               </p>
             </motion.div>
           ) : (
             <div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Nome
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Categoria
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Valor
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-card divide-y divide-border">
                     <AnimatePresence>
                       {filteredProducts.map(product => (
                         <motion.tr
@@ -752,13 +746,13 @@ export function Products() {
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                             {product.nome}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                             {product.categoria || 'Sem categoria'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-right">
                             R$ {product.valor.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -766,14 +760,14 @@ export function Products() {
                               <button
                                 onClick={() => startEditing(product)}
                                 disabled={editingProduct !== null}
-                                className="p-2 rounded-full text-blue-600 hover:bg-blue-100 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors duration-200"
+                                className={`p-2 rounded-full text-blue-600 ${isDark ? 'hover:bg-accent' : 'hover:bg-blue-100'} disabled:text-muted-foreground disabled:hover:bg-transparent transition-colors duration-200`}
                               >
                                 <Edit className="h-5 w-5" />
                               </button>
                               <button
                                 onClick={() => deleteProduct(product.id)}
                                 disabled={editingProduct !== null}
-                                className="p-2 rounded-full text-red-600 hover:bg-red-100 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors duration-200"
+                                className={`p-2 rounded-full text-red-600 ${isDark ? 'hover:bg-accent' : 'hover:bg-red-100'} disabled:text-muted-foreground disabled:hover:bg-transparent transition-colors duration-200`}
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
@@ -790,12 +784,12 @@ export function Products() {
                   <button
                     onClick={loadMoreProducts}
                     disabled={loading}
-                    className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {loading ? (
                       <span className="flex items-center">
                         <svg
-                          className="animate-spin h-4 w-4 mr-2 text-white"
+                          className="animate-spin h-4 w-4 mr-2"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -824,8 +818,8 @@ export function Products() {
               )}
             </div>
           )}
-        </motion.div>
+        </ThemedSection>
       </div>
-    </div>
+    </PageContainer>
   );
 }

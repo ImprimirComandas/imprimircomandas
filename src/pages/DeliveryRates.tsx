@@ -7,10 +7,13 @@ import { AddNeighborhoodForm } from '../components/delivery-rates/AddNeighborhoo
 import { useNeighborhoods } from '../hooks/useNeighborhoods';
 import { PageContainer } from '../components/layouts/PageContainer';
 import { Section } from '../components/layouts/Section';
+import { useTheme } from '@/hooks/useTheme';
+import { ThemedSection } from '@/components/ui/theme-provider';
 
 export default function DeliveryRates() {
   const { bairros, loading, addBairro, updateBairro, deleteBairro, refreshBairros } = useNeighborhoods();
   const [showAddForm, setShowAddForm] = useState(false);
+  const { theme, isDark } = useTheme();
 
   const handleAddBairro = async (nome: string, taxa: number) => {
     await addBairro(nome, taxa);
@@ -49,7 +52,7 @@ export default function DeliveryRates() {
         />
       )}
 
-      <Section>
+      <ThemedSection>
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-primary"></div>
@@ -61,7 +64,7 @@ export default function DeliveryRates() {
             onDelete={deleteBairro}
           />
         )}
-      </Section>
+      </ThemedSection>
 
       {!showAddForm && (
         <motion.div

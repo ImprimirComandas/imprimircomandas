@@ -11,6 +11,8 @@ import RightColumn from './delivery/RightColumn';
 import TrocoModalComponent from './TrocoModalComponent';
 import PagamentoMistoModal from './PagamentoMistoModal';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
+import { useTheme } from '../hooks/useTheme';
+import { PageContainer } from './layouts/PageContainer';
 
 interface DeliveryAppProps {
   profile: Profile | null;
@@ -72,6 +74,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
   
   // Estado para visibilidade dos valores
   const { showValues, toggleShowValues } = useVisibilityPreference();
+  
+  // Tema
+  const { theme, isDark } = useTheme();
 
   // Carregar comandas iniciais
   useEffect(() => {
@@ -85,7 +90,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+    <PageContainer>
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho */}
         <DeliveryHeader />
@@ -157,6 +162,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           onConfirm={confirmarPagamento}
         />
       </div>
-    </div>
+    </PageContainer>
   );
 }
