@@ -27,8 +27,8 @@ export default function DeliveryTable({
             <DeliveryTableRow
               key={delivery.id}
               delivery={delivery}
-              onDelete={onDeleteDelivery}
-              onEdit={onEditDelivery}
+              onDelete={onDeleteDelivery || (() => {})}
+              onEdit={onEditDelivery || (() => {})}
               showDeleteButton={showDeleteButton}
             />
           ))}

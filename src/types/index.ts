@@ -36,9 +36,9 @@ export interface Motoboy {
   created_at?: string;
 }
 
-// Update Entrega interface with all required properties
+// Update Entrega interface with all required properties and make id optional
 export interface Entrega {
-  id: string;
+  id?: string;  // Made id optional to fix initialization errors
   motoboy_id: string;
   comanda_id?: string | null;
   data_entrega?: string;
@@ -71,7 +71,7 @@ export interface GroupedDeliveries {
 export interface DeliveryTableProps {
   deliveries: Entrega[];
   onEdit?: (delivery: Entrega) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (delivery: Entrega) => void;  // Changed parameter type from string to Entrega
   onDeleteDelivery?: (delivery: Entrega) => void;
   onEditDelivery?: (delivery: Entrega) => void;
   showDeleteButton?: boolean;
@@ -81,7 +81,7 @@ export interface DeliveryTableProps {
 export interface DeliveryTableRowProps {
   delivery: Entrega;
   onEdit: (delivery: Entrega) => void;
-  onDelete: (id: string) => void;
+  onDelete: (delivery: Entrega) => void;  // Changed parameter type from string to Entrega
   showDeleteButton?: boolean;
 }
 

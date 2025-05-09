@@ -17,7 +17,7 @@ export default function DeliveryTableRow({
         {format(new Date(delivery.created_at || ''), 'HH:mm')}
       </TableCell>
       <TableCell>{delivery.bairro}</TableCell>
-      <TableCell>R$ {delivery.valor_entrega.toFixed(2)}</TableCell>
+      <TableCell>R$ {delivery.valor_entrega?.toFixed(2)}</TableCell>
       <TableCell className="capitalize">{delivery.origem}</TableCell>
       <TableCell className="capitalize">
         {delivery.forma_pagamento}
