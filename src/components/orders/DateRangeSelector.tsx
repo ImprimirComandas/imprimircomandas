@@ -5,6 +5,8 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateRange } from 'react-date-range';
 import { Button } from '@/components/ui/button';
 import { RangeKeyDict } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // Import styles
+import 'react-date-range/dist/theme/default.css'; // Import theme
 
 interface DateRangeSelectorProps {
   dateRange: DateRange[];
@@ -60,7 +62,7 @@ export function DateRangeSelector({
             ref={calendarRef}
             className="absolute z-50 mt-2 bg-card border border-border rounded-lg shadow-xl"
           >
-            <DateRangePicker
+            <DateRange
               ranges={dateRange}
               onChange={onDateRangeChange}
               maxDate={new Date()}
