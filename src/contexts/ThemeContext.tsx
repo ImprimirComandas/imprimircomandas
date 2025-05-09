@@ -1,22 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-
-export type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple' | string;
-
-export interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  isDarkTheme: boolean;
-}
+import { ThemeContext, ThemeContextType, Theme } from './ThemeContext';
 
 const defaultTheme: Theme = 'light';
-
-export const ThemeContext = createContext<ThemeContextType>({
-  theme: defaultTheme,
-  setTheme: () => {},
-  isDarkTheme: false,
-});
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
@@ -81,4 +68,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
+// Export a custom hook for using the theme context
 export const useThemeContext = () => useContext(ThemeContext);
+
+// Re-export Theme type for convenience
+export type { Theme };
+export { ThemeContext };

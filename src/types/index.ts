@@ -35,3 +35,51 @@ export interface Motoboy {
   ativo: boolean;
   created_at?: string;
 }
+
+// Add missing type definitions
+export interface Entrega {
+  id: string;
+  motoboy_id: string;
+  comanda_id?: string;
+  data_entrega: string;
+  valor: number;
+  bairro?: string;
+  status?: string;
+  nome_cliente?: string;
+  endereco?: string;
+  motoboy_nome?: string;
+  created_at?: string;
+}
+
+export interface GroupedDeliveries {
+  [motoboyId: string]: {
+    motoboyName: string;
+    deliveriesByDate: {
+      [date: string]: Entrega[];
+    };
+    totalValue: number;
+  };
+}
+
+export interface DeliveryTableProps {
+  deliveries: Entrega[];
+  onEdit: (delivery: Entrega) => void;
+  onDelete: (id: string) => void;
+}
+
+export interface DeliveryTableRowProps {
+  delivery: Entrega;
+  onEdit: (delivery: Entrega) => void;
+  onDelete: (id: string) => void;
+}
+
+export interface EditDeliveryDialogProps {
+  delivery: Entrega;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (delivery: Entrega) => void;
+}
+
+export interface TotaisPorStatusPagamentoProps {
+  comandas: any[];
+}

@@ -1,10 +1,10 @@
 
 import { useContext } from 'react';
-import { ThemeContext, Theme } from '../contexts/ThemeContext';
-import { getThemeClasses, isDarkTheme } from '../lib/theme';
+import { useThemeContext, Theme } from '../contexts/ThemeContext';
+import { getThemeClasses, isDarkTheme as isThemeDark } from '../lib/theme';
 
 export function useTheme() {
-  const { theme, setTheme, isDarkTheme } = useContext(ThemeContext);
+  const { theme, setTheme, isDarkTheme } = useThemeContext();
   
   // Function to change the theme
   const changeTheme = (newTheme: Theme) => {
