@@ -26,10 +26,12 @@ export default function EditDeliveryDialog({
   const [editedDelivery, setEditedDelivery] = useState<Entrega | null>(null);
 
   useEffect(() => {
+    // This will ensure that whenever the delivery prop changes,
+    // we update our local state with a fresh copy
     if (delivery) {
       setEditedDelivery({ ...delivery });
     }
-  }, [delivery]);
+  }, [delivery, open]);
 
   if (!editedDelivery) return null;
 
@@ -161,7 +163,7 @@ export default function EditDeliveryDialog({
             </Label>
             <div className="col-span-3">
               <Select
-                value={editedDelivery.forma_pagamento}
+                value={editedDelivery.forma_pagamento || ""}
                 onValueChange={(value) => handleInputChange('forma_pagamento', value as any)}
                 disabled={loading}
               >

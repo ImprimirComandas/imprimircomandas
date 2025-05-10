@@ -15,7 +15,7 @@ export default function DeliveryTableRow({
   const { isDark } = useTheme();
   
   return (
-    <TableRow key={delivery.id} className={`${isDark ? 'border-border' : ''}`}>
+    <TableRow className="border-border">
       <TableCell>
         {format(new Date(delivery.created_at || ''), 'HH:mm')}
       </TableCell>
@@ -30,7 +30,7 @@ export default function DeliveryTableRow({
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`text-blue-500 hover:text-blue-700 ${isDark ? 'hover:bg-accent' : 'hover:bg-blue-50'}`}
+            className="text-primary hover:text-primary/90 hover:bg-accent"
             onClick={() => onEdit(delivery)}
           >
             <Edit className="h-4 w-4" />
@@ -40,7 +40,7 @@ export default function DeliveryTableRow({
             <Button 
               variant="ghost" 
               size="sm" 
-              className={`text-red-500 hover:text-red-700 ${isDark ? 'hover:bg-accent' : 'hover:bg-red-50'}`}
+              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
               onClick={() => onDelete(delivery)}
             >
               <Trash2 className="h-4 w-4" />

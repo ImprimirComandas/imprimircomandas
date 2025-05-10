@@ -1,6 +1,8 @@
+
 import React, { RefObject } from 'react';
 import { Trash2, Plus, Save } from 'lucide-react';
 import type { Comanda, Produto, ProdutoFiltrado } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface EditOrderFormProps {
   editedComanda: Partial<Comanda>;
@@ -27,6 +29,7 @@ export function EditOrderForm({
   produtosFiltrados,
   loadingProdutos
 }: EditOrderFormProps) {
+  const { isDark } = useTheme();
   
   const handleProdutoChange = (index: number, field: keyof Produto, value: string | number) => {
     const updatedProdutos = [...(editedComanda.produtos || [])];
@@ -67,7 +70,7 @@ export function EditOrderForm({
   return (
     <div className="space-y-4">
       <div className="relative">
-        <label htmlFor="pesquisa_produto" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="pesquisa_produto" className="block text-sm font-medium text-foreground">
           Buscar Produto
         </label>
         <input
@@ -77,19 +80,19 @@ export function EditOrderForm({
           value={pesquisaProduto}
           onChange={(e) => setPesquisaProduto(e.target.value)}
           placeholder="Digite o nome ou número do produto"
-          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
           aria-label="Buscar produto por nome ou número"
         />
         {loadingProdutos && (
-          <div className="absolute right-3 top-9 text-gray-400">Carregando...</div>
+          <div className="absolute right-3 top-9 text-muted-foreground">Carregando...</div>
         )}
         {produtosFiltrados.length > 0 && (
-          <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
+          <div className="absolute z-10 w-full bg-background border border-border rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
             {produtosFiltrados.map((produto) => (
               <div
                 key={produto.id}
                 onClick={() => handleSelectProduct(produto)}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                className="px-4 py-2 hover:bg-accent cursor-pointer text-foreground"
               >
                 {produto.nome} - R$ {produto.valor.toFixed(2)}
               </div>
@@ -99,13 +102,13 @@ export function EditOrderForm({
       </div>
 
       {(editedComanda.produtos || []).map((produto, index) => (
-        <div key={index} className="flex items-center gap-3 border-b pb-2">
+        <div key={index} className="flex items-center gap-3 border-b border-border pb-2">
           <input
             type="text"
             value={produto.nome}
             onChange={(e) => handleProdutoChange(index, 'nome', e.target.value)}
             placeholder="Nome do produto"
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
             aria-label={`Nome do produto ${index + 1}`}
           />
           <input
@@ -114,7 +117,7 @@ export function EditOrderForm({
             onChange={(e) => handleProdutoChange(index, 'quantidade', parseInt(e.target.value) || 1)}
             placeholder="Qtd"
             min="1"
-            className="w-20 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+            className="w-20 px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
             aria-label={`Quantidade do produto ${index + 1}`}
           />
           <input
@@ -124,12 +127,12 @@ export function EditOrderForm({
             placeholder="Valor"
             step="0.01"
             min="0"
-            className="w-24 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+            className="w-24 px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
             aria-label={`Valor do produto ${index + 1}`}
           />
           <button
             onClick={() => removeProduto(index)}
-            className="text-red-600 hover:text-red-800"
+            className="text-destructive hover:text-destructive/80"
             aria-label={`Remover produto ${index + 1}`}
           >
             <Trash2 size={18} />
@@ -139,14 +142,14 @@ export function EditOrderForm({
       
       <button
         onClick={addProduto}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+        className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium"
       >
         <Plus size={18} />
         Adicionar Produto
       </button>
 
       <div>
-        <label htmlFor="endereco" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="endereco" className="block text-sm font-medium text-foreground">
           Endereço
         </label>
         <input
@@ -155,13 +158,13 @@ export function EditOrderForm({
           value={editedComanda.endereco || ''}
           onChange={(e) => setEditedComanda({ ...editedComanda, endereco: e.target.value })}
           placeholder="Endereço de entrega"
-          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
           aria-label="Endereço de entrega"
         />
       </div>
 
       <div>
-        <label htmlFor="bairro" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="bairro" className="block text-sm font-medium text-foreground">
           Bairro
         </label>
         <input
@@ -170,13 +173,13 @@ export function EditOrderForm({
           value={editedComanda.bairro || ''}
           onChange={(e) => setEditedComanda({ ...editedComanda, bairro: e.target.value })}
           placeholder="Bairro"
-          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
           aria-label="Bairro"
         />
       </div>
 
       <div>
-        <label htmlFor="taxa_entrega" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="taxa_entrega" className="block text-sm font-medium text-foreground">
           Taxa de Entrega
         </label>
         <input
@@ -187,13 +190,13 @@ export function EditOrderForm({
           placeholder="Taxa de entrega"
           step="0.01"
           min="0"
-          className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
           aria-label="Taxa de entrega"
         />
       </div>
 
       <div>
-        <label htmlFor="forma_pagamento" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="forma_pagamento" className="block text-sm font-medium text-foreground">
           Forma de Pagamento
         </label>
         <select
@@ -205,7 +208,7 @@ export function EditOrderForm({
               forma_pagamento: e.target.value as '' | 'pix' | 'dinheiro' | 'cartao' | 'misto',
             })
           }
-          className="mt-1 px-3 py-2 rounded-lg border border-gray-200 w-full"
+          className="mt-1 px-3 py-2 rounded-lg border border-input bg-background text-foreground w-full focus:ring-2 focus:ring-primary"
           aria-label="Selecione a forma de pagamento"
         >
           <option value="">Selecione</option>
@@ -219,7 +222,7 @@ export function EditOrderForm({
       {editedComanda.forma_pagamento === 'misto' && (
         <>
           <div>
-            <label htmlFor="valor_cartao" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valor_cartao" className="block text-sm font-medium text-foreground">
               Valor em Cartão
             </label>
             <input
@@ -230,12 +233,12 @@ export function EditOrderForm({
               placeholder="Valor em cartão"
               step="0.01"
               min="0"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
               aria-label="Valor em cartão"
             />
           </div>
           <div>
-            <label htmlFor="valor_dinheiro" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valor_dinheiro" className="block text-sm font-medium text-foreground">
               Valor em Dinheiro
             </label>
             <input
@@ -246,12 +249,12 @@ export function EditOrderForm({
               placeholder="Valor em dinheiro"
               step="0.01"
               min="0"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
               aria-label="Valor em dinheiro"
             />
           </div>
           <div>
-            <label htmlFor="valor_pix" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valor_pix" className="block text-sm font-medium text-foreground">
               Valor em Pix
             </label>
             <input
@@ -262,7 +265,7 @@ export function EditOrderForm({
               placeholder="Valor em pix"
               step="0.01"
               min="0"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
               aria-label="Valor em pix"
             />
           </div>
@@ -272,7 +275,7 @@ export function EditOrderForm({
       {(editedComanda.forma_pagamento === 'dinheiro' || editedComanda.forma_pagamento === 'misto') && (
         <>
           <div>
-            <label htmlFor="quantiapaga" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="quantiapaga" className="block text-sm font-medium text-foreground">
               Troco para (R$)
             </label>
             <input
@@ -290,12 +293,12 @@ export function EditOrderForm({
               placeholder="Valor entregue pelo cliente"
               step="0.01"
               min="0"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
               aria-label="Valor entregue pelo cliente"
             />
           </div>
           <div>
-            <label htmlFor="troco" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="troco" className="block text-sm font-medium text-foreground">
               Troco (R$)
             </label>
             <input
@@ -303,7 +306,7 @@ export function EditOrderForm({
               type="number"
               value={(editedComanda.troco || 0).toFixed(2)}
               readOnly
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-100"
+              className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-muted text-muted-foreground"
               aria-label="Troco calculado"
             />
           </div>
@@ -316,32 +319,32 @@ export function EditOrderForm({
           type="checkbox"
           checked={editedComanda.pago || false}
           onChange={(e) => setEditedComanda({ ...editedComanda, pago: e.target.checked })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
           aria-label="Marcar como pago"
         />
-        <label htmlFor="pago" className="text-sm font-medium text-gray-700">
+        <label htmlFor="pago" className="text-sm font-medium text-foreground">
           Pago
         </label>
       </div>
 
-      <div className="font-bold text-gray-800 text-lg">
+      <div className="font-bold text-foreground text-lg">
         Subtotal: R$ {calculateSubtotal().toFixed(2)}
       </div>
-      <div className="font-bold text-gray-800 text-lg">
+      <div className="font-bold text-foreground text-lg">
         Total: R$ {calculateTotal().toFixed(2)}
       </div>
 
       <div className="flex gap-3">
         <button
           onClick={onSave}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Save size={18} />
           Salvar
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800"
+          className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80"
         >
           Cancelar
         </button>

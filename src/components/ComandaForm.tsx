@@ -10,6 +10,7 @@ import { AddressForm } from './comanda/AddressForm';
 import { PaymentSection } from './comanda/PaymentSection';
 import { toast } from 'sonner';
 import { useComandaValidation } from '../hooks/useComandaValidation';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ComandaFormProps {
   comanda: Comanda;
@@ -47,6 +48,7 @@ const ComandaForm: React.FC<ComandaFormProps> = ({
 }) => {
   const { isShopOpen } = useShopIsOpen();
   const { validateComanda } = useComandaValidation();
+  const { isDark } = useTheme();
 
   const handleSaveComanda = () => {
     if (validateComanda(comanda, isShopOpen)) {
@@ -59,7 +61,7 @@ const ComandaForm: React.FC<ComandaFormProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-lg shadow-md p-4 md:p-6"
+      className="bg-card text-card-foreground border border-border rounded-lg shadow-md p-4 md:p-6"
     >
       <ProductSearch
         pesquisaProduto={pesquisaProduto}
@@ -99,7 +101,7 @@ const ComandaForm: React.FC<ComandaFormProps> = ({
         <button
           onClick={handleSaveComanda}
           disabled={salvando || !isShopOpen}
-          className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-2 text-sm ${
+          className={`bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded flex items-center gap-2 text-sm ${
             salvando || !isShopOpen ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >

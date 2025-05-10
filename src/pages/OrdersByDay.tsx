@@ -43,23 +43,47 @@ export default function OrdersByDay() {
 
   // Fetch orders when date range changes
   useEffect(() => {
-    fetchOrdersByPeriod(dateRange);
+    if (dateRange[0].startDate && dateRange[0].endDate) {
+      fetchOrdersByPeriod(dateRange);
+    }
   }, [dateRange, fetchOrdersByPeriod]);
 
   // Handle date range changes
   const handleDateRangeChange = (ranges: RangeKeyDict) => {
     const { startDate, endDate } = ranges.selection;
     if (startDate && endDate) {
-      setDateRange([{ startDate, endDate, key: 'selection' }]);
+      setDateRange([{ 
+        startDate: startOfDay(startDate), 
+        endDate: endOfDay(endDate), 
+        key: 'selection' 
+      }]);
     }
   };
 
   // Change period (prev/next)
   const changePeriod = (direction: 'prev' | 'next') => {
-    const daysDiff = Math.ceil((dateRange[0].endDate!.getTime() - dateRange[0].startDate!.getTime()) / (1000 * 60 * 60 * 24)) || 1;
-    const newStart = direction === 'prev' ? subDays(dateRange[0].startDate as Date, daysDiff) : addDays(dateRange[0].startDate as Date, daysDiff);
-    const newEnd = direction === 'prev' ? subDays(dateRange[0].endDate as Date, daysDiff) : addDays(dateRange[0].endDate as Date, daysDiff);
-    setDateRange([{ startDate: newStart, endDate: newEnd, key: 'selection' }]);
+    // Calculate the day difference between start and end date
+    const currentStartDate = dateRange[0].startDate as Date;
+    const currentEndDate = dateRange[0].endDate as Date;
+    
+    // Add one day because endOfDay and startOfDay makes the difference appear as one day less
+    const daysDiff = Math.round((currentEndDate.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    let newStart, newEnd;
+    
+    if (direction === 'prev') {
+      newStart = subDays(currentStartDate, daysDiff);
+      newEnd = subDays(currentEndDate, daysDiff);
+    } else {
+      newStart = addDays(currentStartDate, daysDiff);
+      newEnd = addDays(currentEndDate, daysDiff);
+    }
+    
+    setDateRange([{ 
+      startDate: startOfDay(newStart), 
+      endDate: endOfDay(newEnd), 
+      key: 'selection' 
+    }]);
   };
 
   return (
