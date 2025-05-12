@@ -14,27 +14,23 @@ interface DateRangeSelectorProps {
   onDateRangeChange: (range: RangeKeyDict) => void;
   showCalendar: boolean;
   onShowCalendarChange: (show: boolean) => void;
+  onChangePeriod: (direction: 'prev' | 'next') => void;
 }
 
 export function DateRangeSelector({
   dateRange,
   onDateRangeChange,
   showCalendar,
-  onShowCalendarChange
+  onShowCalendarChange,
+  onChangePeriod
 }: DateRangeSelectorProps) {
   const calendarRef = useRef<HTMLDivElement>(null);
   const { isDark } = useTheme();
 
+  // This function now directly calls the parent's onChangePeriod function
   const handlePeriodChange = (direction: 'prev' | 'next') => {
-    // We'll let the parent component handle this
-    const ranges = {
-      selection: {
-        startDate: dateRange[0].startDate,
-        endDate: dateRange[0].endDate,
-        key: 'selection'
-      }
-    };
-    onDateRangeChange(ranges);
+    console.log(`DateRangeSelector: Calling onChangePeriod with direction: ${direction}`);
+    onChangePeriod(direction);
   };
 
   return (

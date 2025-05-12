@@ -41,6 +41,7 @@ export function OrderFilters({
           onDateRangeChange={onDateRangeChange}
           showCalendar={showCalendar}
           onShowCalendarChange={onShowCalendarChange}
+          onChangePeriod={onChangePeriod}
         />
         
         <div className="flex gap-2 w-full md:w-auto">

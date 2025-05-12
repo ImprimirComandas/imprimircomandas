@@ -28,6 +28,15 @@ export default function TrocoModal({
   
   if (!show) return null;
 
+  const handleSetNeedsTroco = (value: boolean) => {
+    console.log(`Setting needsTroco to:`, value);
+    onChange('needsTroco', value);
+  };
+
+  const handleQuantiaPagaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange('quantiapagaInput', e.target.value);
+  };
+
   const handleConfirmAndSave = () => {
     if (needsTroco === true) {
       const value = typeof quantiapagaInput === 'string' 
@@ -46,14 +55,24 @@ export default function TrocoModal({
     }
   };
 
-  const handleSetNeedsTroco = (value: boolean) => {
-    console.log(`Setting needsTroco to:`, value);
-    onChange('needsTroco', value);
+  // Parse the input value for display
+  const parseQuantiaPaga = () => {
+    if (typeof quantiapagaInput === 'string') {
+      return quantiapagaInput ? parseFloat(quantiapagaInput) : null;
+    }
+    return quantiapagaInput;
   };
-
-  const quantiaPagaValue = typeof quantiapagaInput === 'string' ? 
-    quantiapagaInput : 
-    quantiapagaInput !== null ? String(quantiapagaInput) : '';
+  
+  // Calculate the change amount
+  const getTrocoAmount = () => {
+    const value = parseQuantiaPaga();
+    if (needsTroco === true && value !== null && value > totalComTaxa) {
+      return value - totalComTaxa;
+    }
+    return 0;
+  };
+  
+  const trocoAmount = getTrocoAmount();
 
   return (
     <div
@@ -108,17 +127,19 @@ export default function TrocoModal({
             <input
               id="quantiapaga"
               type="number"
-              value={quantiaPagaValue}
-              onChange={(e) => onChange('quantiapagaInput', e.target.value)}
+              value={typeof quantiapagaInput === 'string' ? 
+                quantiapagaInput : 
+                quantiapagaInput !== null ? String(quantiapagaInput) : ''}
+              onChange={handleQuantiaPagaChange}
               placeholder="Digite a quantia paga"
               className="w-full p-2.5 border border-input bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
               step="0.01"
               min={totalComTaxa}
               aria-describedby="troco-info"
             />
-            {quantiaPagaValue && parseFloat(String(quantiaPagaValue)) > totalComTaxa && (
-              <p id="troco-info" className="mt-2 text-sm text-muted-foreground">
-                Troco: R$ {(parseFloat(String(quantiaPagaValue)) - totalComTaxa).toFixed(2)}
+            {parseQuantiaPaga() !== null && parseQuantiaPaga()! > totalComTaxa && (
+              <p id="troco-info" className="mt-2 text-sm font-medium text-primary">
+                Troco: R$ {trocoAmount.toFixed(2)}
               </p>
             )}
           </div>

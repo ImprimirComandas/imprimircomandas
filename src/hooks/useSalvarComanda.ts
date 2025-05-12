@@ -19,9 +19,10 @@ export const useSalvarComanda = (
   const [salvando, setSalvando] = useState(false);
 
   const validarComanda = () => {
-    console.log('Validating comanda before save:', comanda);
-    console.log('Payment method:', comanda.forma_pagamento);
-    console.log('Is paid:', comanda.pago);
+    console.log('useSalvarComanda: Validating comanda before save:', comanda);
+    console.log('useSalvarComanda: Payment method:', comanda.forma_pagamento);
+    console.log('useSalvarComanda: Is paid:', comanda.pago);
+    console.log('useSalvarComanda: needsTroco:', needsTroco);
     
     if (comanda.produtos.length === 0) {
       toast.error('Adicione pelo menos um produto.');
@@ -44,7 +45,7 @@ export const useSalvarComanda = (
       return false;
     }
     
-    if (comanda.forma_pagamento === 'dinheiro' && needsTroco && (quantiapagaInput === null || quantiapagaInput <= 0)) {
+    if (comanda.forma_pagamento === 'dinheiro' && needsTroco === true && (quantiapagaInput === null || quantiapagaInput <= 0)) {
       toast.error('Informe uma quantia válida para o troco (maior que zero).');
       return false;
     }
@@ -74,7 +75,7 @@ export const useSalvarComanda = (
       let trocoValue = 0;
       let quantiaPaga = totalComTaxa;
       
-      if (comanda.forma_pagamento === 'dinheiro' && needsTroco && quantiapagaInput) {
+      if (comanda.forma_pagamento === 'dinheiro' && needsTroco === true && quantiapagaInput) {
         trocoValue = quantiapagaInput - totalComTaxa;
         quantiaPaga = quantiapagaInput;
       } else if (comanda.forma_pagamento === 'misto' && valorDinheiroInput) {
@@ -89,9 +90,12 @@ export const useSalvarComanda = (
         }
       }
       
-      console.log('Saving comanda with:', {
+      console.log('useSalvarComanda: Saving comanda with:', {
         forma_pagamento: comanda.forma_pagamento,
-        pago: comanda.pago
+        pago: comanda.pago,
+        needsTroco: needsTroco,
+        troco: trocoValue,
+        quantiaPaga: quantiaPaga
       });
 
       const novaComanda = {

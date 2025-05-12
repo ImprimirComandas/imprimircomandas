@@ -6,6 +6,7 @@ import { DateRange, RangeKeyDict } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { useTheme } from '@/hooks/useTheme';
+import { calculateNewDateRange } from '@/utils/dateUtils';
 
 // Components
 import { OrderCard } from '@/components/orders/OrderCard';
@@ -66,28 +67,10 @@ export default function OrdersByDay() {
 
   // Change period (prev/next)
   const changePeriod = (direction: 'prev' | 'next') => {
-    // Calculate the day difference between start and end date
-    const currentStartDate = dateRange[0].startDate as Date;
-    const currentEndDate = dateRange[0].endDate as Date;
-    
-    // Add one day because endOfDay and startOfDay makes the difference appear as one day less
-    const daysDiff = Math.round((currentEndDate.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    let newStart, newEnd;
-    
-    if (direction === 'prev') {
-      newStart = subDays(currentStartDate, daysDiff);
-      newEnd = subDays(currentEndDate, daysDiff);
-    } else {
-      newStart = addDays(currentStartDate, daysDiff);
-      newEnd = addDays(currentEndDate, daysDiff);
-    }
-    
-    setDateRange([{ 
-      startDate: startOfDay(newStart), 
-      endDate: endOfDay(newEnd), 
-      key: 'selection' 
-    }]);
+    console.log("OrdersByDay: Changing period:", direction);
+    const newDateRange = calculateNewDateRange(dateRange, direction);
+    console.log("OrdersByDay: Changed date range:", newDateRange);
+    setDateRange(newDateRange);
   };
 
   // Type-safe wrapper for setFilterStatus

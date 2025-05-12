@@ -27,8 +27,15 @@ export default function TrocoModalComponent({
   if (!show) return null;
 
   const handleSetNeedsTroco = (value: boolean) => {
-    console.log(`Setting needsTroco to:`, value);
+    console.log(`TrocoModalComponent: Setting needsTroco to:`, value);
+    // Pass the boolean value directly, not as a string
     onChange('needsTroco', value);
+  };
+
+  const handleQuantiaPagaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? parseFloat(e.target.value) : null;
+    console.log(`TrocoModalComponent: Setting quantiapagaInput to:`, value);
+    onChange('quantiapagaInput', value);
   };
 
   const handleConfirm = () => {
@@ -43,6 +50,11 @@ export default function TrocoModalComponent({
     
     onConfirm();
   };
+
+  // Calculate the change amount
+  const trocoAmount = needsTroco === true && quantiapagaInput !== null && quantiapagaInput >= totalComTaxa 
+    ? quantiapagaInput - totalComTaxa 
+    : 0;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -88,16 +100,17 @@ export default function TrocoModalComponent({
                 id="quantiapagaInput"
                 name="quantiapagaInput"
                 value={quantiapagaInput === null ? '' : quantiapagaInput}
-                onChange={(e) => onChange('quantiapagaInput', parseFloat(e.target.value) || '')}
+                onChange={handleQuantiaPagaChange}
                 className="mt-1 p-2 w-full border border-input rounded-md bg-background text-foreground"
                 min={totalComTaxa}
                 step="0.01"
               />
-            </div>
-          )}
-          {needsTroco === true && quantiapagaInput !== null && quantiapagaInput >= totalComTaxa && (
-            <div className="font-semibold text-primary">
-              Troco: R$ {(quantiapagaInput - totalComTaxa).toFixed(2)}
+              
+              {quantiapagaInput !== null && quantiapagaInput >= totalComTaxa && (
+                <div className="mt-2 font-semibold text-primary">
+                  Troco: R$ {trocoAmount.toFixed(2)}
+                </div>
+              )}
             </div>
           )}
           {needsTroco === false && (

@@ -30,7 +30,7 @@ export function usePagamento(totalComTaxa: number) {
   } = usePaymentHandling(totalComTaxa);
 
   const resetPagamento = () => {
-    console.log('Resetting payment form');
+    console.log('usePagamento: Resetting payment form');
     setFormaPagamento('');
     setPago(false);
     setNeedsTroco(null);
@@ -41,32 +41,39 @@ export function usePagamento(totalComTaxa: number) {
   };
 
   const onFormaPagamentoChange = (forma: '' | 'pix' | 'dinheiro' | 'cartao' | 'misto') => {
-    console.log('Payment method being set to:', forma);
+    console.log('usePagamento: Payment method being set to:', forma);
     setFormaPagamento(forma); // Directly set the state first for immediate UI feedback
     handlePaymentChange(forma, setFormaPagamento);
   };
 
   // Wrap the original closeTrocoModal to provide resetPagamento
   const handleCloseTrocoModal = () => {
+    console.log('usePagamento: Closing troco modal');
     const resetFunc = () => setFormaPagamento('');
     closeChange(resetFunc);
   };
 
   // Wrap the original closePagamentoMistoModal to provide resetPagamento
   const handleClosePagamentoMistoModal = () => {
+    console.log('usePagamento: Closing pagamento misto modal');
     const resetFunc = () => setFormaPagamento('');
     closeMixed(resetFunc);
   };
 
   // Debug log whenever forma_pagamento changes
   useEffect(() => {
-    console.log('Current payment method state:', forma_pagamento);
+    console.log('usePagamento: Current payment method state:', forma_pagamento);
   }, [forma_pagamento]);
 
   // Debug log whenever pago changes
   useEffect(() => {
-    console.log('Current payment status state:', pago);
+    console.log('usePagamento: Current payment status state:', pago);
   }, [pago]);
+
+  // Debug log whenever needsTroco changes
+  useEffect(() => {
+    console.log('usePagamento: Current needsTroco state:', needsTroco);
+  }, [needsTroco]);
 
   return {
     forma_pagamento,

@@ -14,13 +14,15 @@ export function usePaymentHandling(totalComTaxa: number) {
     forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '',
     setComandaFormaPagamento: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void
   ) => {
+    console.log('usePaymentHandling: Payment method being set to:', forma);
     // Update the payment method in the parent component first
     setComandaFormaPagamento(forma);
     
     // Handle specific logic based on payment type
     if (forma === 'dinheiro') {
       setShowTrocoModal(true);
-      setNeedsTroco(null);
+      setNeedsTroco(null); // Reset to null when opening modal
+      console.log('usePaymentHandling: Opening troco modal, needsTroco reset to null');
       // Clear other mixed payment values
       setValorCartaoInput(null);
       setValorDinheiroInput(null);
@@ -55,35 +57,52 @@ export function usePaymentHandling(totalComTaxa: number) {
   };
 
   const handleInputChange = (field: string, value: any) => {
+    console.log(`usePaymentHandling: Handling input change for ${field}:`, value);
+    
     if (field === 'needsTroco') {
-      // Fix: Convert 'needsTroco' to a proper boolean value, not a string
-      // Handle the value directly as a boolean instead of string comparison
-      setNeedsTroco(value === true || value === 'true' ? true : value === false || value === 'false' ? false : null);
+      // Ensure we're always setting a boolean value
+      const boolValue = typeof value === 'string' 
+        ? value === 'true' 
+        : Boolean(value);
+      
+      console.log(`usePaymentHandling: Setting needsTroco to boolean:`, boolValue);
+      setNeedsTroco(boolValue);
     } else if (field === 'quantiapagaInput') {
-      setQuantiapagaInput(value ? Number(value) : null);
+      const numValue = value !== null && value !== '' ? Number(value) : null;
+      console.log(`usePaymentHandling: Setting quantiapagaInput to:`, numValue);
+      setQuantiapagaInput(numValue);
     } else if (field === 'valorCartaoInput') {
-      setValorCartaoInput(value ? Number(value) : null);
+      setValorCartaoInput(value !== null && value !== '' ? Number(value) : null);
     } else if (field === 'valorDinheiroInput') {
-      setValorDinheiroInput(value ? Number(value) : null);
+      setValorDinheiroInput(value !== null && value !== '' ? Number(value) : null);
     } else if (field === 'valorPixInput') {
-      setValorPixInput(value ? Number(value) : null);
+      setValorPixInput(value !== null && value !== '' ? Number(value) : null);
     }
   };
 
   const handleTrocoConfirm = () => {
+    console.log('usePaymentHandling: Confirming troco with needsTroco:', needsTroco);
+    
     if (needsTroco === null) {
+      console.log('usePaymentHandling: Cannot confirm - needsTroco is null');
       return false;
     }
-    if (needsTroco && (quantiapagaInput === null || quantiapagaInput <= 0)) {
+    
+    if (needsTroco === true && (quantiapagaInput === null || quantiapagaInput <= 0)) {
+      console.log('usePaymentHandling: Cannot confirm - invalid quantia paga');
       return false;
     }
+    
+    console.log('usePaymentHandling: Troco confirmed successfully');
     setShowTrocoModal(false);
     return true;
   };
 
   const closeTrocoModal = (resetFormaPagamento?: () => void) => {
+    console.log('usePaymentHandling: Closing troco modal');
     setShowTrocoModal(false);
     if (resetFormaPagamento) {
+      console.log('usePaymentHandling: Resetting forma pagamento');
       resetFormaPagamento();
     }
   };
@@ -118,6 +137,15 @@ export function usePaymentHandling(totalComTaxa: number) {
       resetFormaPagamento();
     }
   };
+
+  // Debug logs to track state changes
+  useEffect(() => {
+    console.log('usePaymentHandling: needsTroco changed to:', needsTroco);
+  }, [needsTroco]);
+
+  useEffect(() => {
+    console.log('usePaymentHandling: quantiapagaInput changed to:', quantiapagaInput);
+  }, [quantiapagaInput]);
 
   return {
     showTrocoModal,
