@@ -16,13 +16,8 @@ export default function DeliveryTableRow({
   const { isDark } = useTheme();
   
   return (
-<<<<<<< HEAD
     <TableRow className="border-border transition-colors duration-200">
       <TableCell className="font-medium text-foreground">
-=======
-    <TableRow className="border-border">
-      <TableCell>
->>>>>>> 32ab48de34b911e4738785205b6198afc3450ca2
         {format(new Date(delivery.created_at || ''), 'HH:mm')}
       </TableCell>
       <TableCell className="text-foreground">{delivery.bairro}</TableCell>
@@ -50,11 +45,7 @@ export default function DeliveryTableRow({
           <Button 
             variant="ghost" 
             size="sm" 
-<<<<<<< HEAD
             className="text-primary hover:text-primary/90 hover:bg-primary/10"
-=======
-            className="text-primary hover:text-primary/90 hover:bg-accent"
->>>>>>> 32ab48de34b911e4738785205b6198afc3450ca2
             onClick={() => onEdit(delivery)}
           >
             <Edit className="h-4 w-4" />

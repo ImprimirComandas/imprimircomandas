@@ -2,11 +2,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DeliveryTableRow from "./DeliveryTableRow";
 import { DeliveryTableProps } from "@/types";
-<<<<<<< HEAD
 import { motion } from "framer-motion";
 import { useTheme } from "@/hooks/useTheme";
-=======
->>>>>>> 32ab48de34b911e4738785205b6198afc3450ca2
 
 export default function DeliveryTable({ 
   deliveries, 
@@ -14,7 +11,6 @@ export default function DeliveryTable({
   onEditDelivery, 
   showDeleteButton 
 }: DeliveryTableProps) {
-<<<<<<< HEAD
   const { theme } = useTheme();
   
   return (
@@ -33,19 +29,6 @@ export default function DeliveryTable({
             <TableHead className="font-medium text-foreground">Origem</TableHead>
             <TableHead className="font-medium text-foreground">Pagamento</TableHead>
             <TableHead className="font-medium text-foreground">Ações</TableHead>
-=======
-  return (
-    <div className="mt-2 overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="border-border">
-            <TableHead>Horário</TableHead>
-            <TableHead>Bairro</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead>Origem</TableHead>
-            <TableHead>Pagamento</TableHead>
-            <TableHead>Ações</TableHead>
->>>>>>> 32ab48de34b911e4738785205b6198afc3450ca2
           </TableRow>
         </TableHeader>
         <TableBody>
