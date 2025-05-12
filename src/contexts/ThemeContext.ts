@@ -1,19 +1,3 @@
 
-import { createContext } from 'react';
-
-export type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple' | string;
-
-export interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  isDarkTheme: boolean;
-}
-
-// Create a default context with empty values
-export const ThemeContext = createContext<ThemeContextType>({
-  theme: 'light',
-  setTheme: () => {},
-  isDarkTheme: false,
-});
-
-export default ThemeContext;
+// This file is now just re-exporting from ThemeContext.tsx
+export { ThemeContext, useThemeContext, type Theme, type ThemeContextType } from './ThemeContext.tsx';

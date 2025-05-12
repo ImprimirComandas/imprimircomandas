@@ -26,10 +26,12 @@ export default function EditDeliveryDialog({
   const [editedDelivery, setEditedDelivery] = useState<Entrega | null>(null);
 
   useEffect(() => {
+    // This will ensure that whenever the delivery prop changes,
+    // we update our local state with a fresh copy
     if (delivery) {
       setEditedDelivery({ ...delivery });
     }
-  }, [delivery]);
+  }, [delivery, open]);
 
   if (!editedDelivery) return null;
 
@@ -61,14 +63,14 @@ export default function EditDeliveryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md text-foreground bg-background">
         <DialogHeader>
           <DialogTitle>Editar Entrega</DialogTitle>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="motoboy" className="text-right">
+            <Label htmlFor="motoboy" className="text-right text-foreground">
               Motoboy
             </Label>
             <div className="col-span-3">
@@ -92,7 +94,7 @@ export default function EditDeliveryDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="bairro" className="text-right">
+            <Label htmlFor="bairro" className="text-right text-foreground">
               Bairro
             </Label>
             <div className="col-span-3">
@@ -116,7 +118,7 @@ export default function EditDeliveryDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="origem" className="text-right">
+            <Label htmlFor="origem" className="text-right text-foreground">
               Origem
             </Label>
             <div className="col-span-3">
@@ -139,7 +141,7 @@ export default function EditDeliveryDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="valor_entrega" className="text-right">
+            <Label htmlFor="valor_entrega" className="text-right text-foreground">
               Valor da Entrega
             </Label>
             <div className="col-span-3">
@@ -156,12 +158,12 @@ export default function EditDeliveryDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="forma_pagamento" className="text-right">
+            <Label htmlFor="forma_pagamento" className="text-right text-foreground">
               Forma de Pagamento
             </Label>
             <div className="col-span-3">
               <Select
-                value={editedDelivery.forma_pagamento}
+                value={editedDelivery.forma_pagamento || ""}
                 onValueChange={(value) => handleInputChange('forma_pagamento', value as any)}
                 disabled={loading}
               >
@@ -179,7 +181,7 @@ export default function EditDeliveryDialog({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="pago" className="text-right">
+            <Label htmlFor="pago" className="text-right text-foreground">
               Pedido Pago
             </Label>
             <div className="col-span-3 flex items-center">
@@ -189,7 +191,7 @@ export default function EditDeliveryDialog({
                 onCheckedChange={(checked) => handleInputChange('pago', !!checked)}
                 disabled={loading}
               />
-              <Label htmlFor="pago" className="ml-2">
+              <Label htmlFor="pago" className="ml-2 text-foreground">
                 Pedido já está pago
               </Label>
             </div>

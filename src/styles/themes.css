@@ -135,6 +135,74 @@
   --sidebar-ring: 270 80% 60%;
 }
 
+/* New Dark Green Theme */
+.theme-dark-green {
+  --background: 0 0% 0%; /* Pure black background */
+  --foreground: 150 5% 95%; /* Light text for contrast */
+  --card: 150 15% 5%; /* Very dark green-tinted cards */
+  --card-foreground: 150 5% 95%; /* Light text */
+  --popover: 150 15% 5%; /* Dark popover */
+  --popover-foreground: 150 5% 95%; /* Light text */
+  --menu-background: rgba(5, 10, 8, 0.9); /* Almost black menu with slight transparency */
+  --menu-foreground: 150 5% 95%; /* Light text */
+  --primary: 145 70% 30%; /* Dark green as primary color */
+  --primary-foreground: 0 0% 100%; /* White text on primary */
+  --secondary: 150 30% 10%; /* Very dark green secondary */
+  --secondary-foreground: 150 5% 95%; /* Light text */
+  --muted: 150 20% 8%; /* Very dark muted background */
+  --muted-foreground: 150 10% 70%; /* Lighter muted text */
+  --accent: 145 70% 20%; /* Dark green accent */
+  --accent-foreground: 0 0% 100%; /* White on accent */
+  --destructive: 0 70% 40%; /* Deeper red for destructive actions */
+  --destructive-foreground: 0 0% 100%; /* White */
+  --border: 150 20% 12%; /* Dark green border */
+  --input: 150 20% 12%; /* Dark green input */
+  --ring: 145 70% 30%; /* Dark green ring */
+  --radius: 0.5rem; /* Consistent with other themes */
+  --sidebar-background: 0 0% 0%;
+  --sidebar-foreground: 150 5% 95%;
+  --sidebar-primary: 145 70% 30%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 145 70% 20%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 150 20% 12%;
+  --sidebar-ring: 145 70% 30%;
+}
+
+/* Supabase Theme - Updated to ensure proper contrast with green on black */
+.theme-supabase {
+  --background: 222 47% 7%; /* Fundo preto azulado mais escuro */
+  --foreground: 0 0% 98%; /* Texto quase branco para máximo contraste */
+  --card: 215 28% 12%; /* Cards mais escuros */
+  --card-foreground: 0 0% 98%; /* Texto claro */
+  --popover: 215 28% 12%; /* Popover escuro */
+  --popover-foreground: 0 0% 98%; /* Texto claro */
+  --menu-background: rgba(18, 22, 28, 0.9); /* Menu com transparência controlada */
+  --menu-foreground: 0 0% 98%; /* Texto claro para menu */
+  --primary: 153 72% 53%; /* Verde Supabase */
+  --primary-foreground: 222 47% 11%; /* Fundo escuro */
+  --secondary: 215 28% 17%; /* Cinza escuro */
+  --secondary-foreground: 0 0% 98%; /* Texto claro */
+  --muted: 215 28% 17%; /* Fundo suave */
+  --muted-foreground: 215 20% 75%; /* Texto médio mais claro */
+  --accent: 215 28% 17%; /* Igual a secondary */
+  --accent-foreground: 0 0% 98%; /* Texto claro */
+  --destructive: 0 85% 65%; /* Vermelho mais vibrante */
+  --destructive-foreground: 0 0% 98%; /* Texto claro */
+  --border: 215 28% 25%; /* Borda escura */
+  --input: 215 28% 25%; /* Input escuro */
+  --ring: 153 72% 53%; /* Anel de foco verde */
+  --radius: 0.5rem; /* Consistência com tema claro */
+  --sidebar-background: 222 47% 7%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 153 72% 60%; /* Verde um pouco mais brilhante */
+  --sidebar-primary-foreground: 222 47% 11%;
+  --sidebar-accent: 215 28% 17%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 215 28% 25%;
+  --sidebar-ring: 153 72% 53%;
+}
+
 /* Global Animation Durations */
 :root {
   --transition-slow: 0.3s;

@@ -9,6 +9,7 @@ export function getThemeClasses(theme: Theme, options: {
   dark?: string;
   lightBlue?: string;
   darkPurple?: string;
+  darkGreen?: string;
   default?: string;
 }) {
   switch (theme) {
@@ -20,6 +21,8 @@ export function getThemeClasses(theme: Theme, options: {
       return options.lightBlue || options.light || options.default || '';
     case 'dark-purple':
       return options.darkPurple || options.dark || options.default || '';
+    case 'dark-green':
+      return options.darkGreen || options.dark || options.default || '';
     default:
       return options.default || '';
   }
@@ -29,25 +32,14 @@ export function getThemeClasses(theme: Theme, options: {
  * Determines if a theme is considered "dark" for color contrast purposes
  */
 export function isDarkTheme(theme: Theme) {
-  return theme.includes('dark');
+  return theme.includes('dark') || theme === 'supabase';
 }
 
 /**
  * Gets background classes based on current theme
  */
 export function getBackgroundClasses(theme: Theme) {
-  switch (theme) {
-    case 'light':
-      return 'bg-background text-foreground';
-    case 'dark':
-      return 'bg-background text-foreground';
-    case 'light-blue':
-      return 'bg-background text-foreground';
-    case 'dark-purple':
-      return 'bg-background text-foreground';
-    default:
-      return 'bg-background text-foreground';
-  }
+  return 'bg-background text-foreground';
 }
 
 /**

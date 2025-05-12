@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useShopIsOpen } from '../../hooks/useShopIsOpen';
 import { useEffect, useState } from 'react';
+import { CalendarClock, Store } from 'lucide-react';
 
 export default function DeliveryHeader() {
   const { isShopOpen } = useShopIsOpen();
@@ -36,22 +37,24 @@ export default function DeliveryHeader() {
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between">
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900">
+          <h1 className="text-4xl font-extrabold text-foreground bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Gerenciamento de Delivery
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-muted-foreground">
             Crie pedidos, gerencie motoboys e acompanhe entregas
           </p>
         </div>
         
         <div className="mt-4 sm:mt-0 flex flex-col items-end">
-          <div className={`px-4 py-2 rounded-lg font-medium text-white mb-2 ${
-            isShopOpen ? 'bg-green-600' : 'bg-red-600'
+          <div className={`px-4 py-2 rounded-lg font-medium text-primary-foreground mb-2 flex items-center ${
+            isShopOpen ? 'bg-emerald-500' : 'bg-destructive'
           }`}>
+            <Store className="h-4 w-4 mr-2" />
             {isShopOpen ? 'Loja Aberta' : 'Loja Fechada'}
           </div>
           
-          <div className="text-gray-600 text-sm">
+          <div className="text-muted-foreground text-sm flex items-center">
+            <CalendarClock className="h-4 w-4 mr-2 text-primary" />
             <span className="font-semibold">{formattedTime}</span> • {formattedDate}
           </div>
         </div>

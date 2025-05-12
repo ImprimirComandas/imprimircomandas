@@ -1,9 +1,11 @@
 
-import { motion } from 'framer-motion';
 import TotaisPorStatusPagamento from '../TotaisPorStatusPagamento';
 import ComandasAnterioresModificado from '../ComandasAnterioresModificado';
 import GrowthChart from './GrowthChart';
 import type { Comanda } from '../../types/database';
+import { useTheme } from '@/hooks/useTheme';
+import { Card } from '../ui/card';
+import { Clock } from 'lucide-react';
 
 interface RightColumnProps {
   totais: {
@@ -40,28 +42,16 @@ export default function RightColumn({
 }: RightColumnProps) {
   // Filter to only show unconfirmed orders
   const pendingOrders = comandasAnteriores.filter(comanda => !comanda.pago);
+  const { isDark, theme } = useTheme();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
-      className="lg:w-1/2 space-y-6"
-    >
-      {/* Totais por Status */}
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <TotaisPorStatusPagamento
-          confirmados={totais.confirmados || 0}
-          naoConfirmados={totais.naoConfirmados || 0}
-          total={totais.geral || 0}
-          showValues={showValues}
-          toggleShowValues={toggleShowValues}
-        />
-      </div>
-
-      {/* Comandas Anteriores - Only Pending Orders */}
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <h2 className="text-xl font-bold mb-4">Pedidos Pendentes</h2>
+    <div className="space-y-6">
+      {/* Comandas Pendentes - Moved to the top as requested */}
+      <Card className="border border-border bg-card p-5">
+        <h3 className="font-semibold text-lg mb-4 flex items-center">
+          <Clock className="h-5 w-5 text-primary mr-2" />
+          Pedidos Pendentes
+        </h3>
         <ComandasAnterioresModificado
           comandas={pendingOrders}
           expandedComandas={expandedComandas}
@@ -72,10 +62,21 @@ export default function RightColumn({
           getUltimos8Digitos={getUltimos8Digitos}
           onConfirmPayment={onConfirmPayment}
         />
-      </div>
+      </Card>
 
-      {/* Gráfico de Crescimento */}
+      {/* Totais por Status */}
+      <TotaisPorStatusPagamento
+        totais={{
+          confirmados: totais.confirmados || 0,
+          naoConfirmados: totais.naoConfirmados || 0,
+          total: totais.geral || 0
+        }}
+        showValues={showValues}
+        toggleShowValues={toggleShowValues}
+      />
+
+      {/* Growth Chart */}
       <GrowthChart chartData={chartData} />
-    </motion.div>
+    </div>
   );
 }

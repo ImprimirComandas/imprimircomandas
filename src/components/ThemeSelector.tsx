@@ -1,6 +1,6 @@
 
 import { FC } from 'react';
-import { Moon, Sun, Palette } from 'lucide-react';
+import { Moon, Sun, Palette, Database } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +27,14 @@ const ThemeSelector: FC<ThemeSelectorProps> = ({ className }) => {
           size="icon" 
           className={className}
         >
-          {theme.includes('light') ? (
-            <Moon className="h-[1.2rem] w-[1.2rem]" />
-          ) : (
+          {theme === 'supabase' ? (
+            <Database className="h-[1.2rem] w-[1.2rem] text-primary" />
+          ) : theme === 'dark-green' ? (
+            <Palette className="h-[1.2rem] w-[1.2rem] text-green-600" />
+          ) : theme.includes('light') ? (
             <Sun className="h-[1.2rem] w-[1.2rem]" />
+          ) : (
+            <Moon className="h-[1.2rem] w-[1.2rem]" />
           )}
           <span className="sr-only">Mudar tema</span>
         </Button>
@@ -38,6 +42,20 @@ const ThemeSelector: FC<ThemeSelectorProps> = ({ className }) => {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Temas</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => changeTheme('dark-green')}
+          className={theme === 'dark-green' ? 'bg-accent' : ''}
+        >
+          <Palette className="mr-2 h-4 w-4 text-green-600" />
+          <span>Verde Escuro</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => changeTheme('supabase')}
+          className={theme === 'supabase' ? 'bg-accent' : ''}
+        >
+          <Database className="mr-2 h-4 w-4 text-emerald-500" />
+          <span>Supabase</span>
+        </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => changeTheme('light')}
           className={theme === 'light' ? 'bg-accent' : ''}

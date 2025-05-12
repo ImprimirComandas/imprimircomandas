@@ -10,11 +10,11 @@ import StoreSettings from './pages/StoreSettings';
 import OrdersByDay from './pages/OrdersByDay';
 import DeliveryRates from './pages/DeliveryRates';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
 import Header from './components/Header';
 import { useProfileMenu } from './hooks/useProfileMenu';
-import DeliveryManagement from './components/DeliveryManagement';
+import DeliveryManagement from './components/delivery/DeliveryManagement';
 import { useTheme } from './hooks/useTheme';
+import { Toaster } from 'sonner';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -81,7 +81,6 @@ function App() {
 
   return (
     <>
-      <Toaster position="top-right" richColors />
       {!session ? (
         isResetPassword ? <ResetPassword /> : <Auth />
       ) : (
@@ -103,6 +102,7 @@ function App() {
           </Routes>
         </>
       )}
+      <Toaster position="bottom-right" theme={theme === 'dark' ? 'dark' : 'light'} />
     </>
   );
 }

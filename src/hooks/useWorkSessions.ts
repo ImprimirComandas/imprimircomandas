@@ -1,66 +1,70 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { formatDuration, intervalToDuration } from 'date-fns';
 import { ExtendedMotoboySession, Motoboy } from '@/types';
 
-export function useWorkSessions() {
+interface UseWorkSessionsReturn {
+  workSessions: ExtendedMotoboySession[];
+  motoboys: Motoboy[];
+  loading: boolean;
+  loadWorkSessions: (startDate: Date, endDate: Date, deliveriesByMotoboy: any[]) => Promise<void>;
+}
+
+export function useWorkSessions(): UseWorkSessionsReturn {
   const [workSessions, setWorkSessions] = useState<ExtendedMotoboySession[]>([]);
   const [motoboys, setMotoboys] = useState<Motoboy[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const loadWorkSessions = async (
-    start: Date,
-    end: Date,
-    motoboyStats: { motoboy_id: string; motoboy_nome: string; count: number }[]
-  ) => {
+  const loadWorkSessions = async (startDate: Date, endDate: Date, deliveriesByMotoboy: any[]) => {
+    setLoading(true);
     try {
-      const sessions: ExtendedMotoboySession[] = [];
-      for (const statsItem of motoboyStats) {
-        const { data, error } = await supabase
-          .from('entregas')
-          .select('created_at')
-          .eq('motoboy_id', statsItem.motoboy_id)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString())
-          .order('created_at');
+      // Fetch work sessions
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('motoboy_sessions')
+        .select('id, motoboy_id, start_time, end_time')
+        .gte('start_time', startDate.toISOString())
+        .lte('start_time', endDate.toISOString());
 
-        if (error) throw error;
+      if (sessionsError) throw sessionsError;
 
-        if (data && data.length > 0) {
-          const firstDelivery = new Date(data[0].created_at);
-          const lastDelivery = new Date(data[data.length - 1].created_at);
-          const durationMs = lastDelivery.getTime() - firstDelivery.getTime();
-          const durationHours = Math.round(durationMs / (1000 * 60 * 60) * 10) / 10;
-
-          sessions.push({
-            id: `${statsItem.motoboy_id}-${firstDelivery.getTime()}`,
-            motoboy_id: statsItem.motoboy_id,
-            start_time: firstDelivery.toLocaleString(),
-            end_time: lastDelivery.toLocaleString(),
-            duration: `${durationHours} horas`,
-            user_id: statsItem.motoboy_id
-          });
-        }
-      }
-
-      // Fetch updated motoboy list
-      const { data: motoboyData, error: motoboyError } = await supabase
+      // Fetch motoboys
+      const { data: motoboysData, error: motoboysError } = await supabase
         .from('motoboys')
-        .select('*');
+        .select('id, nome');
 
-      if (motoboyError) throw motoboyError;
-      setMotoboys(motoboyData || []);
-      setWorkSessions(sessions);
+      if (motoboysError) throw motoboysError;
 
+      setMotoboys(motoboysData || []);
+
+      // Calculate duration and format sessions
+      const formattedSessions = sessions?.map(session => {
+        const startTime = new Date(session.start_time);
+        const endTime = session.end_time ? new Date(session.end_time) : new Date();
+        const durationObj = intervalToDuration({ start: startTime, end: endTime });
+        const duration = formatDuration(durationObj);
+
+        const motoboy = motoboysData?.find(m => m.id === session.motoboy_id);
+
+        return {
+          ...session,
+          duration,
+          motoboy_nome: motoboy?.nome,
+        };
+      }) || [];
+
+      setWorkSessions(formattedSessions);
     } catch (error: unknown) {
-      console.error('Erro ao carregar períodos de trabalho:', error);
+      console.error('Erro ao carregar sessões de trabalho:', error);
       if (error instanceof Error) {
-        toast.error(`Erro ao carregar períodos de trabalho: ${error.message}`);
+        toast.error(`Erro ao carregar sessões de trabalho: ${error.message}`);
       } else {
-        toast.error('Erro ao carregar períodos de trabalho: Erro desconhecido');
+        toast.error('Erro ao carregar sessões de trabalho: Erro desconhecido');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
-  return { workSessions, motoboys, loadWorkSessions };
+  return { workSessions, motoboys, loading, loadWorkSessions };
 }

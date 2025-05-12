@@ -8,7 +8,7 @@ import { Truck, BarChart3, MapPin, User, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DeliveryList from './DeliveryList';
 import { useTheme } from '@/hooks/useTheme';
-import { ThemedSection } from '@/components/ui/theme-provider';
+import { Section } from '@/components/layouts/Section';
 import { PageContainer } from '../layouts/PageContainer';
 
 export default function DeliveryManagement() {
@@ -92,11 +92,15 @@ export default function DeliveryManagement() {
           transition={{ duration: 0.3 }}
         >
           {activeTab === 'form' ? (
-            <DeliveryForm onDeliveryAdded={handleDeliveryAdded} />
+            <Section>
+              <DeliveryForm onDeliveryAdded={handleDeliveryAdded} />
+            </Section>
           ) : activeTab === 'deliveries' ? (
             <DeliveryList key={refreshDeliveries} />
           ) : (
-            <DeliveryMotoboyManagement />
+            <Section>
+              <DeliveryMotoboyManagement />
+            </Section>
           )}
         </motion.div>
       </div>

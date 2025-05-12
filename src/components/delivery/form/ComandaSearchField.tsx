@@ -1,6 +1,7 @@
 
 import { Search } from 'lucide-react';
 import { Comanda } from '../../../types/database';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ComandaSearchFieldProps {
   comandaId: string;
@@ -25,9 +26,11 @@ export function ComandaSearchField({
   onSelect,
   hasComandaId,
 }: ComandaSearchFieldProps) {
+  const { isDark, theme } = useTheme();
+  
   return (
     <div className="mb-4">
-      <label htmlFor="comandaId" className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor="comandaId" className="block text-sm font-medium text-foreground mb-1">
         Buscar Pedido (Opcional)
       </label>
       <div className="flex gap-2">
@@ -38,19 +41,19 @@ export function ComandaSearchField({
             value={comandaId}
             onChange={onChange}
             placeholder="Digite os 8 últimos dígitos do pedido"
-            className="w-full p-2 border rounded-l-md"
+            className="w-full p-2 bg-background border border-input rounded-l-md text-foreground"
             disabled={loading}
           />
           {showComandaSearch && comandaSearchResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-10 mt-1 w-full bg-card border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
               {comandaSearchResults.map((comanda) => (
                 <div
                   key={comanda.id}
                   onClick={() => onSelect(comanda)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  className="p-2 hover:bg-accent cursor-pointer"
                 >
-                  <div>ID: {comanda.id?.slice(-8)}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-foreground">ID: {comanda.id?.slice(-8)}</div>
+                  <div className="text-sm text-muted-foreground">
                     {comanda.bairro} - R${' '}
                     {(
                       comanda.forma_pagamento === 'dinheiro' &&
@@ -67,12 +70,12 @@ export function ComandaSearchField({
             </div>
           )}
           {comandaId && comandaSearchResults.length === 0 && !loading && (
-            <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg p-2 text-center text-gray-500">
+            <div className="absolute z-10 mt-1 w-full bg-card border border-border rounded-md shadow-lg p-2 text-center text-muted-foreground">
               Nenhum pedido encontrado
             </div>
           )}
           {loading && comandaId && (
-            <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg p-2 text-center text-gray-500">
+            <div className="absolute z-10 mt-1 w-full bg-card border border-border rounded-md shadow-lg p-2 text-center text-muted-foreground">
               Buscando...
             </div>
           )}
@@ -81,7 +84,7 @@ export function ComandaSearchField({
           type="button"
           onClick={onSearch}
           disabled={loading}
-          className="bg-blue-600 text-white p-2 rounded-r-md hover:bg-blue-700 flex items-center"
+          className="bg-primary text-primary-foreground p-2 rounded-r-md hover:bg-primary/90 flex items-center"
         >
           <Search size={18} />
         </button>
@@ -89,7 +92,7 @@ export function ComandaSearchField({
           <button
             type="button"
             onClick={onClear}
-            className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 flex items-center"
+            className="bg-destructive text-destructive-foreground p-2 rounded-md hover:bg-destructive/90 flex items-center"
           >
             Limpar
           </button>

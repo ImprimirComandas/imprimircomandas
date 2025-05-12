@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -13,6 +14,7 @@ import { Button } from '../../ui/button';
 import { Package, X, Info, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'sonner';
+import { useTheme } from '@/hooks/useTheme';
 import {
   Dialog,
   DialogContent,
@@ -86,6 +88,7 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null); // delivery being confirmed
+  const { isDark } = useTheme();
 
   const fetchDeliveries = async (sessionId: string) => {
     setLoadingDeliveries(true);
@@ -175,7 +178,7 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
 
   if (!sessions || sessions.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-6 text-center text-gray-600">
+      <div className="bg-card rounded-2xl shadow-lg p-6 text-center text-muted-foreground border border-border">
         Nenhuma sessão registrada.
       </div>
     );
@@ -186,33 +189,33 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-white rounded-2xl shadow-xl p-6"
+      className="bg-card rounded-2xl shadow-lg p-6 border border-border"
     >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Histórico de Sessões</h2>
+      <h2 className="text-2xl font-bold text-foreground mb-6">Histórico de Sessões</h2>
 
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Motoboy
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Início
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Fim
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Duração
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Status
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Pagamento
               </TableHead>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Ações
               </TableHead>
             </TableRow>
@@ -228,33 +231,33 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
 
               return (
                 <React.Fragment key={session.id}>
-                  <TableRow>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <TableRow className="hover:bg-accent/50">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                       {motoboy?.nome || 'Desconhecido'}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {session.start_time ? formatDate(session.start_time) : '-'}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {session.end_time ? formatDate(session.end_time) : '-'}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {session.start_time
                         ? calculateSessionDuration(session.start_time, session.end_time)
                         : '-'}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       {session.end_time === null ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
                           Ativa
                         </span>
                       ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">
                           Finalizada
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {isExpanded && !loadingDeliveries
                         ? `R$ ${payment.toFixed(2)}`
                         : '-'}
@@ -284,93 +287,91 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
                   {isExpanded && (
                     <TableRow>
                       <TableCell colSpan={7} className="p-0 border-t-0">
-                        <div className="bg-gray-50 p-4">
-                          <h3 className="font-medium text-gray-700 mb-3">
+                        <div className="bg-accent/30 p-4 rounded-md">
+                          <h3 className="font-medium text-foreground mb-3">
                             Detalhes das Entregas
                           </h3>
-                          <p className="text-sm text-gray-600 mb-2">
-                            Total a pagar: R$ {payment.toFixed(2)}
+                          <p className="text-sm text-foreground mb-2">
+                            Total a pagar: <span className="font-bold">R$ {payment.toFixed(2)}</span>
                           </p>
 
                           {loadingDeliveries ? (
                             <div className="text-center py-3">
-                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                              <p className="text-sm text-gray-500 mt-2">
+                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary mx-auto"></div>
+                              <p className="text-sm text-muted-foreground mt-2">
                                 Carregando entregas...
                               </p>
                             </div>
                           ) : deliveries.length === 0 ? (
-                            <p className="text-sm text-gray-500 py-2">
+                            <p className="text-sm text-muted-foreground py-2">
                               Nenhuma entrega registrada para esta sessão.
                             </p>
                           ) : (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-xs">ID</TableHead>
-                                  <TableHead className="text-xs">Bairro</TableHead>
-                                  <TableHead className="text-xs">Valor</TableHead>
-                                  <TableHead className="text-xs">Data/Hora</TableHead>
-                                  <TableHead className="text-xs">Ações</TableHead>
-                                  <TableHead className="text-xs">Entregue</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {deliveries.map((delivery) => (
-                                  <TableRow key={delivery.id}>
-                                    <TableCell className="text-xs">
-                                      {delivery.comanda_id
-                                        ? delivery.comanda_id.slice(-8)
-                                        : delivery.id.slice(-8)}
-                                    </TableCell>
-                                    <TableCell className="text-xs">
-                                      {delivery.bairro}
-                                    </TableCell>
-                                    <TableCell className="text-xs">
-                                      R$ {delivery.valor_entrega.toFixed(2)}
-                                    </TableCell>
-                                    <TableCell className="text-xs">
-                                      {format(new Date(delivery.created_at), 'dd/MM HH:mm')}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => viewDeliveryDetails(delivery)}
-                                      >
-                                        <Info className="h-3.5 w-3.5" />
-                                      </Button>
-                                    </TableCell>
-                                    <TableCell>
-                                      {delivery.status === 'entregue' ? (
-                                        <span className="inline-flex items-center text-green-600">
-                                          <Check className="h-4 w-4 mr-1" /> Entregue
-                                        </span>
-                                      ) : (
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">ID</TableHead>
+                                    <TableHead className="text-xs">Bairro</TableHead>
+                                    <TableHead className="text-xs">Valor</TableHead>
+                                    <TableHead className="text-xs">Data/Hora</TableHead>
+                                    <TableHead className="text-xs">Ações</TableHead>
+                                    <TableHead className="text-xs">Entregue</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {deliveries.map((delivery) => (
+                                    <TableRow key={delivery.id} className="hover:bg-accent/50">
+                                      <TableCell className="text-xs text-foreground">
+                                        {delivery.comanda_id
+                                          ? delivery.comanda_id.slice(-8)
+                                          : delivery.id.slice(-8)}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-foreground">
+                                        {delivery.bairro}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-foreground">
+                                        R$ {delivery.valor_entrega.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-foreground">
+                                        {formatDate(delivery.created_at)}
+                                      </TableCell>
+                                      <TableCell className="text-xs">
                                         <Button
-                                          variant="default"
+                                          variant="ghost"
                                           size="sm"
-                                          disabled={!!confirmingId}
-                                          onClick={() => handleConfirmDelivery(delivery)}
+                                          className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                          onClick={() => viewDeliveryDetails(delivery)}
+                                        >
+                                          <Info size={14} />
+                                        </Button>
+                                      </TableCell>
+                                      <TableCell className="text-xs">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`h-8 px-2 ${
+                                            delivery.status === 'entregue'
+                                              ? 'text-green-600 dark:text-green-400'
+                                              : 'text-amber-600 dark:text-amber-400'
+                                          }`}
+                                          onClick={() => handleDeliveryStatusChange(delivery)}
+                                          disabled={confirmingId === delivery.id}
                                         >
                                           {confirmingId === delivery.id ? (
-                                            <span className="animate-spin">
-                                              <Check className="h-4 w-4" />
-                                            </span>
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                          ) : delivery.status === 'entregue' ? (
+                                            <Check size={14} />
                                           ) : (
-                                            <>
-                                              <Check className="h-4 w-4 mr-1" />
-                                              Confirmar
-                                            </>
+                                            'Pendente'
                                           )}
                                         </Button>
-                                      )}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
                           )}
                         </div>
                       </TableCell>
@@ -388,52 +389,60 @@ export default function SessionHistory({ sessions, motoboys, onRefresh }: Sessio
           <DialogHeader>
             <DialogTitle>Detalhes da Entrega</DialogTitle>
             <DialogDescription>
-              Informações da entrega{' '}
-              {selectedDelivery?.comanda_id
-                ? `#${selectedDelivery.comanda_id.slice(-8)}`
-                : `ID: ${selectedDelivery?.id.slice(-8)}`}
+              Informações detalhadas sobre esta entrega
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Bairro</p>
-                <p className="text-sm">{selectedDelivery?.bairro || 'N/A'}</p>
+          {selectedDelivery && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-semibold text-muted-foreground">ID:</div>
+                <div className="text-foreground">{selectedDelivery.id.slice(-8)}</div>
+                
+                <div className="font-semibold text-muted-foreground">Bairro:</div>
+                <div className="text-foreground">{selectedDelivery.bairro}</div>
+                
+                <div className="font-semibold text-muted-foreground">Valor:</div>
+                <div className="text-foreground">R$ {selectedDelivery.valor_entrega.toFixed(2)}</div>
+                
+                <div className="font-semibold text-muted-foreground">Forma Pagamento:</div>
+                <div className="text-foreground">{selectedDelivery.forma_pagamento.toUpperCase()}</div>
+                
+                <div className="font-semibold text-muted-foreground">Origem:</div>
+                <div className="text-foreground">{selectedDelivery.origem}</div>
+                
+                <div className="font-semibold text-muted-foreground">Status:</div>
+                <div className={`font-medium ${
+                  selectedDelivery.status === 'entregue' 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  {selectedDelivery.status === 'entregue' ? 'ENTREGUE' : 'PENDENTE'}
+                </div>
+                
+                <div className="font-semibold text-muted-foreground">Data/Hora:</div>
+                <div className="text-foreground">{formatDate(selectedDelivery.created_at)}</div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Valor</p>
-                <p className="text-sm">
-                  R$ {selectedDelivery?.valor_entrega.toFixed(2) || '0.00'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Forma de Pagamento</p>
-                <p className="text-sm capitalize">
-                  {selectedDelivery?.forma_pagamento || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Origem</p>
-                <p className="text-sm capitalize">
-                  {selectedDelivery?.origem || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Data</p>
-                <p className="text-sm">
-                  {selectedDelivery
-                    ? format(new Date(selectedDelivery.created_at), 'dd/MM/yyyy HH:mm')
-                    : 'N/A'}
-                </p>
-              </div>
+              
+              {selectedDelivery.comanda_id && (
+                <div className="mt-2 p-2 bg-primary/10 rounded">
+                  <p className="text-xs text-muted-foreground">Pedido Vinculado:</p>
+                  <p className="text-sm font-medium text-foreground">#{selectedDelivery.comanda_id.slice(-8)}</p>
+                </div>
+              )}
             </div>
-          </div>
-
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Fechar
             </Button>
+            {selectedDelivery && selectedDelivery.status !== 'entregue' && (
+              <Button onClick={() => {
+                handleConfirmDelivery(selectedDelivery);
+                setDialogOpen(false);
+              }}>
+                Confirmar Entrega
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

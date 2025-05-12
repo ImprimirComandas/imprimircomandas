@@ -5,6 +5,7 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateRange } from 'react-date-range';
 import { Button } from '@/components/ui/button';
 import { RangeKeyDict } from 'react-date-range';
+import { useTheme } from '@/hooks/useTheme';
 import 'react-date-range/dist/styles.css'; // Import styles
 import 'react-date-range/dist/theme/default.css'; // Import theme
 
@@ -22,6 +23,7 @@ export function DateRangeSelector({
   onShowCalendarChange
 }: DateRangeSelectorProps) {
   const calendarRef = useRef<HTMLDivElement>(null);
+  const { isDark } = useTheme();
 
   const handlePeriodChange = (direction: 'prev' | 'next') => {
     // We'll let the parent component handle this
@@ -61,6 +63,7 @@ export function DateRangeSelector({
           <div
             ref={calendarRef}
             className="absolute z-50 mt-2 bg-card border border-border rounded-lg shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <DateRange
               ranges={dateRange}
@@ -70,6 +73,8 @@ export function DateRangeSelector({
               direction="vertical"
               months={1}
               className="rounded-lg"
+              color={isDark ? 'hsl(var(--primary))' : 'hsl(var(--primary))'}
+              rangeColors={[isDark ? 'hsl(var(--primary))' : 'hsl(var(--primary))']}
             />
           </div>
         )}

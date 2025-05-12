@@ -62,21 +62,30 @@ export function useOrdersData() {
 
   const reprintOrder = async (comanda: Comanda) => {
     try {
-      const subtotal = comanda.produtos.reduce((sum, p) => sum + p.valor * p.quantidade, 0);
-      const total = subtotal + (comanda.taxaentrega || 0);
+      // Ensure produtos is always an array
+      const produtos = comanda.produtos || [];
+      const subtotal = produtos.reduce((sum, p) => sum + (p.valor || 0) * (p.quantidade || 0), 0);
+      const total = subtotal + (comanda.taxaentrega || comanda.taxa_entrega || 0);
 
+      // Ensure forma_pagamento is one of the allowed values
+      let paymentMethod: "" | "pix" | "dinheiro" | "cartao" | "misto" = "";
+      if (comanda.forma_pagamento && ["", "pix", "dinheiro", "cartao", "misto"].includes(comanda.forma_pagamento)) {
+        paymentMethod = comanda.forma_pagamento as "" | "pix" | "dinheiro" | "cartao" | "misto";
+      }
+
+      // Create a formatted comanda with all required fields and proper types
       const formattedComanda: Comanda = {
         ...comanda,
         id: comanda.id || crypto.randomUUID(),
-        data: comanda.data || new Date().toISOString(),
+        data: comanda.data || new Date().toISOString(), // Ensure data is always defined
         user_id: comanda.user_id || '',
-        produtos: comanda.produtos.map(p => ({
+        produtos: produtos.map(p => ({
           nome: p.nome || 'Produto desconhecido',
-          quantidade: p.quantidade || 1,
-          valor: p.valor || 0,
+          quantidade: p.quantidade || 1, // Ensure quantidade is always defined
+          valor: p.valor || p.preco || 0, // Ensure valor is always defined
         })),
-        total,
-        forma_pagamento: comanda.forma_pagamento || '',
+        total: total, // Ensure total is always defined
+        forma_pagamento: paymentMethod,
         pago: comanda.pago || false,
         troco: comanda.troco || 0,
         quantiapaga: comanda.quantiapaga || 0,
@@ -84,8 +93,8 @@ export function useOrdersData() {
         valor_dinheiro: comanda.valor_dinheiro || 0,
         valor_pix: comanda.valor_pix || 0,
         bairro: comanda.bairro || 'Não especificado',
-        taxaentrega: comanda.taxaentrega || 0,
         endereco: comanda.endereco || 'Não especificado',
+        taxaentrega: comanda.taxaentrega || comanda.taxa_entrega || 0,
       };
 
       await imprimirComanda(formattedComanda);

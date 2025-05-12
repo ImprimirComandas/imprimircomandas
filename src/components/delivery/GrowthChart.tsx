@@ -1,134 +1,108 @@
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Legend,
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  AreaChart,
+  Area,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
 } from 'recharts';
+import { useTheme } from '@/hooks/useTheme';
+import { TrendingUp } from 'lucide-react';
 
 interface GrowthChartProps {
   chartData: { name: string; Pedidos: number; Valor: number }[];
 }
 
 export default function GrowthChart({ chartData }: GrowthChartProps) {
+  const { isDark, theme } = useTheme();
+  
+  const isDarkGreen = theme === 'dark-green';
+
+  // Colors based on the current theme
+  const colors = {
+    pedidos: isDarkGreen ? 'hsl(145, 70%, 45%)' : isDark ? 'hsl(var(--primary))' : 'hsl(var(--primary))',
+    valor: isDarkGreen ? 'hsl(80, 70%, 45%)' : isDark ? 'hsl(153, 72%, 53%)' : 'hsl(210, 100%, 50%)',
+    grid: 'hsl(var(--border))',
+    text: 'hsl(var(--muted-foreground))'
+  };
+
+  // Custom tooltip style based on theme
+  const tooltipStyle = {
+    backgroundColor: 'hsl(var(--card))',
+    border: '1px solid hsl(var(--border))',
+    borderRadius: '0.375rem',
+    color: 'hsl(var(--foreground))',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  };
+
   return (
-    <div className="bg-white rounded-lg p-4">
-      <h2 className="text-lg font-medium text-gray-700 mb-3">
-        Crescimento Mensal
-      </h2>
-      {chartData.length > 0 && chartData.some(d => d.Pedidos > 0 || d.Valor > 0) ? (
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-              <XAxis
-                dataKey="name"
-                stroke="#000000"
-                tick={{ fontSize: 12, fill: '#000000' }}
-                tickLine={false}
-                axisLine={{ stroke: '#000000' }}
+    <Card className="border-border bg-card">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center text-foreground">
+          <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+          Crescimento e Desempenho
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {chartData && chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorPedidos" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors.pedidos} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={colors.pedidos} stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={colors.valor} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={colors.valor} stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+              <XAxis 
+                dataKey="name" 
+                stroke={colors.text} 
+                style={{ fontSize: '12px' }} 
               />
-              <YAxis
-                yAxisId="left"
-                stroke="#000000"
-                tick={{ fontSize: 12, fill: '#000000' }}
-                tickLine={false}
-                axisLine={{ stroke: '#000000' }}
-                label={{
-                  value: 'Pedidos',
-                  angle: -90,
-                  position: 'insideLeft',
-                  offset: -5,
-                  fill: '#000000',
-                  fontSize: 12,
+              <YAxis 
+                stroke={colors.text} 
+                style={{ fontSize: '12px' }} 
+              />
+              <Tooltip 
+                contentStyle={tooltipStyle}
+                formatter={(value: number, name: string) => {
+                  return name === 'Valor' ? `R$ ${value.toFixed(2)}` : value;
                 }}
               />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                stroke="#000000"
-                tick={{ fontSize: 12, fill: '#000000' }}
-                tickLine={false}
-                axisLine={{ stroke: '#000000' }}
-                label={{
-                  value: 'Vendas (R$)',
-                  angle: 90,
-                  position: 'insideRight',
-                  offset: -5,
-                  fill: '#000000',
-                  fontSize: 12,
-                }}
+              <Legend />
+              <Area 
+                type="monotone" 
+                dataKey="Pedidos" 
+                stroke={colors.pedidos} 
+                fillOpacity={1} 
+                fill="url(#colorPedidos)" 
+                activeDot={{ r: 6 }}
               />
-              <Tooltip
-                formatter={(value: number, name: string) =>
-                  name === 'Pedidos' ? `${value} pedidos` : `R$ ${value.toFixed(2)}`
-                }
-                contentStyle={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '6px',
-                  border: '1px solid #000000',
-                  padding: '8px',
-                  fontSize: '12px',
-                }}
-                labelStyle={{ color: '#000000', fontSize: '12px' }}
+              <Area 
+                type="monotone" 
+                dataKey="Valor" 
+                stroke={colors.valor} 
+                fillOpacity={1} 
+                fill="url(#colorValor)" 
+                activeDot={{ r: 6 }}
               />
-              <Legend
-                wrapperStyle={{ fontSize: '12px', color: '#000000' }}
-                verticalAlign="bottom"
-                height={24}
-              />
-              {/* Linhas verticais tracejadas para Pedidos */}
-              {chartData.map((entry, index) => (
-                <ReferenceLine
-                  key={`pedidos-${index}`}
-                  x={entry.name}
-                  stroke="#1E90FF"
-                  strokeDasharray="3 3"
-                  strokeWidth={1}
-                  yAxisId="left"
-                  y={0}
-                  ifOverflow="extendDomain"
-                />
-              ))}
-              {/* Linhas verticais tracejadas para Valor */}
-              {chartData.map((entry, index) => (
-                <ReferenceLine
-                  key={`valor-${index}`}
-                  x={entry.name}
-                  stroke="#000000"
-                  strokeDasharray="3 3"
-                  strokeWidth={1}
-                  yAxisId="right"
-                  y={0}
-                  ifOverflow="extendDomain"
-                />
-              ))}
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="Pedidos"
-                stroke="#1E90FF"
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#1E90FF', stroke: '#1E90FF' }}
-                activeDot={{ r: 6, fill: '#1E90FF', stroke: '#FFFFFF', strokeWidth: 2 }}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="Valor"
-                stroke="#000000"
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#000000', stroke: '#000000' }}
-                activeDot={{ r: 6, fill: '#000000', stroke: '#FFFFFF', strokeWidth: 2 }}
-              />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
-        </div>
-      ) : (
-        <p className="text-gray-500 text-center text-sm">Nenhum dado disponível para o gráfico.</p>
-      )}
-    </div>
+        ) : (
+          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            Sem dados disponíveis para o período selecionado
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

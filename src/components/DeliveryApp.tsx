@@ -5,7 +5,6 @@ import { useComandas } from '../hooks/useComandas';
 import { useChartData } from '../hooks/useChartData';
 import { useVisibilityPreference } from '../hooks/useVisibilityPreference';
 import type { Profile } from '../types/database';
-import DeliveryHeader from './delivery/DeliveryHeader';
 import LeftColumn from './delivery/LeftColumn';
 import RightColumn from './delivery/RightColumn';
 import TrocoModalComponent from './TrocoModalComponent';
@@ -13,6 +12,7 @@ import PagamentoMistoModal from './PagamentoMistoModal';
 import PaymentConfirmationModal from './PaymentConfirmationModal';
 import { useTheme } from '../hooks/useTheme';
 import { PageContainer } from './layouts/PageContainer';
+import { PageTitle } from './ui/page-title';
 
 interface DeliveryAppProps {
   profile: Profile | null;
@@ -61,9 +61,9 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     onFormaPagamentoChange,
     onChange,
     handleTrocoConfirm,
-    closeTrocoModal, // This now expects no parameters
+    closeTrocoModal,
     handlePagamentoMistoConfirm,
-    closePagamentoMistoModal, // This now expects no parameters
+    closePagamentoMistoModal,
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
@@ -91,48 +91,55 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
 
   return (
     <PageContainer>
-      <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
-        <DeliveryHeader />
+      <div className="max-w-7xl mx-auto w-full px-4">
+        <PageTitle 
+          title="Sistema de Delivery" 
+          description="Gerencie pedidos, entregas e pagamentos" 
+          className="mt-6"
+        />
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Coluna Esquerda: Formulário de Comanda */}
-          <LeftColumn 
-            comanda={comanda}
-            pesquisaProduto={pesquisaProduto}
-            produtosFiltrados={produtosFiltrados}
-            salvando={salvando}
-            totalComTaxa={totalComTaxa}
-            bairrosDisponiveis={bairrosDisponiveis}
-            loading={loading}
-            onRemoveProduto={removerProduto}
-            onUpdateQuantidade={atualizarQuantidadeProduto}
-            onSaveComanda={salvarComanda}
-            onChange={onChange}
-            onBairroChange={onBairroChange}
-            onFormaPagamentoChange={onFormaPagamentoChange}
-            selecionarProdutoCadastrado={selecionarProdutoCadastrado}
-            startEditingProduct={startEditingProduct}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Coluna Esquerda: Formulário de Comanda - Changed to 6 columns */}
+          <div className="lg:col-span-6">
+            <LeftColumn 
+              comanda={comanda}
+              pesquisaProduto={pesquisaProduto}
+              produtosFiltrados={produtosFiltrados}
+              salvando={salvando}
+              totalComTaxa={totalComTaxa}
+              bairrosDisponiveis={bairrosDisponiveis}
+              loading={loading}
+              onRemoveProduto={removerProduto}
+              onUpdateQuantidade={atualizarQuantidadeProduto}
+              onSaveComanda={salvarComanda}
+              onChange={onChange}
+              onBairroChange={onBairroChange}
+              onFormaPagamentoChange={onFormaPagamentoChange}
+              selecionarProdutoCadastrado={selecionarProdutoCadastrado}
+              startEditingProduct={startEditingProduct}
+            />
+          </div>
 
-          {/* Coluna Direita: Totais, Gráfico e Comandas Anteriores */}
-          <RightColumn 
-            totais={totais}
-            showValues={showValues}
-            toggleShowValues={toggleShowValues}
-            comandasAnteriores={comandasAnteriores}
-            expandedComandas={expandedComandas}
-            carregando={carregando}
-            reimprimirComanda={reimprimirComanda}
-            excluirComanda={excluirComanda}
-            toggleExpandComanda={toggleExpandComanda}
-            getUltimos8Digitos={getUltimos8Digitos}
-            onConfirmPayment={(comanda) => {
-              setComandaSelecionada(comanda);
-              setShowPaymentConfirmation(true);
-            }}
-            chartData={chartData}
-          />
+          {/* Coluna Direita: Totais e Comandas Pendentes - Changed to 6 columns */}
+          <div className="lg:col-span-6">
+            <RightColumn 
+              totais={totais}
+              showValues={showValues}
+              toggleShowValues={toggleShowValues}
+              comandasAnteriores={comandasAnteriores}
+              expandedComandas={expandedComandas}
+              carregando={carregando}
+              reimprimirComanda={reimprimirComanda}
+              excluirComanda={excluirComanda}
+              toggleExpandComanda={toggleExpandComanda}
+              getUltimos8Digitos={getUltimos8Digitos}
+              onConfirmPayment={(comanda) => {
+                setComandaSelecionada(comanda);
+                setShowPaymentConfirmation(true);
+              }}
+              chartData={chartData}
+            />
+          </div>
         </div>
 
         {/* Modais */}
@@ -141,7 +148,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           needsTroco={needsTroco}
           quantiapagaInput={quantiapagaInput}
           totalComTaxa={totalComTaxa}
-          onClose={closeTrocoModal} // No parameter needed now
+          onClose={closeTrocoModal}
           onConfirm={handleTrocoConfirm}
           onChange={onChange}
         />
@@ -151,7 +158,7 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
           valorCartaoInput={valorCartaoInput}
           valorDinheiroInput={valorDinheiroInput}
           valorPixInput={valorPixInput}
-          onClose={closePagamentoMistoModal} // No parameter needed now
+          onClose={closePagamentoMistoModal}
           onConfirm={handlePagamentoMistoConfirm}
           onChange={onChange}
         />

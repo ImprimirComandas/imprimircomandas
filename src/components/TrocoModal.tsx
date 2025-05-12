@@ -1,10 +1,12 @@
 
 import React from 'react';
+import { useTheme } from '@/hooks/useTheme';
+import { toast } from 'sonner';
 
 interface TrocoModalProps {
   show: boolean;
   needsTroco: boolean | null;
-  quantiapagaInput: string;
+  quantiapagaInput: string | number | null;
   totalComTaxa: number;
   onClose: () => void;
   onConfirm: () => void;
@@ -22,14 +24,36 @@ export default function TrocoModal({
   onChange,
   onSaveAndPrint,
 }: TrocoModalProps) {
+  const { isDark } = useTheme();
+  
   if (!show) return null;
 
   const handleConfirmAndSave = () => {
+    if (needsTroco === true) {
+      const value = typeof quantiapagaInput === 'string' 
+        ? parseFloat(quantiapagaInput) 
+        : quantiapagaInput;
+        
+      if (!value || value < totalComTaxa) {
+        toast.error("O valor informado deve ser maior ou igual ao total do pedido");
+        return;
+      }
+    }
+    
     onConfirm();
     if (onSaveAndPrint) {
       onSaveAndPrint();
     }
   };
+
+  const handleSetNeedsTroco = (value: boolean) => {
+    console.log(`Setting needsTroco to:`, value);
+    onChange('needsTroco', value);
+  };
+
+  const quantiaPagaValue = typeof quantiapagaInput === 'string' ? 
+    quantiapagaInput : 
+    quantiapagaInput !== null ? String(quantiapagaInput) : '';
 
   return (
     <div
@@ -40,62 +64,61 @@ export default function TrocoModal({
       role="dialog"
     >
       <div
-        className={`bg-white rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg transform transition-all duration-300 ${
+        className={`bg-card text-card-foreground rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg border border-border transform transition-all duration-300 ${
           show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-5">
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-5">
           Precisa de Troco?
         </h2>
         <div className="flex gap-3 mb-5">
           <button
-            onClick={() => onChange('needsTroco', true)}
+            onClick={() => handleSetNeedsTroco(true)}
             className={`flex-1 py-2.5 rounded-lg font-medium transition-all duration-200 ${
               needsTroco === true
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
             }`}
+            type="button"
             aria-pressed={needsTroco === true}
           >
             Sim
           </button>
           <button
-            onClick={() => {
-              onChange('needsTroco', false);
-              onChange('quantiapagaInput', '');
-            }}
+            onClick={() => handleSetNeedsTroco(false)}
             className={`flex-1 py-2.5 rounded-lg font-medium transition-all duration-200 ${
               needsTroco === false
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
             }`}
+            type="button"
             aria-pressed={needsTroco === false}
           >
             Não
           </button>
         </div>
-        {needsTroco && (
+        {needsTroco === true && (
           <div className="mb-5">
             <label
               htmlFor="quantiapaga"
-              className="block text-sm font-medium text-gray-700 mb-1.5"
+              className="block text-sm font-medium text-foreground mb-1.5"
             >
               Quantia Paga (R$)
             </label>
             <input
               id="quantiapaga"
               type="number"
-              value={quantiapagaInput}
+              value={quantiaPagaValue}
               onChange={(e) => onChange('quantiapagaInput', e.target.value)}
               placeholder="Digite a quantia paga"
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200"
+              className="w-full p-2.5 border border-input bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
               step="0.01"
               min={totalComTaxa}
               aria-describedby="troco-info"
             />
-            {quantiapagaInput && parseFloat(quantiapagaInput) > totalComTaxa && (
-              <p id="troco-info" className="mt-2 text-sm text-gray-500">
-                Troco: R$ {(parseFloat(quantiapagaInput) - totalComTaxa).toFixed(2)}
+            {quantiaPagaValue && parseFloat(String(quantiaPagaValue)) > totalComTaxa && (
+              <p id="troco-info" className="mt-2 text-sm text-muted-foreground">
+                Troco: R$ {(parseFloat(String(quantiaPagaValue)) - totalComTaxa).toFixed(2)}
               </p>
             )}
           </div>
@@ -103,8 +126,9 @@ export default function TrocoModal({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200"
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all duration-200"
             aria-label="Cancelar"
+            type="button"
           >
             Cancelar
           </button>
@@ -112,11 +136,12 @@ export default function TrocoModal({
             onClick={handleConfirmAndSave}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               needsTroco === null
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                ? 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
             }`}
             disabled={needsTroco === null}
             aria-label="Confirmar"
+            type="button"
           >
             Confirmar e Salvar
           </button>

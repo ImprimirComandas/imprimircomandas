@@ -1,216 +1,68 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { startOfDay, endOfDay } from 'date-fns';
-import { Eye, EyeOff } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
-import { TotaisPorStatusPagamentoProps } from '../types';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { TotaisPorStatusPagamentoProps } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
+import { Card } from './ui/card';
+import { CheckCircle, DollarSign } from 'lucide-react';
 
-interface Comanda {
-  total: number;
-  pago: boolean;
-  data: string;
-}
-
-export default function TotaisPorStatusPagamento(props?: TotaisPorStatusPagamentoProps) {
-  const [showValues, setShowValues] = useState(props?.showValues ?? true);
-  const [totais, setTotais] = useState({
-    confirmados: props?.confirmados ?? 0,
-    naoConfirmados: props?.naoConfirmados ?? 0,
-    total: props?.total ?? 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-
-  // Função para buscar totais do dia atual
-  const fetchTotaisDiaAtual = async () => {
-    setLoading(true);
-    try {
-      const start = startOfDay(new Date()).toISOString();
-      const end = endOfDay(new Date()).toISOString();
-
-      const { data, error } = await supabase
-        .from('comandas')
-        .select('total, pago, data')
-        .gte('data', start)
-        .lte('data', end);
-
-      if (error) throw new Error(`Erro ao carregar totais: ${error.message}`);
-
-      const comandas = data as Comanda[];
-
-      const confirmados = comandas
-        .filter(comanda => comanda.pago)
-        .reduce((sum, comanda) => sum + (comanda.total || 0), 0);
-
-      const naoConfirmados = comandas
-        .filter(comanda => !comanda.pago)
-        .reduce((sum, comanda) => sum + (comanda.total || 0), 0);
-
-      const total = confirmados + naoConfirmados;
-      
-      // Visual feedback for updates
-      if (totais.confirmados !== confirmados || 
-          totais.naoConfirmados !== naoConfirmados ||
-          totais.total !== total) {
-        setUpdating(true);
-        setTimeout(() => setUpdating(false), 1000);
-      }
-
-      setTotais({ confirmados, naoConfirmados, total });
-    } catch (error: unknown) {
-      console.error('Erro ao buscar pagamentos:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar totais';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Função para carregar o estado de showValues do Supabase
-  const loadShowValuesState = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('show_payment_values')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116: registro não encontrado
-        throw new Error(`Erro ao carregar configuração: ${error.message}`);
-      }
-
-      setShowValues(data?.show_payment_values ?? true);
-    } catch (error: unknown) {
-      console.error('Erro ao carregar configuração:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar configuração';
-      toast.error(errorMessage);
-    }
-  };
-
-  // Função para salvar o estado de showValues no Supabase
-  const saveShowValuesState = async (value: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert(
-          { user_id: (await supabase.auth.getUser()).data.user?.id, show_payment_values: value },
-          { onConflict: 'user_id' }
-        );
-
-      if (error) throw new Error(`Erro ao salvar configuração: ${error.message}`);
-    } catch (error: unknown) {
-      console.error('Erro ao salvar configuração:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar configuração';
-      toast.error(errorMessage);
-    }
-  };
-
-  // Carregar totais e estado de showValues ao montar o componente
-  useEffect(() => {
-    if (!props?.confirmados) {
-      fetchTotaisDiaAtual();
-    }
-    if (props?.showValues === undefined) {
-      loadShowValuesState();
-    }
-    
-    // Set up real-time subscription
-    const comandasChannel = supabase
-      .channel('pagamentos_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comandas'
-        },
-        (payload) => {
-          console.log('Real-time update from comandas for totals:', payload);
-          fetchTotaisDiaAtual();
-        }
-      )
-      .subscribe();
-      
-    // Clean up subscription
-    return () => {
-      supabase.removeChannel(comandasChannel);
-    };
-  }, [props]);
-
-  // Função para alternar showValues e salvar no Supabase
-  const toggleShowValues = () => {
-    const newValue = !showValues;
-    setShowValues(newValue);
-    if (props?.toggleShowValues) {
-      props.toggleShowValues();
-    } else {
-      saveShowValuesState(newValue);
-    }
-  };
-
+export default function TotaisPorStatusPagamento(props: TotaisPorStatusPagamentoProps) {
+  const { isDark } = useTheme();
+  
+  // Handle both prop patterns for backward compatibility
+  let confirmados = 0;
+  let naoConfirmados = 0;
+  let total = 0;
+  
+  if ('totais' in props && props.totais) {
+    confirmados = props.totais.confirmados || 0;
+    naoConfirmados = props.totais.naoConfirmados || 0;
+    total = props.totais.total || 0;
+  } else if ('confirmados' in props) {
+    confirmados = props.confirmados || 0;
+    naoConfirmados = props.naoConfirmados || 0;
+    total = props.total || 0;
+  }
+  
   return (
-    <div className="relative">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Status de Pagamentos - Hoje</h2>
-        <button
-          onClick={toggleShowValues}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          title={showValues ? 'Ocultar valores' : 'Exibir valores'}
-        >
-          {showValues ? (
-            <Eye className="h-5 w-5 text-gray-600" />
-          ) : (
-            <EyeOff className="h-5 w-5 text-gray-600" />
-          )}
-        </button>
-      </div>
-      {loading ? (
-        <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+    <Card className="p-5 border-border bg-card shadow-sm">
+      <h3 className="font-semibold text-lg mb-4 flex items-center">
+        <DollarSign className="h-5 w-5 text-primary mr-2" />
+        Status de Pagamentos - Hoje
+      </h3>
+      
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <span className="text-sm text-muted-foreground">Pagos</span>
+            <span className="ml-2 bg-green-500/20 text-green-700 dark:text-green-400 px-1.5 py-0.5 text-xs rounded-md">
+              ****
+            </span>
+          </div>
+          <span className="text-lg font-medium text-foreground">
+            R$ {confirmados.toFixed(2)}
+          </span>
         </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          <AnimatePresence>
-            <motion.div 
-              animate={{ scale: updating ? 1.05 : 1 }}
-              transition={{ duration: 0.3 }}
-              className="bg-green-50 p-4 rounded-lg border border-green-200"
-            >
-              <p className="text-sm font-medium text-green-800">Confirmados</p>
-              <p className="text-lg font-bold text-green-900">
-                {showValues ? `R$ ${totais.confirmados.toFixed(2)}` : '****'}
-              </p>
-            </motion.div>
-            <motion.div 
-              animate={{ scale: updating ? 1.05 : 1 }}
-              transition={{ duration: 0.3 }}
-              className="bg-red-50 p-4 rounded-lg border border-red-200"
-            >
-              <p className="text-sm font-medium text-red-800">Não Confirmados</p>
-              <p className="text-lg font-bold text-red-900">
-                {showValues ? `R$ ${totais.naoConfirmados.toFixed(2)}` : '****'}
-              </p>
-            </motion.div>
-            <motion.div 
-              animate={{ scale: updating ? 1.05 : 1 }}
-              transition={{ duration: 0.3 }}
-              className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-            >
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-lg font-bold text-gray-900">
-                {showValues ? `R$ ${totais.total.toFixed(2)}` : '****'}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-      )}
-    </div>
+
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <span className="text-sm text-muted-foreground">Pendentes</span>
+            <span className="ml-2 bg-red-500/20 text-red-700 dark:text-red-400 px-1.5 py-0.5 text-xs rounded-md">
+              ****
+            </span>
+          </div>
+          <span className="text-lg font-medium text-foreground">
+            R$ {naoConfirmados.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="pt-2 border-t border-border flex justify-between items-center">
+          <span className="text-sm font-semibold">Total</span>
+          <span className="text-xl font-bold text-primary">
+            R$ {total.toFixed(2)}
+          </span>
+        </div>
+      </div>
+    </Card>
   );
 }

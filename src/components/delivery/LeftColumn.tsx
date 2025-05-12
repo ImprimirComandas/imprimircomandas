@@ -39,25 +39,23 @@ const LeftColumn: FC<LeftColumnProps> = ({
   startEditingProduct,
 }) => {
   return (
-    <div className="lg:w-1/2 w-full">
-      <ComandaForm
-        comanda={comanda}
-        pesquisaProduto={pesquisaProduto}
-        produtosFiltrados={produtosFiltrados}
-        loading={loading}
-        salvando={salvando}
-        totalComTaxa={totalComTaxa}
-        bairrosDisponiveis={bairrosDisponiveis}
-        onRemoveProduto={onRemoveProduto}
-        onUpdateQuantidade={onUpdateQuantidade}
-        onSaveComanda={onSaveComanda}
-        onChange={onChange}
-        onBairroChange={onBairroChange}
-        onFormaPagamentoChange={onFormaPagamentoChange}
-        selecionarProdutoCadastrado={selecionarProdutoCadastrado}
-        startEditingProduct={startEditingProduct}
-      />
-    </div>
+    <ComandaForm
+      comanda={comanda}
+      pesquisaProduto={pesquisaProduto}
+      produtosFiltrados={produtosFiltrados}
+      loading={loading}
+      salvando={salvando}
+      totalComTaxa={totalComTaxa}
+      bairrosDisponiveis={bairrosDisponiveis}
+      onRemoveProduto={onRemoveProduto}
+      onUpdateQuantidade={onUpdateQuantidade}
+      onSaveComanda={onSaveComanda}
+      onChange={onChange}
+      onBairroChange={onBairroChange}
+      onFormaPagamentoChange={onFormaPagamentoChange}
+      selecionarProdutoCadastrado={selecionarProdutoCadastrado}
+      startEditingProduct={startEditingProduct}
+    />
   );
 };
 

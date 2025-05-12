@@ -1,60 +1,110 @@
 
-// Import and re-export all types from other files
-export * from './motoboy';
-export * from './orders';
-
-// Re-export from ThemeContext to avoid circular dependencies
-import { Theme } from '../contexts/ThemeContext';
-export type { Theme };
-
-// Define theme-related options interfaces
-export interface ThemeClassOptions {
-  light?: string;
-  dark?: string;
-  lightBlue?: string;
-  darkPurple?: string;
-  default?: string;
+export interface Comanda {
+  id?: string;
+  created_at?: string;
+  cliente?: string;
+  telefone?: string;
+  endereco: string;
+  bairro: string;
+  total: number;
+  subtotal?: number;
+  taxa_entrega?: number;
+  taxaentrega: number; // Changed from optional to required to match database.ts
+  observacoes?: string;
+  itens?: Item[];
+  produtos: Produto[];
+  pagamento_confirmado?: boolean;
+  forma_pagamento: "" | "pix" | "dinheiro" | "cartao" | "misto";
+  troco?: number;
+  quantiapaga?: number;
+  pago: boolean;
+  cliente_id?: string;
+  motoboy_id?: string;
+  status?: string;
+  data: string;
+  user_id?: string;
+  valor_cartao?: number;
+  valor_dinheiro?: number;
+  valor_pix?: number;
 }
 
-// Define ExtendedMotoboySession interface
-export interface ExtendedMotoboySession {
+export interface Item {
   id?: string;
-  motoboy_id: string;
-  start_time: string;
-  end_time?: string | null;
-  duration?: string;
-  status?: 'active' | 'completed' | 'cancelled';
-  user_id?: string;
+  produto?: string;
+  quantidade?: number;
+  preco?: number;
+  comanda_id?: string;
+}
+
+export interface BairroTaxa {
+  id?: string;
+  nome: string;
+  taxa: number;
 }
 
 export interface Motoboy {
-  id: string;
+  id?: string;
   nome: string;
-  telefone: string;
-  placa?: string;
-  ativo: boolean;
-  created_at?: string;
+  telefone?: string;
+  email?: string;
+  disponivel?: boolean;
 }
 
-// Update Entrega interface with all required properties and make id optional
-export interface Entrega {
-  id?: string;  // Made id optional to fix initialization errors
+export interface Produto {
+  id?: string;
+  nome: string;
+  preco?: number;
+  valor: number; // Changed from optional to required to match database.ts
+  categoria?: string;
+  descricao?: string;
+  imagem_url?: string;
+  quantidade: number; // Changed from optional to required to match database.ts
+}
+
+export interface ProdutoFiltrado {
+  id: string;
+  nome: string;
+  valor: number;
+  numero?: number;
+}
+
+export interface Categoria {
+  id?: string;
+  nome: string;
+}
+
+export interface Cliente {
+  id?: string;
+  nome: string;
+  telefone: string;
+  endereco: string;
+  bairro: string;
+}
+
+export interface MotoboySession {
+  id?: string;
   motoboy_id: string;
-  comanda_id?: string | null;
-  data_entrega?: string;
-  valor?: number;
-  bairro?: string;
-  origem?: string;
-  status?: string;
-  nome_cliente?: string;
-  endereco?: string;
+  start_time: string;
+  end_time?: string;
+}
+
+export interface ExtendedMotoboySession extends MotoboySession {
+  duration?: string;
   motoboy_nome?: string;
-  created_at?: string;
-  valor_entrega?: number;
-  valor_pedido?: number;
-  forma_pagamento?: string;
-  pago?: boolean;
-  user_id?: string;
+}
+
+export interface DeliveryStats {
+  total: number;
+  byNeighborhood: {
+    bairro: string;
+    count: number;
+  }[];
+}
+
+export interface GrowthChartData {
+  name: string;
+  Pedidos: number;
+  Valor: number;
 }
 
 export interface GroupedDeliveries {
@@ -67,40 +117,49 @@ export interface GroupedDeliveries {
   };
 }
 
-// Update DeliveryTableProps interface to include all required properties
 export interface DeliveryTableProps {
   deliveries: Entrega[];
-  onEdit?: (delivery: Entrega) => void;
-  onDelete?: (delivery: Entrega) => void;  // Changed parameter type from string to Entrega
   onDeleteDelivery?: (delivery: Entrega) => void;
   onEditDelivery?: (delivery: Entrega) => void;
   showDeleteButton?: boolean;
 }
 
-// Update DeliveryTableRowProps interface to include all required properties
 export interface DeliveryTableRowProps {
   delivery: Entrega;
+  onDelete: (delivery: Entrega) => void;
   onEdit: (delivery: Entrega) => void;
-  onDelete: (delivery: Entrega) => void;  // Changed parameter type from string to Entrega
   showDeleteButton?: boolean;
 }
 
-// Update EditDeliveryDialogProps interface to include all required properties
+export interface Entrega {
+  id?: string;
+  created_at?: string;
+  motoboy_id: string;
+  comanda_id: string | null;
+  bairro: string;
+  origem: string;
+  valor_entrega: number;
+  valor_pedido: number;
+  forma_pagamento: string;
+  pago: boolean;
+}
+
 export interface EditDeliveryDialogProps {
+  open: boolean;
+  loading: boolean;
   delivery: Entrega | null;
-  isOpen?: boolean;
-  open?: boolean;
-  loading?: boolean;
-  bairros?: any[];
-  motoboys?: any[];
-  onClose?: () => void;
-  onOpenChange?: (open: boolean) => void;
+  bairros: any[];
+  motoboys: any[];
+  onOpenChange: (open: boolean) => void;
   onSave: (delivery: Entrega) => void;
 }
 
-// Update TotaisPorStatusPagamentoProps interface to include all required properties
 export interface TotaisPorStatusPagamentoProps {
-  comandas?: any[];
+  totais?: {
+    confirmados: number;
+    naoConfirmados: number;
+    total: number;
+  };
   confirmados?: number;
   naoConfirmados?: number;
   total?: number;

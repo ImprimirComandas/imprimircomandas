@@ -2,12 +2,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '@/hooks/useTheme';
 
 interface DeliveryStatsChartProps {
   chartData: { name: string; Entregas: number }[];
 }
 
 export default function DeliveryStatsChart({ chartData }: DeliveryStatsChartProps) {
+  const { isDark } = useTheme();
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -15,7 +18,7 @@ export default function DeliveryStatsChart({ chartData }: DeliveryStatsChartProp
       transition={{ duration: 0.5, delay: 0.2 }}
       className="mb-8"
     >
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <h3 className="text-lg font-semibold text-foreground mb-4">
         Crescimento das Entregas
       </h3>
       {chartData.length > 0 && chartData.some(d => d.Entregas > 0) ? (
@@ -25,21 +28,22 @@ export default function DeliveryStatsChart({ chartData }: DeliveryStatsChartProp
               data={chartData}
               margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="name" stroke="#374151" />
-              <YAxis stroke="#374151" label={{ value: 'Entregas', angle: -90, position: 'insideLeft' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" stroke="currentColor" />
+              <YAxis stroke="currentColor" label={{ value: 'Entregas', angle: -90, position: 'insideLeft', fill: "currentColor" }} />
               <Tooltip
                 formatter={(value: number) => `${value} entregas`}
                 contentStyle={{
-                  backgroundColor: '#fff',
+                  backgroundColor: 'hsl(var(--card))',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: '1px solid hsl(var(--border))',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="Entregas"
-                stroke="#3B82F6"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -48,7 +52,7 @@ export default function DeliveryStatsChart({ chartData }: DeliveryStatsChartProp
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="text-gray-600 text-center">Nenhum dado disponível para o período selecionado.</p>
+        <p className="text-muted-foreground text-center">Nenhum dado disponível para o período selecionado.</p>
       )}
     </motion.div>
   );

@@ -2,6 +2,10 @@
 import React from 'react';
 import { Save, X } from 'lucide-react';
 import { Motoboy } from '../../../../types';
+import { useTheme } from '@/hooks/useTheme';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface MotoboyEditFormProps {
   motoboy: Motoboy;
@@ -11,14 +15,16 @@ interface MotoboyEditFormProps {
 
 export default function MotoboyEditForm({ motoboy, onCancel, onSave }: MotoboyEditFormProps) {
   const [editingMotoboy, setEditingMotoboy] = React.useState(motoboy);
+  const { isDark } = useTheme();
 
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="nome" className="block text-sm font-medium text-foreground mb-1">
           Nome
-        </label>
-        <input
+        </Label>
+        <Input
+          id="nome"
           type="text"
           value={editingMotoboy.nome}
           onChange={(e) =>
@@ -28,14 +34,15 @@ export default function MotoboyEditForm({ motoboy, onCancel, onSave }: MotoboyEd
             })
           }
           placeholder="Digite o nome do motoboy"
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-background text-foreground"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="telefone" className="block text-sm font-medium text-foreground mb-1">
           Telefone
-        </label>
-        <input
+        </Label>
+        <Input
+          id="telefone"
           type="tel"
           value={editingMotoboy.telefone}
           onChange={(e) =>
@@ -45,22 +52,25 @@ export default function MotoboyEditForm({ motoboy, onCancel, onSave }: MotoboyEd
             })
           }
           placeholder="Digite o telefone do motoboy"
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-background text-foreground"
         />
       </div>
       <div className="flex justify-end gap-2 mt-3">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onCancel}
-          className="p-2 rounded-full text-gray-600 hover:bg-gray-100"
         >
           <X className="h-5 w-5" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onSave(editingMotoboy)}
-          className="p-2 rounded-full text-green-600 hover:bg-green-100"
+          className="text-primary hover:text-primary hover:bg-primary/10"
         >
           <Save className="h-5 w-5" />
-        </button>
+        </Button>
       </div>
     </div>
   );

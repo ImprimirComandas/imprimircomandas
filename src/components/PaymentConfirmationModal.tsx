@@ -1,5 +1,6 @@
 
 import { Check, X } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import type { Comanda } from '../types/database';
 
 interface PaymentConfirmationModalProps {
@@ -15,6 +16,8 @@ export default function PaymentConfirmationModal({
   onClose,
   onConfirm,
 }: PaymentConfirmationModalProps) {
+  const { isDark } = useTheme();
+  
   if (!show || !comanda) return null;
 
   return (
@@ -28,37 +31,37 @@ export default function PaymentConfirmationModal({
       }}
     >
       <div
-        className="bg-white rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg transform transition-all duration-300"
+        className="bg-card text-card-foreground rounded-xl p-6 w-full max-w-sm sm:max-w-md shadow-lg border border-border transform transition-all duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
             Confirmar Pagamento
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700" title="Fechar">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors" title="Fechar">
             <X size={24} />
           </button>
         </div>
         
         <div className="mb-6">
-          <p className="text-lg text-gray-700">
+          <p className="text-lg text-foreground">
             Pedido #{comanda.id?.slice(-8) || 'N/A'}
           </p>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Total: R$ {comanda.total.toFixed(2)}
           </p>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Forma de pagamento: {comanda.forma_pagamento.toUpperCase()}
           </p>
-          <p className="text-gray-600">
-            Status atual: <span className={comanda.pago ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+          <p className="text-muted-foreground">
+            Status atual: <span className={`font-medium ${comanda.pago ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               {comanda.pago ? 'PAGO' : 'NÃO PAGO'}
             </span>
           </p>
         </div>
 
         <div className="text-center mb-4">
-          <p className="text-gray-700 font-medium">
+          <p className="text-foreground font-medium">
             Deseja {comanda.pago ? 'cancelar o pagamento' : 'confirmar o pagamento'} deste pedido?
           </p>
         </div>
@@ -66,17 +69,17 @@ export default function PaymentConfirmationModal({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200"
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-all duration-200"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
               comanda.pago 
-                ? 'bg-orange-600 text-white hover:bg-orange-700' 
-                : 'bg-green-600 text-white hover:bg-green-700'
-            } shadow-sm flex items-center gap-2`}
+                ? 'bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800' 
+                : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
+            } shadow-sm`}
           >
             <Check size={18} />
             {comanda.pago ? 'Marcar como Não Pago' : 'Confirmar Pagamento'}

@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import type { Comanda } from '../../../types/database';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PaymentOptionsProps {
   forma_pagamento: Comanda['forma_pagamento'];
@@ -12,6 +13,7 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   onFormaPagamentoChange,
 }) => {
   const [selectedOption, setSelectedOption] = useState<Comanda['forma_pagamento']>(forma_pagamento);
+  const { isDark } = useTheme();
   
   // Update local state when prop changes
   useEffect(() => {
@@ -27,8 +29,8 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Forma de Pagamento <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-foreground">
+          Forma de Pagamento <span className="text-destructive">*</span>
         </label>
         <div className="mt-2 flex flex-wrap gap-3">
           {['pix', 'dinheiro', 'cartao', 'misto'].map((forma) => (
@@ -36,8 +38,8 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
               key={forma} 
               className={`flex items-center p-3 rounded-md transition-colors duration-200 cursor-pointer ${
                 selectedOption === forma 
-                  ? 'bg-blue-100 border-2 border-blue-500 font-medium shadow-sm' 
-                  : 'border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-primary/20 border-2 border-primary font-medium' 
+                  : 'border border-input hover:bg-accent/50'
               }`}
             >
               <input
@@ -46,9 +48,9 @@ export const PaymentOptions: React.FC<PaymentOptionsProps> = ({
                 value={forma}
                 checked={selectedOption === forma}
                 onChange={() => handleOptionChange(forma as Comanda['forma_pagamento'])}
-                className="mr-2 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                className="mr-2 h-4 w-4 text-primary border-input focus:ring-primary"
               />
-              <span className="text-sm capitalize">{forma}</span>
+              <span className="text-sm capitalize text-foreground">{forma}</span>
             </label>
           ))}
         </div>

@@ -4,6 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 import { PaymentTotal } from './payment/PaymentTotal';
 import { PaymentOptions } from './payment/PaymentOptions';
 import { Checkbox } from '../ui/checkbox';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PaymentSectionProps {
   subtotal: number;
@@ -26,6 +27,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   onFormaPagamentoChange,
   onChange,
 }) => {
+  const { isDark } = useTheme();
+  
   const handlePagoChange = (checked: boolean) => {
     console.log('Payment status changed to:', checked);
     onChange('pago', checked);
@@ -50,20 +53,20 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           checked={pago}
           onCheckedChange={handlePagoChange}
         />
-        <label htmlFor="pago" className="text-sm font-medium text-gray-700 cursor-pointer">
+        <label htmlFor="pago" className="text-sm font-medium text-foreground cursor-pointer">
           Pedido Pago
         </label>
       </div>
 
       {!isShopOpen && (
-        <div className="mt-4 rounded-md bg-red-50 p-4">
+        <div className="mt-4 rounded-md bg-destructive/10 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <AlertTriangle className="h-5 w-5 text-red-400" aria-hidden="true" />
+              <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden="true" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Atenção</h3>
-              <div className="mt-2 text-sm text-red-700">
+              <h3 className="text-sm font-medium text-destructive">Atenção</h3>
+              <div className="mt-2 text-sm text-destructive/80">
                 <p>A loja está fechada. Não é possível cadastrar novos pedidos.</p>
               </div>
             </div>
@@ -72,4 +75,4 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       )}
     </div>
   );
-};
+}

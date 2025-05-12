@@ -8,6 +8,7 @@ import MotoboyEditForm from './MotoboyEditForm';
 import DeliveryStats from './DeliveryStats';
 import SessionControls from './SessionControls';
 import { ClockIcon } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface MotoboyCardProps {
   motoboy: Motoboy;
@@ -37,13 +38,14 @@ export default function MotoboyCard({
 }: MotoboyCardProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [isStatsExpanded, setIsStatsExpanded] = React.useState(false);
+  const { isDark } = useTheme();
   const isActive = activeSessions.length > 0;
 
   if (isEditing) {
     return (
       <motion.div
         className={`p-4 rounded-xl border ${
-          isActive ? 'border-green-500 bg-green-50' : 'border-gray-200'
+          isActive ? 'border-primary bg-primary/10' : 'border-border bg-card'
         }`}
       >
         <MotoboyEditForm
@@ -61,22 +63,28 @@ export default function MotoboyCard({
   return (
     <motion.div
       className={`p-4 rounded-xl border ${
-        isActive ? 'border-green-500 bg-green-50' : 'border-gray-200'
+        isActive ? 'border-primary bg-primary/10' : 'border-border bg-card'
       }`}
     >
       <div className="flex justify-between">
-        <h3 className="font-semibold text-gray-800">{motoboy.nome}</h3>
+        <h3 className="font-semibold text-foreground">{motoboy.nome}</h3>
         <div className="flex gap-1">
           <button
             onClick={() => setIsEditing(true)}
-            className="p-1 rounded-full text-blue-600 hover:bg-blue-100"
+            className={`p-1 rounded-full ${isDark 
+              ? 'text-blue-400 hover:bg-blue-900/30' 
+              : 'text-blue-600 hover:bg-blue-100'}`}
             title="Editar"
           >
             <Edit className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(motoboy.id)}
-            className="p-1 rounded-full text-red-600 hover:bg-red-100"
+            className={`p-1 rounded-full ${
+              isDark 
+                ? 'text-red-400 hover:bg-red-900/30' 
+                : 'text-red-600 hover:bg-red-100'
+            }`}
             disabled={isActive}
             title={isActive ? 'Finalize a sessão para excluir' : 'Excluir'}
           >
@@ -86,14 +94,14 @@ export default function MotoboyCard({
       </div>
 
       {motoboy.telefone && (
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Telefone: {motoboy.telefone}
         </p>
       )}
 
       {isActive && activeSessions[0] && (
         <div className="mt-3">
-          <div className="flex items-center text-green-600 text-sm font-medium mb-2">
+          <div className="flex items-center text-primary text-sm font-medium mb-2">
             <ClockIcon className="h-4 w-4 mr-1" />
             <span>
               Em atividade: {calculateSessionDuration(activeSessions[0].start_time, null)}

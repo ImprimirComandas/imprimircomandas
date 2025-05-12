@@ -1,13 +1,27 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ThemeContext, ThemeContextType, Theme } from './ThemeContext';
 
-const defaultTheme: Theme = 'light';
+export type Theme = 'light' | 'dark' | 'light-blue' | 'dark-purple' | 'dark-green' | 'supabase' | string;
+
+export interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  isDarkTheme: boolean;
+}
+
+// Create the context with default values
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: 'dark-green',
+  setTheme: () => {},
+  isDarkTheme: true,
+});
+
+const defaultTheme: Theme = 'dark-green'; // Changed to dark-green theme
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
 
   useEffect(() => {
     // Load theme from local storage or user preferences
@@ -15,22 +29,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      // Check system preference
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark');
-      }
+      // Use dark-green theme as default
+      setTheme('dark-green');
     }
   }, []);
 
   useEffect(() => {
-    const isDark = theme.includes('dark');
+    const isDark = theme.includes('dark') || theme === 'supabase'; // Supabase is dark
     setIsDarkTheme(isDark);
     
     // Apply theme class to document
     const root = window.document.documentElement;
     
     // Remove all theme classes first
-    root.classList.remove('theme-light', 'theme-dark', 'theme-light-blue', 'theme-dark-purple');
+    root.classList.remove(
+      'theme-light', 
+      'theme-dark', 
+      'theme-light-blue', 
+      'theme-dark-purple', 
+      'theme-dark-green',
+      'theme-supabase'
+    );
     
     // Add the selected theme class
     root.classList.add(`theme-${theme}`);
@@ -70,7 +89,3 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 // Export a custom hook for using the theme context
 export const useThemeContext = () => useContext(ThemeContext);
-
-// Re-export Theme type for convenience
-export type { Theme };
-export { ThemeContext };

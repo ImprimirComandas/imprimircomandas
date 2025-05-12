@@ -18,7 +18,8 @@ export const Section: React.FC<SectionProps> = ({
   className = '',
   delay = 0
 }) => {
-  const { isDark } = useTheme();
+  const { isDark, theme } = useTheme();
+  const isSupabase = theme === 'supabase';
   
   return (
     <motion.section
@@ -30,14 +31,20 @@ export const Section: React.FC<SectionProps> = ({
       {(title || description) && (
         <div className="mb-6">
           {title && (
-            <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+            <h2 className="text-2xl font-bold text-foreground flex items-center">
+              {isSupabase && <div className="w-1.5 h-5 bg-primary rounded-full mr-2"></div>}
+              {title}
+            </h2>
           )}
           {description && (
             <p className="mt-2 text-muted-foreground">{description}</p>
           )}
         </div>
       )}
-      <div className="bg-card border border-border rounded-xl shadow-sm p-6">
+      <div className={`
+        bg-card border border-border rounded-xl shadow-sm p-6
+        ${isSupabase ? 'backdrop-blur-sm bg-card/80' : ''}
+      `}>
         {children}
       </div>
     </motion.section>

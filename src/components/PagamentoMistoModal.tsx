@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PagamentoMistoModalProps {
   show: boolean;
@@ -22,6 +23,8 @@ export default function PagamentoMistoModal({
   onConfirm,
   onChange,
 }: PagamentoMistoModalProps) {
+  const { isDark } = useTheme();
+  
   if (!show) return null;
   
   const totalAtual = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
@@ -54,11 +57,11 @@ export default function PagamentoMistoModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Pagamento Misto</h2>
+      <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Pagamento Misto</h2>
         <div className="space-y-4">
           <div>
-            <label htmlFor="valorCartaoInput" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valorCartaoInput" className="block text-sm font-medium text-foreground">
               Valor no Cartão
             </label>
             <input
@@ -67,13 +70,13 @@ export default function PagamentoMistoModal({
               name="valorCartaoInput"
               value={valorCartaoInput === null ? '' : valorCartaoInput}
               onChange={(e) => onChange('valorCartaoInput', e.target.value)}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 w-full border border-input bg-background text-foreground rounded-md"
               min="0"
               step="0.01"
             />
           </div>
           <div>
-            <label htmlFor="valorDinheiroInput" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valorDinheiroInput" className="block text-sm font-medium text-foreground">
               Valor em Dinheiro
             </label>
             <input
@@ -82,13 +85,13 @@ export default function PagamentoMistoModal({
               name="valorDinheiroInput"
               value={valorDinheiroInput === null ? '' : valorDinheiroInput}
               onChange={(e) => onChange('valorDinheiroInput', e.target.value)}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 w-full border border-input bg-background text-foreground rounded-md"
               min="0"
               step="0.01"
             />
           </div>
           <div>
-            <label htmlFor="valorPixInput" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="valorPixInput" className="block text-sm font-medium text-foreground">
               Valor no PIX
             </label>
             <input
@@ -97,29 +100,29 @@ export default function PagamentoMistoModal({
               name="valorPixInput"
               value={valorPixInput === null ? '' : valorPixInput}
               onChange={(e) => onChange('valorPixInput', e.target.value)}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+              className="mt-1 p-2 w-full border border-input bg-background text-foreground rounded-md"
               min="0"
               step="0.01"
             />
           </div>
           
-          <div className="p-3 bg-gray-50 rounded-md border">
-            <div className="font-semibold text-gray-700 mb-1">
+          <div className="p-3 bg-accent rounded-md border border-border">
+            <div className="font-semibold text-foreground mb-1">
               Total a pagar: R$ {totalComTaxa.toFixed(2)}
             </div>
             
-            <div className="font-semibold text-gray-700 mb-1">
+            <div className="font-semibold text-foreground mb-1">
               Total informado: R$ {totalAtual.toFixed(2)}
             </div>
             
             {diferenca > 0 && (
-              <div className="font-semibold text-orange-500">
+              <div className="font-semibold text-orange-500 dark:text-orange-400">
                 Faltando: R$ {diferenca.toFixed(2)}
               </div>
             )}
 
             {troco > 0 && (
-              <div className="font-semibold text-green-600">
+              <div className="font-semibold text-green-600 dark:text-green-400">
                 Troco: R$ {troco.toFixed(2)}
               </div>
             )}
@@ -129,17 +132,17 @@ export default function PagamentoMistoModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-md"
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/80 py-2 px-4 rounded-md transition-colors"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              className={`py-2 px-4 rounded-md ${
+              className={`py-2 px-4 rounded-md transition-colors ${
                 confirmacaoValida 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
               }`}
               disabled={!confirmacaoValida}
             >

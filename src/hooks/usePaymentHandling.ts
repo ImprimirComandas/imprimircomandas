@@ -56,7 +56,9 @@ export function usePaymentHandling(totalComTaxa: number) {
 
   const handleInputChange = (field: string, value: any) => {
     if (field === 'needsTroco') {
-      setNeedsTroco(value === 'true' ? true : value === 'false' ? false : null);
+      // Fix: Convert 'needsTroco' to a proper boolean value, not a string
+      // Handle the value directly as a boolean instead of string comparison
+      setNeedsTroco(value === true || value === 'true' ? true : value === false || value === 'false' ? false : null);
     } else if (field === 'quantiapagaInput') {
       setQuantiapagaInput(value ? Number(value) : null);
     } else if (field === 'valorCartaoInput') {
