@@ -88,11 +88,14 @@ export default function OrdersByDay() {
       endDate: endOfDay(newEnd), 
       key: 'selection' 
     }]);
+<<<<<<< HEAD
   };
 
   // Type-safe wrapper for setFilterStatus
   const handleFilterStatusChange = (status: 'all' | 'paid' | 'pending') => {
     setFilterStatus(status);
+=======
+>>>>>>> 32ab48de34b911e4738785205b6198afc3450ca2
   };
 
   return (
