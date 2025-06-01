@@ -1,11 +1,12 @@
-// Update imports to use the correct path for types
+
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { OrderCardHeader } from './OrderCardHeader';
 import { OrderCardDetails } from './OrderCardDetails';
 import { EditOrderForm } from './EditOrderForm';
-import type { Produto, ProdutoFiltrado, Comanda } from '@/types';
+import { useProdutoSearch } from '@/hooks/useProdutoSearch';
+import type { Produto, Comanda } from '@/types';
 
 interface OrderCardProps {
   comanda: Comanda;
@@ -26,10 +27,14 @@ export function OrderCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editedComanda, setEditedComanda] = useState<Partial<Comanda>>(comanda);
   const [getProdutos, setGetProdutos] = useState<Produto[]>(comanda.produtos || []);
-  const [pesquisaProduto, setPesquisaProduto] = useState('');
-  const [produtosFiltrados, setProdutosFiltrados] = useState<ProdutoFiltrado[]>([]);
-  const [loadingProdutos, setLoadingProdutos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    pesquisaProduto,
+    setPesquisaProduto,
+    produtosFiltrados,
+    loading: loadingProdutos,
+  } = useProdutoSearch();
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
@@ -41,6 +46,7 @@ export function OrderCard({
   const cancelEdit = () => {
     setIsEditing(false);
     setEditedComanda(comanda);
+    setPesquisaProduto('');
   };
 
   const saveEdit = async () => {
@@ -49,6 +55,7 @@ export function OrderCard({
       if (success) {
         setIsEditing(false);
         setGetProdutos(editedComanda.produtos as Produto[]);
+        setPesquisaProduto('');
       }
     }
   };

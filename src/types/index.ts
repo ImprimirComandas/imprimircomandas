@@ -47,6 +47,12 @@ export interface Motoboy {
   telefone?: string;
   email?: string;
   disponivel?: boolean;
+  // New payment configuration fields
+  valor_fixo_sessao?: number;
+  entregas_para_desconto?: number;
+  valor_desconto_entrega?: number;
+  taxa_comissao?: number;
+  tipo_pagamento?: 'fixo' | 'comissao' | 'fixo_comissao';
 }
 
 export interface Produto {
@@ -90,6 +96,12 @@ export interface MotoboySession {
 export interface ExtendedMotoboySession extends MotoboySession {
   duration?: string;
   motoboy_nome?: string;
+  // New session summary fields
+  total_entregas?: number;
+  total_taxas_coletadas?: number;
+  valor_fixo_aplicado?: number;
+  descontos_aplicados?: number;
+  valor_final_motoboy?: number;
 }
 
 export interface DeliveryStats {

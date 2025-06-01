@@ -1,7 +1,9 @@
+
 import React, { RefObject } from 'react';
 import { Trash2, Plus, Save } from 'lucide-react';
 import type { Comanda, Produto, ProdutoFiltrado } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
+import { ProductSearch } from '@/components/comanda/ProductSearch';
 
 interface EditOrderFormProps {
   editedComanda: Partial<Comanda>;
@@ -66,39 +68,21 @@ export function EditOrderForm({
     setPesquisaProduto('');
   };
 
+  const handleSearchChange = (field: string, value: string) => {
+    if (field === 'pesquisaProduto') {
+      setPesquisaProduto(value);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <label htmlFor="pesquisa_produto" className="block text-sm font-medium text-foreground">
-          Buscar Produto
-        </label>
-        <input
-          id="pesquisa_produto"
-          ref={searchInputRef}
-          type="text"
-          value={pesquisaProduto}
-          onChange={(e) => setPesquisaProduto(e.target.value)}
-          placeholder="Digite o nome ou número do produto"
-          className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary text-foreground"
-          aria-label="Buscar produto por nome ou número"
-        />
-        {loadingProdutos && (
-          <div className="absolute right-3 top-9 text-muted-foreground">Carregando...</div>
-        )}
-        {produtosFiltrados.length > 0 && (
-          <div className="absolute z-10 w-full bg-background border border-border rounded-lg mt-1 max-h-60 overflow-auto shadow-lg">
-            {produtosFiltrados.map((produto) => (
-              <div
-                key={produto.id}
-                onClick={() => handleSelectProduct(produto)}
-                className="px-4 py-2 hover:bg-accent cursor-pointer text-foreground"
-              >
-                {produto.nome} - R$ {produto.valor.toFixed(2)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <ProductSearch
+        pesquisaProduto={pesquisaProduto}
+        loading={loadingProdutos}
+        produtosFiltrados={produtosFiltrados}
+        onChange={handleSearchChange}
+        onSelectProduct={handleSelectProduct}
+      />
 
       {(editedComanda.produtos || []).map((produto, index) => (
         <div key={index} className="flex items-center gap-3 border-b border-border pb-2">
