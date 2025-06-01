@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   AreaChart,
@@ -13,13 +13,13 @@ import {
 } from 'recharts';
 import { useTheme } from '@/hooks/useTheme';
 import { TrendingUp } from 'lucide-react';
+import { PeriodSelector, ChartPeriod } from '@/components/charts/PeriodSelector';
+import { useChartData } from '@/hooks/useChartData';
 
-interface GrowthChartProps {
-  chartData: { name: string; Pedidos: number; Valor: number }[];
-}
-
-export default function GrowthChart({ chartData }: GrowthChartProps) {
+export default function GrowthChart() {
   const { isDark, theme } = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriod>('week');
+  const { chartData, loading } = useChartData(selectedPeriod);
   
   const isDarkGreen = theme === 'dark-green';
 
@@ -40,16 +40,37 @@ export default function GrowthChart({ chartData }: GrowthChartProps) {
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
   };
 
+  const getPeriodTitle = (period: ChartPeriod) => {
+    switch (period) {
+      case 'today': return 'Hoje';
+      case 'week': return 'Últimos 7 dias';
+      case 'month': return 'Último mês';
+      case 'year': return 'Último ano';
+      case 'all': return 'Histórico completo';
+      default: return 'Crescimento e Desempenho';
+    }
+  };
+
   return (
     <Card className="border-border bg-card">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center text-foreground">
-          <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-          Crescimento e Desempenho
-        </CardTitle>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <CardTitle className="flex items-center text-foreground">
+            <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+            Crescimento e Desempenho - {getPeriodTitle(selectedPeriod)}
+          </CardTitle>
+          <PeriodSelector 
+            selectedPeriod={selectedPeriod}
+            onPeriodChange={setSelectedPeriod}
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        {chartData && chartData.length > 0 ? (
+        {loading ? (
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-primary"></div>
+          </div>
+        ) : chartData && chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>

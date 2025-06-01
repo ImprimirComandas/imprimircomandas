@@ -23,7 +23,6 @@ interface RightColumnProps {
   toggleExpandComanda: (id: string) => void;
   getUltimos8Digitos: (id: string | undefined) => string;
   onConfirmPayment: (comanda: Comanda) => void;
-  chartData: { name: string; Pedidos: number; Valor: number }[];
 }
 
 export default function RightColumn({
@@ -37,8 +36,7 @@ export default function RightColumn({
   excluirComanda,
   toggleExpandComanda,
   getUltimos8Digitos,
-  onConfirmPayment,
-  chartData
+  onConfirmPayment
 }: RightColumnProps) {
   // Filter to only show unconfirmed orders
   const pendingOrders = comandasAnteriores.filter(comanda => !comanda.pago);
@@ -75,8 +73,8 @@ export default function RightColumn({
         toggleShowValues={toggleShowValues}
       />
 
-      {/* Growth Chart */}
-      <GrowthChart chartData={chartData} />
+      {/* Growth Chart - Now self-contained */}
+      <GrowthChart />
     </div>
   );
 }

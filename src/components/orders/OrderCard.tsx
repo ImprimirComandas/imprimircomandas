@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, Edit2, Save, Trash2, Plus, Printer } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +31,26 @@ export function OrderCard({
   const [produtosFiltrados, setProdutosFiltrados] = useState<ProdutoFiltrado[]>([]);
   const [loadingProdutos, setLoadingProdutos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize editedComanda when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setEditedComanda({
+        ...comanda,
+        produtos: getProdutos(), // Ensure produtos is properly formatted
+        taxaentrega: comanda.taxaentrega || 0,
+        forma_pagamento: comanda.forma_pagamento || '',
+        pago: comanda.pago || false,
+        bairro: comanda.bairro || '',
+        endereco: comanda.endereco || '',
+        valor_cartao: comanda.valor_cartao || 0,
+        valor_dinheiro: comanda.valor_dinheiro || 0,
+        valor_pix: comanda.valor_pix || 0,
+        quantiapaga: comanda.quantiapaga || 0,
+        troco: comanda.troco || 0
+      });
+    }
+  }, [isEditing, comanda]);
 
   const getProdutos = (): Produto[] => {
     try {
@@ -112,6 +132,17 @@ export function OrderCard({
 
   const calculateTotal = () => {
     return calculateSubtotal() + (editedComanda.taxaentrega || 0);
+  };
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedComanda({});
+    setPesquisaProduto('');
+    setProdutosFiltrados([]);
   };
 
   const handleSave = () => {
@@ -490,7 +521,7 @@ export function OrderCard({
                         Salvar
                       </Button>
                       <Button
-                        onClick={() => setIsEditing(false)}
+                        onClick={handleCancelEdit}
                         variant="secondary"
                       >
                         Cancelar
@@ -562,7 +593,7 @@ export function OrderCard({
                         {comanda.pago ? 'Desmarcar' : 'Confirmar'}
                       </Button>
                       <Button
-                        onClick={() => setIsEditing(true)}
+                        onClick={handleStartEdit}
                         variant="outline"
                         className="flex items-center gap-2 text-primary"
                       >

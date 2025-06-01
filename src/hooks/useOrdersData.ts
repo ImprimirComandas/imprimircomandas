@@ -173,16 +173,23 @@ export function useOrdersData() {
   }, [comandas, searchTerm, filterStatus]);
 
   const orderTotals = useMemo(() => {
-    return filteredOrders.reduce(
+    const totals = filteredOrders.reduce(
       (acc, comanda) => {
         const valor = comanda.total || 0;
         acc.total += valor;
-        if (comanda.pago) acc.confirmados += valor;
-        else acc.naoConfirmados += valor;
+        if (comanda.pago) {
+          acc.confirmados += valor;
+          acc.pedidosPagos += 1;
+        } else {
+          acc.naoConfirmados += valor;
+          acc.pedidosPendentes += 1;
+        }
         return acc;
       },
-      { confirmados: 0, naoConfirmados: 0, total: 0 }
+      { confirmados: 0, naoConfirmados: 0, total: 0, pedidosPagos: 0, pedidosPendentes: 0 }
     );
+
+    return totals;
   }, [filteredOrders]);
 
   return {
