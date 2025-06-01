@@ -20,14 +20,10 @@ export default function TotaisPorStatusPagamento(props: TotaisPorStatusPagamento
   if ('totais' in props && props.totais) {
     confirmados = props.totais.confirmados || 0;
     naoConfirmados = props.totais.naoConfirmados || 0;
-    total = props.totais.total || 0;
-    // Calculate counts if available
-    if (props.totais.pedidosPagos !== undefined) {
-      pedidosPagos = props.totais.pedidosPagos;
-    }
-    if (props.totais.pedidosPendentes !== undefined) {
-      pedidosPendentes = props.totais.pedidosPendentes;
-    }
+    total = props.totais.total || props.totais.geral || 0;
+    // Get counts from the new totals structure
+    pedidosPagos = props.totais.pedidosPagos || 0;
+    pedidosPendentes = props.totais.pedidosPendentes || 0;
     totalPedidos = pedidosPagos + pedidosPendentes;
   } else if ('confirmados' in props) {
     confirmados = props.confirmados || 0;

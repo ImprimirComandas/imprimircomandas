@@ -137,7 +137,6 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
                 setComandaSelecionada(comanda);
                 setShowPaymentConfirmation(true);
               }}
-              chartData={chartData}
             />
           </div>
         </div>
