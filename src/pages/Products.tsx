@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -6,7 +5,7 @@ import type { Profile } from '../types/database';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
 import { PageContainer } from '../components/layouts/PageContainer';
-import { ThemedSection } from '../components/ui/theme-provider';
+import { Section } from '../components/layouts/Section';
 import { ProductForm } from '../components/products/ProductForm';
 import { ProductFilters } from '../components/products/ProductFilters';
 import { ProductList } from '../components/products/ProductList';
@@ -526,9 +525,8 @@ export function Products() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Form Column */}
           <div className="lg:col-span-2">
-            <ThemedSection>
+            <Section>
               <ProductForm
                 productName={productName}
                 productValue={productValue}
@@ -543,23 +541,22 @@ export function Products() {
                 onDeleteAll={deleteAllProducts}
                 productsCount={products.length}
               />
-            </ThemedSection>
+            </Section>
           </div>
 
-          {/* Actions Column */}
           <div>
-            <ThemedSection>
+            <Section>
               <ProductActions
                 onExport={exportProducts}
                 onFileUpload={handleFileUpload}
                 saving={saving}
                 uploadedFile={uploadedFile}
               />
-            </ThemedSection>
+            </Section>
           </div>
         </div>
 
-        <ThemedSection className="mt-8">
+        <Section className="mt-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
             <h2 className="text-xl font-semibold text-foreground">Produtos Cadastrados</h2>
             <ProductFilters
@@ -580,7 +577,7 @@ export function Products() {
             onDelete={deleteProduct}
             onLoadMore={loadMoreProducts}
           />
-        </ThemedSection>
+        </Section>
       </div>
     </PageContainer>
   );

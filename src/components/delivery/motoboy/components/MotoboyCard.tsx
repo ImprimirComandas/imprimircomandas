@@ -1,129 +1,136 @@
 
 import React from 'react';
-import { Edit, Trash } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Motoboy, MotoboySession } from '../../../../types';
-import { calculateSessionDuration } from '../utils';
-import MotoboyEditForm from './MotoboyEditForm';
-import DeliveryStats from './DeliveryStats';
-import SessionControls from './SessionControls';
-import { ClockIcon } from 'lucide-react';
-import { useTheme } from '@/hooks/useTheme';
+import { Card } from '../../../ui/card';
+import { Play, Square, Edit, Trash2, Phone, DollarSign, Clock } from 'lucide-react';
+import type { Motoboy, ExtendedMotoboySession } from '@/types';
 
 interface MotoboyCardProps {
   motoboy: Motoboy;
-  activeSessions: MotoboySession[];
+  activeSession?: ExtendedMotoboySession;
+  onStartSession: (motoboyId: string) => Promise<void>;
+  onEndSession: () => void;
+  onEdit: () => void;
   onDelete: (id: string) => Promise<void>;
-  onSave: (motoboy: Motoboy) => Promise<void>;
-  onStartSession: () => Promise<void>;
-  onEndSession: (sessionId: string) => Promise<void>;
-  sessionLoading: boolean;
-  deliveryStats: {
-    total: number;
-    byNeighborhood: Array<{ bairro: string; count: number; }>;
-  };
-  loadingStats: boolean;
+  loading: boolean;
 }
 
-export default function MotoboyCard({
+export function MotoboyCard({
   motoboy,
-  activeSessions,
-  onDelete,
-  onSave,
+  activeSession,
   onStartSession,
   onEndSession,
-  sessionLoading,
-  deliveryStats,
-  loadingStats,
+  onEdit,
+  onDelete,
+  loading
 }: MotoboyCardProps) {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [isStatsExpanded, setIsStatsExpanded] = React.useState(false);
-  const { isDark } = useTheme();
-  const isActive = activeSessions.length > 0;
+  const isActive = !!activeSession;
 
-  if (isEditing) {
-    return (
-      <motion.div
-        className={`p-4 rounded-xl border ${
-          isActive ? 'border-primary bg-primary/10' : 'border-border bg-card'
-        }`}
-      >
-        <MotoboyEditForm
-          motoboy={motoboy}
-          onCancel={() => setIsEditing(false)}
-          onSave={async (updatedMotoboy) => {
-            await onSave(updatedMotoboy);
-            setIsEditing(false);
-          }}
-        />
-      </motion.div>
-    );
-  }
+  const getPaymentTypeLabel = (tipo?: string) => {
+    switch (tipo) {
+      case 'fixo': return 'Valor Fixo';
+      case 'comissao': return 'Comissão';
+      case 'fixo_comissao': return 'Fixo + Comissão';
+      default: return 'Não definido';
+    }
+  };
+
+  const formatDuration = (startTime: string) => {
+    const start = new Date(startTime);
+    const now = new Date();
+    const diffMs = now.getTime() - start.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
 
   return (
-    <motion.div
-      className={`p-4 rounded-xl border ${
-        isActive ? 'border-primary bg-primary/10' : 'border-border bg-card'
-      }`}
-    >
-      <div className="flex justify-between">
-        <h3 className="font-semibold text-foreground">{motoboy.nome}</h3>
+    <Card className={`p-4 transition-all ${isActive ? 'ring-2 ring-green-500 bg-green-50/50 dark:bg-green-900/10' : ''}`}>
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground text-lg">{motoboy.nome}</h3>
+          {motoboy.telefone && (
+            <div className="flex items-center text-sm text-muted-foreground mt-1">
+              <Phone className="h-4 w-4 mr-1" />
+              {motoboy.telefone}
+            </div>
+          )}
+        </div>
         <div className="flex gap-1">
           <button
-            onClick={() => setIsEditing(true)}
-            className={`p-1 rounded-full ${isDark 
-              ? 'text-blue-400 hover:bg-blue-900/30' 
-              : 'text-blue-600 hover:bg-blue-100'}`}
-            title="Editar"
+            onClick={onEdit}
+            disabled={loading}
+            className="p-2 rounded-full text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors"
+            aria-label={`Editar ${motoboy.nome}`}
           >
             <Edit className="h-4 w-4" />
           </button>
           <button
-            onClick={() => onDelete(motoboy.id)}
-            className={`p-1 rounded-full ${
-              isDark 
-                ? 'text-red-400 hover:bg-red-900/30' 
-                : 'text-red-600 hover:bg-red-100'
-            }`}
-            disabled={isActive}
-            title={isActive ? 'Finalize a sessão para excluir' : 'Excluir'}
+            onClick={() => onDelete(motoboy.id!)}
+            disabled={loading || isActive}
+            className="p-2 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 disabled:text-muted-foreground disabled:hover:bg-transparent transition-colors"
+            aria-label={`Deletar ${motoboy.nome}`}
           >
-            <Trash className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {motoboy.telefone && (
-        <p className="text-sm text-muted-foreground mt-1">
-          Telefone: {motoboy.telefone}
-        </p>
-      )}
-
-      {isActive && activeSessions[0] && (
-        <div className="mt-3">
-          <div className="flex items-center text-primary text-sm font-medium mb-2">
-            <ClockIcon className="h-4 w-4 mr-1" />
-            <span>
-              Em atividade: {calculateSessionDuration(activeSessions[0].start_time, null)}
-            </span>
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center text-sm">
+          <DollarSign className="h-4 w-4 text-green-600 mr-2" />
+          <span className="text-muted-foreground">Pagamento:</span>
+          <span className="font-medium ml-1">{getPaymentTypeLabel(motoboy.tipo_pagamento)}</span>
+        </div>
+        
+        {motoboy.valor_fixo_sessao && motoboy.valor_fixo_sessao > 0 && (
+          <div className="text-sm text-muted-foreground ml-6">
+            Fixo: R$ {motoboy.valor_fixo_sessao.toFixed(2)}/sessão
           </div>
+        )}
+        
+        {motoboy.taxa_comissao && motoboy.taxa_comissao > 0 && (
+          <div className="text-sm text-muted-foreground ml-6">
+            Comissão: R$ {motoboy.taxa_comissao.toFixed(2)}/entrega
+          </div>
+        )}
+        
+        {motoboy.entregas_para_desconto && motoboy.entregas_para_desconto > 0 && (
+          <div className="text-sm text-muted-foreground ml-6">
+            Desconto: {motoboy.entregas_para_desconto} entregas → -R$ {(motoboy.valor_desconto_entrega || 0).toFixed(2)}/entrega
+          </div>
+        )}
+      </div>
 
-          <DeliveryStats
-            stats={deliveryStats}
-            isExpanded={isStatsExpanded}
-            onToggleExpand={() => setIsStatsExpanded(!isStatsExpanded)}
-            isLoading={loadingStats}
-          />
+      {isActive && activeSession && (
+        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center text-green-800 dark:text-green-300 text-sm font-medium">
+            <Clock className="h-4 w-4 mr-2" />
+            Sessão Ativa: {formatDuration(activeSession.start_time)}
+          </div>
         </div>
       )}
 
-      <SessionControls
-        isActive={isActive}
-        sessionId={activeSessions[0]?.id}
-        onStartSession={onStartSession}
-        onEndSession={onEndSession}
-        disabled={sessionLoading}
-      />
-    </motion.div>
+      <div className="flex gap-2">
+        {!isActive ? (
+          <button
+            onClick={() => onStartSession(motoboy.id!)}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground transition-colors"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Iniciar Sessão
+          </button>
+        ) : (
+          <button
+            onClick={onEndSession}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-muted disabled:text-muted-foreground transition-colors"
+          >
+            <Square className="h-4 w-4 mr-2" />
+            Encerrar Sessão
+          </button>
+        )}
+      </div>
+    </Card>
   );
 }

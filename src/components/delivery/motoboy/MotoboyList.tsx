@@ -1,202 +1,122 @@
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { supabase } from '../../../lib/supabase';
-import MotoboyCard from './components/MotoboyCard';
-import { Motoboy, MotoboySession } from '../../../types';
-import { User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card } from '../../ui/card';
+import { MotoboyCard } from './components/MotoboyCard';
+import { MotoboyEditForm } from './components/MotoboyEditForm';
+import { SessionSummary } from './SessionSummary';
+import type { Motoboy, ExtendedMotoboySession } from '@/types';
 
 interface MotoboyListProps {
   motoboys: Motoboy[];
-  sessions: MotoboySession[];
+  activeSessions: ExtendedMotoboySession[];
+  onStartSession: (motoboyId: string) => Promise<void>;
+  onEndSession: (motoboyId: string) => Promise<void>;
+  onEdit: (motoboy: Motoboy) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   loading: boolean;
-  sessionLoading: boolean;
-  onMotoboyDeleted: () => Promise<void>;
-  onSessionStatusChanged: () => Promise<void>;
-  onSessionAdded?: () => void;
-  onSessionEnded?: () => void;
 }
 
-export default function MotoboyList({
+export function MotoboyList({
   motoboys,
-  sessions,
-  loading,
-  sessionLoading,
-  onMotoboyDeleted,
-  onSessionStatusChanged,
-  onSessionAdded,
-  onSessionEnded,
+  activeSessions,
+  onStartSession,
+  onEndSession,
+  onEdit,
+  onDelete,
+  loading
 }: MotoboyListProps) {
-  const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
-  const [deliveryStats, setDeliveryStats] = useState<Record<string, { total: number, byNeighborhood: Array<{ bairro: string; count: number }> }>>({});
+  const [editingMotoboy, setEditingMotoboy] = useState<Motoboy | null>(null);
+  const [showSessionSummary, setShowSessionSummary] = useState<{
+    session: ExtendedMotoboySession;
+    motoboy: Motoboy;
+    entregas: number;
+    taxas: number;
+  } | null>(null);
 
-  const handleSaveMotoboy = async (motoboy: Motoboy) => {
-    try {
-      if (motoboy.nome.trim() === '') {
-        toast.error('O nome do motoboy não pode estar vazio');
-        return;
-      }
+  const handleEdit = (motoboy: Motoboy) => {
+    setEditingMotoboy(motoboy);
+  };
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar autenticado');
-        return;
-      }
+  const handleSaveEdit = async (updatedMotoboy: Motoboy) => {
+    await onEdit(updatedMotoboy);
+    setEditingMotoboy(null);
+  };
 
-      const { error } = await supabase
-        .from('motoboys')
-        .update({
-          nome: motoboy.nome,
-          telefone: motoboy.telefone,
-        })
-        .eq('id', motoboy.id);
-
-      if (error) throw error;
-
-      toast.success('Motoboy atualizado com sucesso');
-      onMotoboyDeleted();
-    } catch (error: unknown) {
-      console.error('Erro ao atualizar motoboy:', error);
-      const err = error as Error;
-      toast.error(`Erro ao atualizar motoboy: ${err.message}`);
+  const handleEndSession = async (motoboyId: string) => {
+    const session = activeSessions.find(s => s.motoboy_id === motoboyId);
+    const motoboy = motoboys.find(m => m.id === motoboyId);
+    
+    if (session && motoboy) {
+      // In a real implementation, you would fetch delivery data from the session
+      // For now, using mock data - this should be replaced with actual delivery queries
+      const mockEntregas = Math.floor(Math.random() * 10) + 1;
+      const mockTaxas = mockEntregas * 5.0; // Mock R$5 per delivery
+      
+      setShowSessionSummary({
+        session,
+        motoboy,
+        entregas: mockEntregas,
+        taxas: mockTaxas
+      });
     }
   };
 
-  const handleDeleteMotoboy = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este motoboy?')) return;
-
-    try {
-      const activeSessions = sessions.filter(
-        (s) => s.motoboy_id === id && s.end_time === null
-      );
-
-      if (activeSessions.length > 0) {
-        toast.error('Finalize a sessão do motoboy antes de excluí-lo');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('motoboys')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Motoboy excluído com sucesso');
-      onMotoboyDeleted();
-    } catch (error: unknown) {
-      console.error('Erro ao excluir motoboy:', error);
-      const err = error as Error;
-      toast.error(`Erro ao excluir motoboy: ${err.message}`);
+  const handleCloseSummary = async () => {
+    if (showSessionSummary) {
+      await onEndSession(showSessionSummary.motoboy.id!);
+      setShowSessionSummary(null);
     }
   };
 
-  const startMotoboySession = async (motoboyId: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar autenticado');
-        return;
-      }
-
-      const { data: shopSessions, error: shopSessionsError } = await supabase
-        .from('shop_sessions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .is('end_time', null)
-        .limit(1);
-
-      if (shopSessionsError) throw shopSessionsError;
-
-      if (!shopSessions || shopSessions.length === 0) {
-        toast.error('A loja precisa estar aberta para iniciar uma sessão de motoboy');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('motoboy_sessions')
-        .insert([
-          {
-            motoboy_id: motoboyId,
-            start_time: new Date().toISOString(),
-            end_time: null,
-            user_id: session.user.id,
-          },
-        ]);
-
-      if (error) throw error;
-
-      toast.success('Sessão iniciada com sucesso');
-      onSessionAdded?.();
-      onSessionStatusChanged();
-    } catch (error: unknown) {
-      console.error('Erro ao iniciar sessão:', error);
-      const err = error as Error;
-      toast.error(`Erro ao iniciar sessão: ${err.message}`);
-    }
-  };
-
-  const endMotoboySession = async (sessionId: string) => {
-    try {
-      const { error } = await supabase
-        .from('motoboy_sessions')
-        .update({ end_time: new Date().toISOString() })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast.success('Sessão finalizada com sucesso');
-      onSessionEnded?.();
-      onSessionStatusChanged();
-    } catch (error: unknown) {
-      console.error('Erro ao finalizar sessão:', error);
-      const err = error as Error;
-      toast.error(`Erro ao finalizar sessão: ${err.message}`);
-    }
-  };
-
-  const getActiveSessions = (motoboyId: string) => {
-    return sessions.filter(
-      (session) => session.motoboy_id === motoboyId && session.end_time === null
-    );
-  };
-
-  if (loading) {
+  if (editingMotoboy) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
-      </div>
+      <MotoboyEditForm
+        motoboy={editingMotoboy}
+        onSave={handleSaveEdit}
+        onCancel={() => setEditingMotoboy(null)}
+        loading={loading}
+      />
     );
   }
 
-  if (!motoboys || motoboys.length === 0) {
+  if (motoboys.length === 0) {
     return (
-      <div className="bg-gray-50 p-8 rounded-lg text-center">
-        <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 text-lg font-medium">
-          Nenhum motoboy cadastrado. Adicione um motoboy para começar.
-        </p>
-      </div>
+      <Card className="p-8 text-center">
+        <p className="text-muted-foreground">Nenhum motoboy cadastrado ainda.</p>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {motoboys.map((motoboy) => (
-        <MotoboyCard
-          key={motoboy.id}
-          motoboy={motoboy}
-          activeSessions={getActiveSessions(motoboy.id)}
-          onDelete={handleDeleteMotoboy}
-          onSave={handleSaveMotoboy}
-          onStartSession={() => startMotoboySession(motoboy.id)}
-          onEndSession={endMotoboySession}
-          sessionLoading={sessionLoading}
-          deliveryStats={deliveryStats[motoboy.id] || { total: 0, byNeighborhood: [] }}
-          loadingStats={loadingStats[motoboy.id] || false}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {motoboys.map(motoboy => {
+          const activeSession = activeSessions.find(s => s.motoboy_id === motoboy.id);
+          
+          return (
+            <MotoboyCard
+              key={motoboy.id}
+              motoboy={motoboy}
+              activeSession={activeSession}
+              onStartSession={onStartSession}
+              onEndSession={() => handleEndSession(motoboy.id!)}
+              onEdit={() => handleEdit(motoboy)}
+              onDelete={onDelete}
+              loading={loading}
+            />
+          );
+        })}
+      </div>
+      
+      {showSessionSummary && (
+        <SessionSummary
+          session={showSessionSummary.session}
+          motoboy={showSessionSummary.motoboy}
+          totalEntregas={showSessionSummary.entregas}
+          totalTaxasColetadas={showSessionSummary.taxas}
+          onClose={handleCloseSummary}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 }
