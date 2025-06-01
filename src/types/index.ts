@@ -1,4 +1,3 @@
-
 export interface Comanda {
   id?: string;
   created_at?: string;
@@ -158,11 +157,15 @@ export interface TotaisPorStatusPagamentoProps {
   totais?: {
     confirmados: number;
     naoConfirmados: number;
-    total: number;
+    total?: number;
+    geral?: number;
+    pedidosPagos?: number;
+    pedidosPendentes?: number;
   };
+  showValues?: boolean;
+  toggleShowValues?: () => void;
+  // For backward compatibility, also support the old individual props
   confirmados?: number;
   naoConfirmados?: number;
   total?: number;
-  showValues?: boolean;
-  toggleShowValues?: () => void;
 }
