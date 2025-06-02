@@ -32,17 +32,25 @@ export function useNotifications() {
           break;
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+
       const { error } = await supabase
         .from('notifications')
         .insert({
-          comanda_id: comanda.id,
-          user_id: comanda.user_id,
+          criada_por: user.id,
           tipo,
           titulo,
           mensagem,
-          taxa_entrega: comanda.taxaentrega,
-          bairro: comanda.bairro,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+          dados_extras: {
+            comanda_id: comanda.id,
+            taxa_entrega: comanda.taxaentrega,
+            bairro: comanda.bairro,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          }
         });
 
       if (error) throw error;
@@ -76,11 +84,11 @@ export function useNotifications() {
       const { error } = await supabase
         .from('notification_tracking')
         .update({
-          visto_em: new Date().toISOString(),
-          status: 'visto'
+          visualizada_em: new Date().toISOString(),
+          status: 'visualizada'
         })
         .eq('notification_id', notificationId)
-        .eq('device_token', deviceToken);
+        .eq('device_token_id', deviceToken);
 
       if (error) throw error;
       return true;

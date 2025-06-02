@@ -139,28 +139,37 @@ export type Database = {
       }
       device_tokens: {
         Row: {
-          ativo: boolean
-          created_at: string
+          app_version: string | null
+          ativo: boolean | null
+          created_at: string | null
           device_info: Json | null
           id: string
-          last_seen: string
+          last_seen: string | null
+          platform: string | null
           token: string
+          user_id: string | null
         }
         Insert: {
-          ativo?: boolean
-          created_at?: string
+          app_version?: string | null
+          ativo?: boolean | null
+          created_at?: string | null
           device_info?: Json | null
           id?: string
-          last_seen?: string
+          last_seen?: string | null
+          platform?: string | null
           token: string
+          user_id?: string | null
         }
         Update: {
-          ativo?: boolean
-          created_at?: string
+          app_version?: string | null
+          ativo?: boolean | null
+          created_at?: string | null
           device_info?: Json | null
           id?: string
-          last_seen?: string
+          last_seen?: string | null
+          platform?: string | null
           token?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -304,38 +313,101 @@ export type Database = {
         }
         Relationships: []
       }
-      notification_tracking: {
+      notification_campaigns: {
         Row: {
-          device_token: string
-          enviado_em: string
+          agendada_para: string | null
+          created_at: string | null
+          criada_por: string
+          descricao: string | null
+          estatisticas: Json | null
           id: string
-          notification_id: string | null
-          status: string
-          tentativas: number
-          ultimo_erro: string | null
-          visto_em: string | null
+          nome: string
+          notification_template: Json
+          segment_id: string | null
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
-          device_token: string
-          enviado_em?: string
+          agendada_para?: string | null
+          created_at?: string | null
+          criada_por: string
+          descricao?: string | null
+          estatisticas?: Json | null
           id?: string
-          notification_id?: string | null
-          status?: string
-          tentativas?: number
-          ultimo_erro?: string | null
-          visto_em?: string | null
+          nome: string
+          notification_template: Json
+          segment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
-          device_token?: string
-          enviado_em?: string
+          agendada_para?: string | null
+          created_at?: string | null
+          criada_por?: string
+          descricao?: string | null
+          estatisticas?: Json | null
           id?: string
-          notification_id?: string | null
-          status?: string
-          tentativas?: number
-          ultimo_erro?: string | null
-          visto_em?: string | null
+          nome?: string
+          notification_template?: Json
+          segment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "notification_campaigns_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "user_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_tracking: {
+        Row: {
+          created_at: string | null
+          device_token_id: string
+          entregue_em: string | null
+          enviada_em: string | null
+          erro_detalhes: string | null
+          id: string
+          notification_id: string
+          status: string | null
+          tentativas: number | null
+          visualizada_em: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_token_id: string
+          entregue_em?: string | null
+          enviada_em?: string | null
+          erro_detalhes?: string | null
+          id?: string
+          notification_id: string
+          status?: string | null
+          tentativas?: number | null
+          visualizada_em?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_token_id?: string
+          entregue_em?: string | null
+          enviada_em?: string | null
+          erro_detalhes?: string | null
+          id?: string
+          notification_id?: string
+          status?: string | null
+          tentativas?: number | null
+          visualizada_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_tracking_device_token_id_fkey"
+            columns: ["device_token_id"]
+            isOneToOne: false
+            referencedRelation: "device_tokens"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notification_tracking_notification_id_fkey"
             columns: ["notification_id"]
@@ -347,53 +419,60 @@ export type Database = {
       }
       notifications: {
         Row: {
-          ativa: boolean
-          bairro: string | null
-          comanda_id: string | null
-          created_at: string
-          expires_at: string | null
+          agendada_para: string | null
+          created_at: string | null
+          criada_por: string
+          dados_extras: Json | null
+          enviada_em: string | null
           id: string
           mensagem: string
-          taxa_entrega: number | null
+          prioridade: string | null
+          status: string | null
           tipo: string
           titulo: string
-          user_id: string
+          total_dispositivos: number | null
+          total_enviadas: number | null
+          total_falhadas: number | null
+          total_visualizadas: number | null
+          updated_at: string | null
         }
         Insert: {
-          ativa?: boolean
-          bairro?: string | null
-          comanda_id?: string | null
-          created_at?: string
-          expires_at?: string | null
+          agendada_para?: string | null
+          created_at?: string | null
+          criada_por: string
+          dados_extras?: Json | null
+          enviada_em?: string | null
           id?: string
           mensagem: string
-          taxa_entrega?: number | null
+          prioridade?: string | null
+          status?: string | null
           tipo: string
           titulo: string
-          user_id: string
+          total_dispositivos?: number | null
+          total_enviadas?: number | null
+          total_falhadas?: number | null
+          total_visualizadas?: number | null
+          updated_at?: string | null
         }
         Update: {
-          ativa?: boolean
-          bairro?: string | null
-          comanda_id?: string | null
-          created_at?: string
-          expires_at?: string | null
+          agendada_para?: string | null
+          created_at?: string | null
+          criada_por?: string
+          dados_extras?: Json | null
+          enviada_em?: string | null
           id?: string
           mensagem?: string
-          taxa_entrega?: number | null
+          prioridade?: string | null
+          status?: string | null
           tipo?: string
           titulo?: string
-          user_id?: string
+          total_dispositivos?: number | null
+          total_enviadas?: number | null
+          total_falhadas?: number | null
+          total_visualizadas?: number | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_comanda_id_fkey"
-            columns: ["comanda_id"]
-            isOneToOne: false
-            referencedRelation: "comandas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       orders: {
         Row: {
@@ -539,6 +618,72 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          created_at: string | null
+          detalhes: Json | null
+          evento: string
+          id: string
+          ip_address: string | null
+          nivel: string | null
+          user_agent: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          detalhes?: Json | null
+          evento: string
+          id?: string
+          ip_address?: string | null
+          nivel?: string | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          detalhes?: Json | null
+          evento?: string
+          id?: string
+          ip_address?: string | null
+          nivel?: string | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      user_segments: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          criado_por: string
+          criterios: Json
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por: string
+          criterios?: Json
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string
+          criterios?: Json
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           show_payment_values: boolean | null
@@ -559,6 +704,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_notification_stats: {
+        Args: { notification_uuid: string }
+        Returns: undefined
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
@@ -578,6 +727,10 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       search_comandas_by_last_8: {
         Args: Record<PropertyKey, never> | { search_term: string }
