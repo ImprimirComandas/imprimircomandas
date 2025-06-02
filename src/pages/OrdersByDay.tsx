@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { startOfDay, endOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -12,6 +11,7 @@ import { OrderStats } from '@/components/orders/OrderStats';
 import { SimplifiedOrderFilters } from '@/components/orders/SimplifiedOrderFilters';
 import { UnifiedDateNavigator } from '@/components/orders/UnifiedDateNavigator';
 import { PageContainer } from '@/components/layouts/PageContainer';
+import { MassSelectionControls } from '@/components/orders/MassSelectionControls';
 
 // Hooks
 import { useOrdersByDay } from '@/hooks/orders/useOrdersByDay';
@@ -37,7 +37,18 @@ export default function OrdersByDay() {
     togglePayment,
     reprintOrder,
     deleteOrder,
-    saveOrderEdit
+    saveOrderEdit,
+    // Mass selection
+    selectedOrders,
+    isSelectAll,
+    selectedCount,
+    toggleOrder,
+    toggleSelectAll,
+    clearSelection,
+    massConfirmPayment,
+    massDelete,
+    updateOrderInList,
+    removeOrderFromList
   } = useOrdersByDay();
 
   useEffect(() => {
@@ -52,6 +63,21 @@ export default function OrdersByDay() {
 
   const handleFilterStatusChange = (status: 'all' | 'paid' | 'pending') => {
     setFilterStatus(status);
+  };
+
+  const handleMassConfirmPayment = async () => {
+    const selectedIds = Array.from(selectedOrders);
+    await massConfirmPayment(selectedIds, updateOrderInList);
+  };
+
+  const handleMassDelete = async () => {
+    const selectedIds = Array.from(selectedOrders);
+    await massDelete(selectedIds, removeOrderFromList);
+  };
+
+  const handleToggleSelectAll = () => {
+    const orderIds = comandas.map(c => c.id!).filter(Boolean);
+    toggleSelectAll(orderIds);
   };
 
   return (
@@ -90,6 +116,21 @@ export default function OrdersByDay() {
           total={totals.total}
         />
 
+        {comandas.length > 0 && (
+          <div className="mb-6">
+            <MassSelectionControls
+              selectedCount={selectedCount}
+              totalCount={comandas.length}
+              isSelectAll={isSelectAll}
+              onToggleSelectAll={handleToggleSelectAll}
+              onConfirmPayments={handleMassConfirmPayment}
+              onDeleteOrders={handleMassDelete}
+              onClearSelection={clearSelection}
+              loading={loading}
+            />
+          </div>
+        )}
+
         <motion.div layout>
           {loading ? (
             <div className="flex justify-center py-12">
@@ -114,6 +155,9 @@ export default function OrdersByDay() {
                 onReprint={reprintOrder}
                 onDelete={deleteOrder}
                 onSaveEdit={saveOrderEdit}
+                isSelected={selectedOrders.has(comanda.id!)}
+                onToggleSelect={toggleOrder}
+                showSelection={true}
               />
             ))
           )}

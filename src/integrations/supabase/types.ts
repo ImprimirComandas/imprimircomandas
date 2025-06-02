@@ -137,6 +137,33 @@ export type Database = {
           },
         ]
       }
+      device_tokens: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          device_info: Json | null
+          id: string
+          last_seen: string
+          token: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          last_seen?: string
+          token: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          last_seen?: string
+          token?: string
+        }
+        Relationships: []
+      }
       entregas: {
         Row: {
           bairro: string
@@ -276,6 +303,97 @@ export type Database = {
           valor_fixo_sessao?: number | null
         }
         Relationships: []
+      }
+      notification_tracking: {
+        Row: {
+          device_token: string
+          enviado_em: string
+          id: string
+          notification_id: string | null
+          status: string
+          tentativas: number
+          ultimo_erro: string | null
+          visto_em: string | null
+        }
+        Insert: {
+          device_token: string
+          enviado_em?: string
+          id?: string
+          notification_id?: string | null
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+          visto_em?: string | null
+        }
+        Update: {
+          device_token?: string
+          enviado_em?: string
+          id?: string
+          notification_id?: string | null
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+          visto_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_tracking_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          ativa: boolean
+          bairro: string | null
+          comanda_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          mensagem: string
+          taxa_entrega: number | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          ativa?: boolean
+          bairro?: string | null
+          comanda_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          mensagem: string
+          taxa_entrega?: number | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          ativa?: boolean
+          bairro?: string | null
+          comanda_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          mensagem?: string
+          taxa_entrega?: number | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {

@@ -1,8 +1,8 @@
-
 import { useCallback } from 'react';
 import { useOrderData } from './useOrderData';
 import { useOrderActions } from './useOrderActions';
 import { useOrderFilters } from './useOrderFilters';
+import { useMassSelection } from './useMassSelection';
 import type { Comanda } from '@/types';
 import type { DateRange } from 'react-date-range';
 
@@ -31,6 +31,8 @@ export function useOrdersByDay() {
     filteredOrders,
     orderTotals
   } = useOrderFilters(comandas);
+
+  const massSelection = useMassSelection();
 
   const togglePayment = useCallback(async (comanda: Comanda) => {
     const success = await togglePaymentAction(comanda);
@@ -72,6 +74,7 @@ export function useOrdersByDay() {
     togglePayment,
     reprintOrder,
     deleteOrder,
-    saveOrderEdit
+    saveOrderEdit,
+    ...massSelection,
   };
 }
