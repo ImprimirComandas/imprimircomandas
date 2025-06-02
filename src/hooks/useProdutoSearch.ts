@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -39,7 +40,7 @@ export function useProdutoSearch() {
     fetchProdutos();
   }, []);
 
-  // Use debounce to avoid too many filter operations
+  // Use debounce to avoid too many filter operations - LOCAL FILTER ONLY
   const debouncedFilter = useCallback(
     debounce((searchTerm: string) => {
       if (!searchTerm || searchTerm.trim() === '') {
@@ -49,6 +50,7 @@ export function useProdutoSearch() {
       }
       
       setLoading(true);
+      // LOCAL FILTER ONLY - no database calls
       const filtered = produtosCadastrados.filter(
         (p) =>
           p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +66,6 @@ export function useProdutoSearch() {
 
   // Filter products when search term changes
   useEffect(() => {
-    // console.log('pesquisaProduto atualizado:', pesquisaProduto);
     debouncedFilter(pesquisaProduto);
   }, [pesquisaProduto, debouncedFilter]);
 
@@ -118,7 +119,7 @@ export function useProdutoSearch() {
 
   return {
     pesquisaProduto,
-    setPesquisaProduto, // Use diretamente a função do useState
+    setPesquisaProduto,
     produtosCadastrados,
     produtosFiltrados,
     editingProduct,

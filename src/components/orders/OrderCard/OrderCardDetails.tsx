@@ -2,7 +2,6 @@
 import React from 'react';
 import { CheckCircle, XCircle, Edit2, Printer } from 'lucide-react';
 import type { Comanda, Produto } from '@/types';
-import { useTheme } from '@/hooks/useTheme';
 
 interface OrderCardDetailsProps {
   comanda: Comanda;
@@ -21,7 +20,6 @@ export function OrderCardDetails({
   onReprint, 
   onDelete 
 }: OrderCardDetailsProps) {
-  const { isDark } = useTheme();
   
   return (
     <>
@@ -88,7 +86,7 @@ export function OrderCardDetails({
       <div className="mt-5 flex gap-3 flex-wrap">
         <button
           onClick={() => onTogglePayment(comanda)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
             comanda.pago ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
           } text-white`}
         >
@@ -98,7 +96,7 @@ export function OrderCardDetails({
         
         <button
           onClick={onStartEdit}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors"
         >
           <Edit2 size={18} />
           Editar
@@ -106,7 +104,7 @@ export function OrderCardDetails({
         
         <button
           onClick={() => onReprint(comanda)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
         >
           <Printer size={18} />
           Reimprimir
@@ -114,7 +112,7 @@ export function OrderCardDetails({
         
         <button
           onClick={() => onDelete(comanda.id)}
-          className="px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+          className="px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
         >
           Excluir
         </button>

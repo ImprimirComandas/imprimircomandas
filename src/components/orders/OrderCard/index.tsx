@@ -1,12 +1,11 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { OrderCardHeader } from './OrderCardHeader';
 import { OrderCardDetails } from './OrderCardDetails';
-import { EditOrderForm } from './EditOrderForm';
-import { useProdutoSearch } from '@/hooks/useProdutoSearch';
-import type { Produto, Comanda } from '@/types';
+import { OrderEditModal } from '../OrderEditModal';
+import type { Comanda } from '@/types';
 
 interface OrderCardProps {
   comanda: Comanda;
@@ -24,85 +23,56 @@ export function OrderCard({
   onSaveEdit
 }: OrderCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedComanda, setEditedComanda] = useState<Partial<Comanda>>(comanda);
-  const [getProdutos, setGetProdutos] = useState<Produto[]>(comanda.produtos || []);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const {
-    pesquisaProduto,
-    setPesquisaProduto,
-    produtosFiltrados,
-    loading: loadingProdutos,
-  } = useProdutoSearch();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
   const startEdit = () => {
-    setIsEditing(true);
-    setEditedComanda(comanda);
+    setIsEditModalOpen(true);
   };
 
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setEditedComanda(comanda);
-    setPesquisaProduto('');
-  };
-
-  const saveEdit = async () => {
-    if (comanda.id) {
-      const success = await onSaveEdit(comanda.id, editedComanda);
-      if (success) {
-        setIsEditing(false);
-        setGetProdutos(editedComanda.produtos as Produto[]);
-        setPesquisaProduto('');
-      }
-    }
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
   };
 
   return (
-    <motion.div layout className="mb-4">
-      <Card className="p-6">
-        <OrderCardHeader
-          comanda={comanda}
-          isExpanded={isExpanded}
-          onExpand={toggleExpand}
-        />
-        
-        <motion.div
-          layout
-          className="mt-4 overflow-hidden"
-          initial={{ height: 0 }}
-          animate={{ height: isExpanded ? 'auto' : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="mt-4">
-            {isEditing ? (
-              <EditOrderForm
-                editedComanda={editedComanda}
-                setEditedComanda={setEditedComanda}
-                onSave={saveEdit}
-                onCancel={cancelEdit}
-                getProdutos={getProdutos}
-                searchInputRef={searchInputRef}
-                pesquisaProduto={pesquisaProduto}
-                setPesquisaProduto={setPesquisaProduto}
-                produtosFiltrados={produtosFiltrados}
-                loadingProdutos={loadingProdutos}
-              />
-            ) : (
+    <>
+      <motion.div layout className="mb-4">
+        <Card className="p-6">
+          <OrderCardHeader
+            comanda={comanda}
+            isExpanded={isExpanded}
+            onExpand={toggleExpand}
+          />
+          
+          <motion.div
+            layout
+            className="mt-4 overflow-hidden"
+            initial={{ height: 0 }}
+            animate={{ height: isExpanded ? 'auto' : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mt-4">
               <OrderCardDetails
                 comanda={comanda}
-                getProdutos={getProdutos}
+                getProdutos={comanda.produtos || []}
                 onTogglePayment={onTogglePayment}
                 onStartEdit={startEdit}
                 onReprint={onReprint}
                 onDelete={onDelete}
               />
-            )}
-          </div>
-        </motion.div>
-      </Card>
-    </motion.div>
+            </div>
+          </motion.div>
+        </Card>
+      </motion.div>
+
+      <OrderEditModal
+        comanda={comanda}
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        onSave={onSaveEdit}
+        onReprint={onReprint}
+      />
+    </>
   );
 }

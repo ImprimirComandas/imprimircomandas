@@ -7,9 +7,11 @@ import { motion } from 'framer-motion';
 import { PageContainer } from '../components/layouts/PageContainer';
 import { Section } from '../components/layouts/Section';
 import { ProductForm } from '../components/products/ProductForm';
-import { ProductFilters } from '../components/products/ProductFilters';
-import { ProductList } from '../components/products/ProductList';
 import { ProductActions } from '../components/products/ProductActions';
+import { ProductEditModal } from '../components/products/ProductEditModal';
+import { ProductCategorySection } from '../components/products/ProductCategorySection';
+import { CategoryControls } from '../components/products/CategoryControls';
+import { useProductsByCategory } from '../hooks/useProductsByCategory';
 
 interface Product {
   id: string;
@@ -20,30 +22,33 @@ interface Product {
 
 export function Products() {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
-  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [productName, setProductName] = useState('');
   const [productValue, setProductValue] = useState('');
   const [productCategory, setProductCategory] = useState('');
-  const [editSearchTerm, setEditSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const pageSize = 20;
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const {
+    products,
+    productsByCategory,
+    categories,
+    loading,
+    expandedCategories,
+    toggleCategory,
+    expandAllCategories,
+    collapseAllCategories,
+    fetchAllProducts,
+    updateProductInList,
+    removeProductFromList,
+    addProductToList,
+  } = useProductsByCategory();
 
   useEffect(() => {
     getProfile();
-    fetchCategories();
-    fetchProducts(1, true);
   }, []);
-
-  useEffect(() => {
-    fetchProducts(1, true);
-  }, [selectedCategory]);
 
   const getProfile = async () => {
     try {
@@ -62,66 +67,6 @@ export function Products() {
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data, error } = await supabase
-          .from('produtos')
-          .select('categoria')
-          .eq('user_id', session.user.id)
-          .not('categoria', 'is', null);
-
-        if (error) throw error;
-
-        const uniqueCategories = [...new Set(data?.map(item => item.categoria))] as string[];
-        setCategories(uniqueCategories.sort());
-      }
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      toast.error('Erro ao carregar categorias');
-    }
-  };
-
-  const fetchProducts = async (pageNumber: number, reset: boolean = false) => {
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
-        let query = supabase
-          .from('produtos')
-          .select('id, nome, valor, categoria')
-          .eq('user_id', session.user.id)
-          .order('nome')
-          .range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1);
-
-        if (selectedCategory !== 'Todas') {
-          query = query.eq('categoria', selectedCategory);
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        setProducts(prev => reset ? (data || []) : [...prev, ...(data || [])]);
-        setHasMore((data || []).length === pageSize);
-        setPage(pageNumber);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      toast.error('Erro ao carregar produtos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMoreProducts = () => {
-    if (hasMore && !loading) {
-      fetchProducts(page + 1);
-    }
-  };
-
   const exportProducts = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -130,37 +75,23 @@ export function Products() {
         return;
       }
 
-      let allProducts: { nome: string; valor: number; categoria: string | null; numero: number }[] = [];
-      let currentPage = 0;
-      const exportPageSize = 3000;
-
-      while (true) {
-        const { data, error } = await supabase
-          .from('produtos')
-          .select('nome, valor, categoria, numero')
-          .eq('user_id', session.user.id)
-          .order('nome')
-          .range(currentPage * exportPageSize, (currentPage + 1) * exportPageSize - 1);
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) break;
-
-        allProducts = [...allProducts, ...data];
-        currentPage++;
-      }
-
-      if (allProducts.length === 0) {
+      if (products.length === 0) {
         toast.error('Nenhum produto encontrado para exportar');
         return;
       }
 
-      const ws = XLSX.utils.json_to_sheet(allProducts);
+      const productsToExport = products.map(p => ({
+        nome: p.nome,
+        valor: p.valor,
+        categoria: p.categoria || 'Sem categoria'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(productsToExport);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
       XLSX.writeFile(wb, `produtos_${new Date().toISOString().split('T')[0]}.xlsx`);
       
-      toast.success(`Todos os ${allProducts.length} produtos exportados com sucesso!`);
+      toast.success(`Todos os ${products.length} produtos exportados com sucesso!`);
     } catch (error) {
       console.error('Erro ao exportar produtos:', error);
       toast.error('Erro ao exportar produtos. Verifique o console para mais detalhes.');
@@ -217,12 +148,8 @@ export function Products() {
       if (error) throw error;
 
       toast.success('Produto adicionado/atualizado com sucesso!');
-      setProducts(prev => {
-        const updated = prev.filter(p => p.nome !== productName);
-        return [...(data || []), ...updated].sort((a, b) => a.nome.localeCompare(b.nome));
-      });
-      if (productCategory && !categories.includes(productCategory)) {
-        setCategories(prev => [...prev, productCategory].sort());
+      if (data && data[0]) {
+        addProductToList(data[0]);
       }
       setProductName('');
       setProductValue('');
@@ -247,8 +174,7 @@ export function Products() {
       if (error) throw error;
 
       toast.success('Produto excluído com sucesso!');
-      setProducts(prev => prev.filter(p => p.id !== id));
-      fetchCategories();
+      removeProductFromList(id);
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
       toast.error('Erro ao excluir produto');
@@ -279,11 +205,7 @@ export function Products() {
       if (error) throw error;
 
       toast.success('Todos os produtos foram excluídos com sucesso!');
-      setProducts([]);
-      setCategories([]);
-      setSelectedCategory('Todas');
-      setPage(1);
-      setHasMore(false);
+      fetchAllProducts();
     } catch (error) {
       console.error('Erro ao excluir todos os produtos:', error);
       toast.error('Erro ao excluir produtos');
@@ -294,56 +216,28 @@ export function Products() {
 
   const startEditing = (product: Product) => {
     setEditingProduct(product);
-    setProductName(product.nome);
-    setProductValue(product.valor.toString());
-    setProductCategory(product.categoria || '');
+    setShowEditModal(true);
   };
 
-  const cancelEditing = () => {
-    setEditingProduct(null);
-    setProductName('');
-    setProductValue('');
-    setProductCategory('');
-  };
-
-  const saveEdit = async () => {
-    if (!editingProduct || !productName || !productValue) {
-      toast.error('Por favor, preencha o nome e o valor do produto');
-      return;
-    }
-
-    const parsedValue = parseFloat(productValue);
-    if (isNaN(parsedValue) || parsedValue <= 0 || parsedValue > 9999999999.99) {
-      toast.error('O valor do produto deve ser um número positivo até R$9.999.999.999,99');
-      return;
-    }
-
+  const handleModalSave = async (updatedProduct: Product) => {
     try {
       setSaving(true);
 
-      const updatedProduct = {
-        nome: productName,
-        valor: parseFloat(parsedValue.toFixed(2)),
-        categoria: productCategory || null,
-      };
-
       const { error } = await supabase
         .from('produtos')
-        .update(updatedProduct)
-        .eq('id', editingProduct.id);
+        .update({
+          nome: updatedProduct.nome,
+          valor: updatedProduct.valor,
+          categoria: updatedProduct.categoria
+        })
+        .eq('id', updatedProduct.id);
 
       if (error) throw error;
 
       toast.success('Produto atualizado com sucesso!');
-      setProducts(prev =>
-        prev
-          .map(p => (p.id === editingProduct.id ? { ...p, ...updatedProduct } : p))
-          .sort((a, b) => a.nome.localeCompare(b.nome))
-      );
-      if (productCategory && !categories.includes(productCategory)) {
-        setCategories(prev => [...prev, productCategory].sort());
-      }
-      cancelEditing();
+      updateProductInList(updatedProduct);
+      setShowEditModal(false);
+      setEditingProduct(null);
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
       toast.error(`Erro ao atualizar produto: ${error.message || 'Erro desconhecido'}`);
@@ -483,8 +377,7 @@ export function Products() {
         if (error) throw error;
 
         toast.success(`${uniqueProducts.length} produtos adicionados/atualizados com sucesso!`);
-        fetchProducts(1, true);
-        fetchCategories();
+        fetchAllProducts();
       } catch (error) {
         console.error('Erro ao processar produtos:', error);
         toast.error(`Erro ao processar produtos: ${error.message || 'Erro desconhecido'}`);
@@ -501,11 +394,7 @@ export function Products() {
     }
   };
 
-  const filteredProducts = products
-    .filter(product =>
-      !editSearchTerm || product.nome.toLowerCase().includes(editSearchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.nome.localeCompare(b.nome));
+  const uniqueCategories = Array.from(new Set(products.map(p => p.categoria).filter(Boolean))).sort();
 
   return (
     <PageContainer>
@@ -532,12 +421,11 @@ export function Products() {
                 productValue={productValue}
                 productCategory={productCategory}
                 saving={saving}
-                editingProduct={editingProduct}
+                editingProduct={null}
                 onProductNameChange={setProductName}
                 onProductValueChange={setProductValue}
                 onProductCategoryChange={setProductCategory}
-                onSubmit={editingProduct ? saveEdit : addProduct}
-                onCancel={editingProduct ? cancelEditing : undefined}
+                onSubmit={addProduct}
                 onDeleteAll={deleteAllProducts}
                 productsCount={products.length}
               />
@@ -557,27 +445,69 @@ export function Products() {
         </div>
 
         <Section className="mt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <h2 className="text-xl font-semibold text-foreground">Produtos Cadastrados</h2>
-            <ProductFilters
-              selectedCategory={selectedCategory}
-              searchTerm={editSearchTerm}
-              categories={categories}
-              onCategoryChange={setSelectedCategory}
-              onSearchChange={setEditSearchTerm}
-            />
+          <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
+            <h2 className="text-xl font-semibold text-foreground">Produtos por Categoria</h2>
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring focus:border-ring transition-all"
+                placeholder="Buscar produto..."
+              />
+            </div>
           </div>
 
-          <ProductList
-            products={filteredProducts}
-            loading={loading}
-            hasMore={hasMore}
-            editingProduct={editingProduct}
-            onEdit={startEditing}
-            onDelete={deleteProduct}
-            onLoadMore={loadMoreProducts}
+          <CategoryControls
+            totalCategories={categories.length}
+            expandedCount={expandedCategories.size}
+            onExpandAll={expandAllCategories}
+            onCollapseAll={collapseAllCategories}
           />
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-primary"></div>
+            </div>
+          ) : categories.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-muted/50 p-8 rounded-lg text-center"
+            >
+              <p className="text-muted-foreground text-lg font-medium">
+                Nenhum produto encontrado.
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-4">
+              {categories.map(category => (
+                <ProductCategorySection
+                  key={category}
+                  categoryName={category}
+                  products={productsByCategory[category]}
+                  searchTerm={searchTerm}
+                  editingProduct={editingProduct}
+                  onEdit={startEditing}
+                  onDelete={deleteProduct}
+                  isExpanded={expandedCategories.has(category)}
+                  onToggle={() => toggleCategory(category)}
+                />
+              ))}
+            </div>
+          )}
         </Section>
+
+        <ProductEditModal
+          product={editingProduct}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleModalSave}
+          saving={saving}
+        />
       </div>
     </PageContainer>
   );
