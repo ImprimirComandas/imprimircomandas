@@ -42,8 +42,7 @@ export function OrderCard({
     setIsEditModalOpen(false);
   };
 
-  const handleSelectToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSelectToggle = () => {
     if (onToggleSelect && comanda.id) {
       onToggleSelect(comanda.id);
     }
@@ -59,7 +58,6 @@ export function OrderCard({
                 <Checkbox
                   checked={isSelected}
                   onCheckedChange={handleSelectToggle}
-                  onClick={handleSelectToggle}
                 />
               </div>
             )}

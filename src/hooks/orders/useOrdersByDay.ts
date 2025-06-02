@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useOrderData } from './useOrderData';
 import { useOrderActions } from './useOrderActions';
@@ -75,6 +76,8 @@ export function useOrdersByDay() {
     reprintOrder,
     deleteOrder,
     saveOrderEdit,
+    updateOrderInList,
+    removeOrderFromList,
     ...massSelection,
   };
 }
