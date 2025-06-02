@@ -155,12 +155,22 @@ export const useEditOrderFormSimplified = (
   };
 
   const validatePayment = (): boolean => {
+    // Verificar se há forma de pagamento
+    if (!forma_pagamento) {
+      toast({
+        title: "Forma de pagamento obrigatória",
+        description: "Selecione uma forma de pagamento antes de finalizar o pedido.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
     // Validação para pagamento em dinheiro com troco
     if (forma_pagamento === 'dinheiro' && needsTroco === true) {
       if (!quantiapagaInput || quantiapagaInput < totalComTaxa) {
         toast({
-          title: "Erro no pagamento",
-          description: `A quantia paga deve ser maior ou igual ao total do pedido (R$ ${totalComTaxa.toFixed(2)})`,
+          title: "Valor insuficiente para troco",
+          description: `A quantia paga (R$ ${(quantiapagaInput || 0).toFixed(2)}) deve ser maior ou igual ao total do pedido (R$ ${totalComTaxa.toFixed(2)}). Ajuste o valor do troco.`,
           variant: "destructive"
         });
         return false;
@@ -172,8 +182,22 @@ export const useEditOrderFormSimplified = (
       const totalValores = (valorCartaoInput || 0) + (valorDinheiroInput || 0) + (valorPixInput || 0);
       if (totalValores < totalComTaxa) {
         toast({
-          title: "Erro no pagamento misto",
-          description: `O valor total deve ser pelo menos R$ ${totalComTaxa.toFixed(2)}`,
+          title: "Valor insuficiente no pagamento misto",
+          description: `O valor total (R$ ${totalValores.toFixed(2)}) deve ser pelo menos igual ao valor do pedido (R$ ${totalComTaxa.toFixed(2)}). Ajuste os valores de pagamento.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+    }
+
+    // Validação para dinheiro sem troco
+    if (forma_pagamento === 'dinheiro' && needsTroco === false) {
+      // Se não precisa de troco, o valor pago deve ser exatamente o total
+      const valorPago = quantiapagaInput || totalComTaxa;
+      if (valorPago < totalComTaxa) {
+        toast({
+          title: "Valor de pagamento insuficiente",
+          description: `O valor pago (R$ ${valorPago.toFixed(2)}) é menor que o total do pedido (R$ ${totalComTaxa.toFixed(2)}). Marque "Precisa de troco" ou ajuste o valor.`,
           variant: "destructive"
         });
         return false;
