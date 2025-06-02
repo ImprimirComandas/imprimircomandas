@@ -235,30 +235,45 @@ export type Database = {
       motoboys: {
         Row: {
           created_at: string | null
+          entregas_para_desconto: number | null
           id: string
           nome: string
           placa: string | null
           status: string | null
+          taxa_comissao: number | null
           telefone: string | null
+          tipo_pagamento: string | null
           user_id: string
+          valor_desconto_entrega: number | null
+          valor_fixo_sessao: number | null
         }
         Insert: {
           created_at?: string | null
+          entregas_para_desconto?: number | null
           id?: string
           nome: string
           placa?: string | null
           status?: string | null
+          taxa_comissao?: number | null
           telefone?: string | null
+          tipo_pagamento?: string | null
           user_id: string
+          valor_desconto_entrega?: number | null
+          valor_fixo_sessao?: number | null
         }
         Update: {
           created_at?: string | null
+          entregas_para_desconto?: number | null
           id?: string
           nome?: string
           placa?: string | null
           status?: string | null
+          taxa_comissao?: number | null
           telefone?: string | null
+          tipo_pagamento?: string | null
           user_id?: string
+          valor_desconto_entrega?: number | null
+          valor_fixo_sessao?: number | null
         }
         Relationships: []
       }

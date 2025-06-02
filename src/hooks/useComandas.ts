@@ -113,16 +113,34 @@ export const useComandas = () => {
   };
 
   const calcularTotais = () => {
-    const totais = { pix: 0, dinheiro: 0, cartao: 0, geral: 0, confirmados: 0, naoConfirmados: 0, misto: 0 };
+    const totais = { 
+      pix: 0, 
+      dinheiro: 0, 
+      cartao: 0, 
+      geral: 0, 
+      confirmados: 0, 
+      naoConfirmados: 0, 
+      misto: 0,
+      pedidosPagos: 0,
+      pedidosPendentes: 0
+    };
+    
     comandasAnteriores.forEach(comanda => {
-      if (comanda.pago) totais.confirmados += comanda.total;
-      else totais.naoConfirmados += comanda.total;
+      if (comanda.pago) {
+        totais.confirmados += comanda.total;
+        totais.pedidosPagos += 1;
+      } else {
+        totais.naoConfirmados += comanda.total;
+        totais.pedidosPendentes += 1;
+      }
       totais.geral += comanda.total;
+      
       if (comanda.forma_pagamento === 'pix') totais.pix += comanda.total;
       else if (comanda.forma_pagamento === 'dinheiro') totais.dinheiro += comanda.total;
       else if (comanda.forma_pagamento === 'cartao') totais.cartao += comanda.total;
       else if (comanda.forma_pagamento === 'misto') totais.misto += comanda.total;
     });
+    
     return totais;
   };
 

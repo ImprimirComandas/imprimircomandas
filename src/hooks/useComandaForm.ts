@@ -167,5 +167,6 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     selecionarProdutoCadastrado,
     startEditingProduct,
     refreshBairros,
+    resetComanda, // Add this to the return object
   };
 };

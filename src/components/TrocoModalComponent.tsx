@@ -28,7 +28,6 @@ export default function TrocoModalComponent({
 
   const handleSetNeedsTroco = (value: boolean) => {
     console.log(`TrocoModalComponent: Setting needsTroco to:`, value);
-    // Pass the boolean value directly, not as a string
     onChange('needsTroco', value);
   };
 
@@ -39,13 +38,25 @@ export default function TrocoModalComponent({
   };
 
   const handleConfirm = () => {
-    if (needsTroco === true && (!quantiapagaInput || quantiapagaInput < totalComTaxa)) {
-      toast({
-        title: "Erro",
-        description: "O valor informado deve ser maior ou igual ao total do pedido",
-        variant: "destructive"
-      });
-      return;
+    if (needsTroco === true) {
+      if (!quantiapagaInput || quantiapagaInput < totalComTaxa) {
+        toast({
+          title: "Valor insuficiente",
+          description: `A quantia paga deve ser maior ou igual ao total do pedido (R$ ${totalComTaxa.toFixed(2)})`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Verificar se não resultará em troco negativo
+      if (quantiapagaInput < totalComTaxa) {
+        toast({
+          title: "Troco negativo",
+          description: "O valor pago não pode ser menor que o total do pedido",
+          variant: "destructive"
+        });
+        return;
+      }
     }
     
     onConfirm();
@@ -55,6 +66,9 @@ export default function TrocoModalComponent({
   const trocoAmount = needsTroco === true && quantiapagaInput !== null && quantiapagaInput >= totalComTaxa 
     ? quantiapagaInput - totalComTaxa 
     : 0;
+  
+  // Check if there's an error with the amount
+  const hasError = needsTroco === true && quantiapagaInput !== null && quantiapagaInput < totalComTaxa;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -93,7 +107,7 @@ export default function TrocoModalComponent({
           {needsTroco === true && (
             <div>
               <label htmlFor="quantiapagaInput" className="block text-sm font-medium text-foreground">
-                Quantia Paga
+                Quantia Paga (mínimo: R$ {totalComTaxa.toFixed(2)})
               </label>
               <input
                 type="number"
@@ -101,10 +115,19 @@ export default function TrocoModalComponent({
                 name="quantiapagaInput"
                 value={quantiapagaInput === null ? '' : quantiapagaInput}
                 onChange={handleQuantiaPagaChange}
-                className="mt-1 p-2 w-full border border-input rounded-md bg-background text-foreground"
+                className={`mt-1 p-2 w-full border rounded-md bg-background text-foreground ${
+                  hasError ? 'border-destructive' : 'border-input'
+                }`}
                 min={totalComTaxa}
                 step="0.01"
+                placeholder={`Valor mínimo: R$ ${totalComTaxa.toFixed(2)}`}
               />
+              
+              {hasError && (
+                <div className="mt-1 text-sm text-destructive">
+                  Valor deve ser pelo menos R$ {totalComTaxa.toFixed(2)}
+                </div>
+              )}
               
               {quantiapagaInput !== null && quantiapagaInput >= totalComTaxa && (
                 <div className="mt-2 font-semibold text-primary">
@@ -129,9 +152,9 @@ export default function TrocoModalComponent({
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={needsTroco === null}
+              disabled={needsTroco === null || hasError}
               className={`py-2 px-4 rounded-md transition-colors ${
-                needsTroco === null
+                needsTroco === null || hasError
                 ? 'bg-muted text-muted-foreground cursor-not-allowed'
                 : 'bg-primary hover:bg-primary/90 text-primary-foreground'
               }`}

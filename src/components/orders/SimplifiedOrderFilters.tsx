@@ -1,39 +1,26 @@
 
 import { useState } from 'react';
 import { Search, X, Clock, Filter } from 'lucide-react';
-import { DateRange, RangeKeyDict } from 'react-date-range';
-import { DateRangeSelector } from './DateRangeSelector';
 import { Button } from '@/components/ui/button';
 
-interface OrderFiltersProps {
-  dateRange: DateRange[];
-  onDateRangeChange: (range: RangeKeyDict) => void;
+interface SimplifiedOrderFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   filterStatus: 'all' | 'paid' | 'pending';
   onFilterStatusChange: (status: 'all' | 'paid' | 'pending') => void;
 }
 
-export function OrderFilters({
-  dateRange,
-  onDateRangeChange,
+export function SimplifiedOrderFilters({
   searchTerm,
   onSearchChange,
   filterStatus,
   onFilterStatusChange
-}: OrderFiltersProps) {
+}: SimplifiedOrderFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   
   return (
     <div className="my-6 space-y-4 bg-card rounded-lg border border-border p-4">
-      {/* Date selector */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <DateRangeSelector
-          dateRange={dateRange}
-          onDateChange={onDateRangeChange}
-          loading={false}
-        />
-        
         <div className="flex gap-2 w-full md:w-auto">
           {/* Search input */}
           <div className="relative flex-1 md:max-w-xs">
