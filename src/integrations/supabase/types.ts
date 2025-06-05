@@ -366,6 +366,7 @@ export type Database = {
       notification_tracking: {
         Row: {
           created_at: string | null
+          device_token: string | null
           device_token_id: string
           entregue_em: string | null
           enviada_em: string | null
@@ -378,6 +379,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          device_token?: string | null
           device_token_id: string
           entregue_em?: string | null
           enviada_em?: string | null
@@ -390,6 +392,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          device_token?: string | null
           device_token_id?: string
           entregue_em?: string | null
           enviada_em?: string | null
@@ -435,6 +438,7 @@ export type Database = {
           total_falhadas: number | null
           total_visualizadas: number | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           agendada_para?: string | null
@@ -453,6 +457,7 @@ export type Database = {
           total_falhadas?: number | null
           total_visualizadas?: number | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           agendada_para?: string | null
@@ -471,8 +476,17 @@ export type Database = {
           total_falhadas?: number | null
           total_visualizadas?: number | null
           updated_at?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -558,36 +572,51 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          deleted_at: string | null
           email: string | null
           full_name: string | null
           id: string
+          last_login: string | null
+          locked_until: string | null
+          login_attempts: number | null
           phone: string | null
           print_size: string | null
           show_values: boolean | null
+          status: string | null
           store_name: string | null
           theme: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          deleted_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          last_login?: string | null
+          locked_until?: string | null
+          login_attempts?: number | null
           phone?: string | null
           print_size?: string | null
           show_values?: boolean | null
+          status?: string | null
           store_name?: string | null
           theme?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          deleted_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          last_login?: string | null
+          locked_until?: string | null
+          login_attempts?: number | null
           phone?: string | null
           print_size?: string | null
           show_values?: boolean | null
+          status?: string | null
           store_name?: string | null
           theme?: string | null
           updated_at?: string | null
@@ -651,6 +680,72 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category?: string
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          reason: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_segments: {
         Row: {
           ativo: boolean | null
@@ -699,14 +794,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings_new: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_type?: string
+          setting_value?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_new_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      ban_user: {
+        Args: { target_user_id: string; ban_reason?: string }
+        Returns: undefined
+      }
       calculate_notification_stats: {
         Args: { notification_uuid: string }
         Returns: undefined
+      }
+      get_user_role: {
+        Args: { user_uuid?: string }
+        Returns: Database["public"]["Enums"]["user_role"]
       }
       gtrgm_compress: {
         Args: { "": unknown }
@@ -728,9 +869,29 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      is_authorized_admin_email: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      promote_to_admin: {
+        Args: { target_user_id: string; promotion_reason?: string }
+        Returns: undefined
+      }
+      reactivate_user: {
+        Args: { target_user_id: string; reactivation_reason?: string }
+        Returns: undefined
       }
       search_comandas_by_last_8: {
         Args: Record<PropertyKey, never> | { search_term: string }
@@ -756,9 +917,17 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      soft_delete_user: {
+        Args: { target_user_id: string; delete_reason?: string }
+        Returns: undefined
+      }
+      suspend_user: {
+        Args: { target_user_id: string; suspend_reason?: string; days?: number }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "user" | "banned" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -873,6 +1042,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "user", "banned", "suspended"],
+    },
   },
 } as const

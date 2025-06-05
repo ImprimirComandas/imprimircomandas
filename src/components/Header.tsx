@@ -8,6 +8,7 @@ import ProfileMenu from './header/ProfileMenu';
 import NavLink from './header/NavLink';
 import MobileMenu from './header/MobileMenu';
 import ThemeSelector from './ThemeSelector';
+import NotificationBell from './NotificationBell';
 import { useTheme } from '../hooks/useTheme';
 
 interface HeaderProps {
@@ -142,6 +143,7 @@ export default function Header({
 
         {/* Ações e Menu */}
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <ThemeSelector
             className={`
               mr-2 rounded-full p-2 transition-colors duration-200

@@ -1,106 +1,157 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import type { Comanda } from '@/types';
+
+export interface Notification {
+  id: string;
+  titulo: string;
+  mensagem: string;
+  tipo: string;
+  created_at: string;
+  dados_extras?: any;
+  status?: string;
+}
 
 export function useNotifications() {
-  const [loading, setLoading] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const createNotification = useCallback(async (
-    comanda: Comanda,
-    tipo: 'nova_comanda' | 'pagamento_confirmado' | 'comanda_cancelada'
-  ) => {
+  // Função para tocar o beep
+  const playNotificationSound = useCallback(() => {
     try {
-      setLoading(true);
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
       
-      let titulo = '';
-      let mensagem = '';
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
       
-      switch (tipo) {
-        case 'nova_comanda':
-          titulo = 'Nova Comanda';
-          mensagem = `Nova comanda #${comanda.id?.slice(-8)} - ${comanda.bairro} - R$ ${comanda.total.toFixed(2)}`;
-          break;
-        case 'pagamento_confirmado':
-          titulo = 'Pagamento Confirmado';
-          mensagem = `Pagamento confirmado para comanda #${comanda.id?.slice(-8)} - R$ ${comanda.total.toFixed(2)}`;
-          break;
-        case 'comanda_cancelada':
-          titulo = 'Comanda Cancelada';
-          mensagem = `Comanda #${comanda.id?.slice(-8)} foi cancelada`;
-          break;
-      }
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Erro ao tocar som da notificação:', error);
+    }
+  }, []);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return false;
-      }
+  // Função para mostrar notificação do navegador
+  const showBrowserNotification = useCallback((notification: Notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(notification.titulo, {
+        body: notification.mensagem,
+        icon: '/favicon.ico',
+        tag: notification.id
+      });
+    }
+  }, []);
 
-      const { error } = await supabase
+  // Solicitar permissão para notificações do navegador
+  const requestNotificationPermission = useCallback(async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }, []);
+
+  // Carregar notificações iniciais
+  const loadNotifications = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
         .from('notifications')
-        .insert({
-          criada_por: user.id,
-          tipo,
-          titulo,
-          mensagem,
-          dados_extras: {
-            comanda_id: comanda.id,
-            taxa_entrega: comanda.taxaentrega,
-            bairro: comanda.bairro,
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-          }
-        });
+        .select('*')
+        .eq('status', 'enviada')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 
-      // Send notification to external app
-      await supabase.functions.invoke('send-notification', {
-        body: {
-          notification_id: comanda.id,
-          titulo,
-          mensagem,
-          taxa_entrega: comanda.taxaentrega,
-          bairro: comanda.bairro,
-          tipo
-        }
-      });
-
-      return true;
+      setNotifications(data || []);
+      
+      // Contar não lidas (últimas 24h)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const unread = (data || []).filter(n => n.created_at > oneDayAgo);
+      setUnreadCount(unread.length);
     } catch (error) {
-      console.error('Error creating notification:', error);
-      return false;
+      console.error('Erro ao carregar notificações:', error);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const markNotificationAsSeen = useCallback(async (
-    notificationId: string,
-    deviceToken: string
-  ) => {
-    try {
-      const { error } = await supabase
-        .from('notification_tracking')
-        .update({
-          visualizada_em: new Date().toISOString(),
-          status: 'visualizada'
-        })
-        .eq('notification_id', notificationId)
-        .eq('device_token_id', deviceToken);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('Error marking notification as seen:', error);
-      return false;
-    }
+  // Marcar como lida
+  const markAsRead = useCallback((notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
 
+  // Escutar notificações em tempo real
+  useEffect(() => {
+    requestNotificationPermission();
+    loadNotifications();
+
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          const newNotification = payload.new as Notification;
+          
+          // Adicionar à lista
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Tocar som
+          playNotificationSound();
+          
+          // Mostrar toast
+          toast.success(newNotification.titulo, {
+            description: newNotification.mensagem,
+            duration: 5000,
+          });
+          
+          // Mostrar notificação do navegador
+          showBrowserNotification(newNotification);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          const updatedNotification = payload.new as Notification;
+          setNotifications(prev => 
+            prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [playNotificationSound, showBrowserNotification, requestNotificationPermission, loadNotifications]);
+
   return {
+    notifications,
+    unreadCount,
     loading,
-    createNotification,
-    markNotificationAsSeen
+    markAsRead,
+    loadNotifications
   };
 }
