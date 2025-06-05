@@ -38,11 +38,12 @@ export function useNotifications() {
         return false;
       }
 
-      // Use the correct column names based on the database schema
+      // Usar as colunas corretas baseadas no esquema do banco
       const { error } = await supabase
         .from('notifications')
         .insert({
-          user_id: user.id, // Changed from criada_por to user_id
+          user_id: user.id,
+          criada_por: user.id,
           tipo,
           titulo,
           mensagem,
@@ -56,7 +57,7 @@ export function useNotifications() {
 
       if (error) throw error;
 
-      // Send notification to external app
+      // Enviar notificação para o app externo
       await supabase.functions.invoke('send-notification', {
         body: {
           notification_id: comanda.id,

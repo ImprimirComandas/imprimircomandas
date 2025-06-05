@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Send, Calendar, Users, Bell } from 'lucide-react';
-import { useNotifications } from '@/hooks/useNotifications';
-import { toast } from 'sonner';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 
 export function AdminNotificationSender() {
   const [titulo, setTitulo] = useState('');
@@ -19,42 +18,30 @@ export function AdminNotificationSender() {
   const [dataAgendamento, setDataAgendamento] = useState('');
   const [preview, setPreview] = useState(false);
   
-  const { createNotification, loading } = useNotifications();
+  const { createAdminNotification, loading } = useAdminNotifications();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!titulo.trim() || !mensagem.trim()) {
-      toast.error('Título e mensagem são obrigatórios');
       return;
     }
 
-    try {
-      // Create a mock comanda for the notification system
-      const mockComanda = {
-        id: crypto.randomUUID(),
-        total: 0,
-        taxaentrega: 0,
-        bairro: 'Sistema'
-      };
-
-      const success = await createNotification(mockComanda as any, 'nova_comanda');
-      
-      if (success) {
-        toast.success('Notificação enviada com sucesso!');
-        // Reset form
-        setTitulo('');
-        setMensagem('');
-        setTipo('info');
-        setAgendada(false);
-        setDataAgendamento('');
-        setPreview(false);
-      } else {
-        toast.error('Erro ao enviar notificação');
-      }
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      toast.error('Erro ao enviar notificação');
+    const success = await createAdminNotification(
+      titulo,
+      mensagem,
+      tipo,
+      agendada ? dataAgendamento : undefined
+    );
+    
+    if (success) {
+      // Reset form
+      setTitulo('');
+      setMensagem('');
+      setTipo('info');
+      setAgendada(false);
+      setDataAgendamento('');
+      setPreview(false);
     }
   };
 
