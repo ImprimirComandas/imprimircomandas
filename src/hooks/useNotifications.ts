@@ -38,10 +38,11 @@ export function useNotifications() {
         return false;
       }
 
+      // Use the correct column names based on the database schema
       const { error } = await supabase
         .from('notifications')
         .insert({
-          criada_por: user.id,
+          user_id: user.id, // Changed from criada_por to user_id
           tipo,
           titulo,
           mensagem,

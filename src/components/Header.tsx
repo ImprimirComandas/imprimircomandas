@@ -1,31 +1,38 @@
+
 import { useState } from 'react';
-import { useTheme } from 'next-themes';
-import { useRouter } from 'next/router';
-import { useSession, signOut } from 'next-auth/react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ModeToggle } from '@/components/ui/mode-toggle';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Menu } from "lucide-react"
-import { MainNav } from '@/components/MainNav';
-import { siteConfig } from '@/config/site';
+import { Menu, Sun, Moon, Settings, LogOut, User } from "lucide-react"
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { Icons } from './icons';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useTheme } from 'next-themes';
 
 export function Header() {
-  const { data: session } = useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/login');
+    // Add your sign out logic here
+    navigate('/login');
   };
+
+  const navItems = [
+    { href: '/', label: 'Início' },
+    { href: '/products', label: 'Produtos' },
+    { href: '/orders', label: 'Pedidos' },
+    { href: '/orders-by-day', label: 'Pedidos por Dia' },
+    { href: '/delivery', label: 'Delivery' },
+    { href: '/motoboys', label: 'Motoboys' },
+    { href: '/bairros', label: 'Bairros' },
+    { href: '/admin/notifications', label: 'Notificações' },
+    { href: '/settings', label: 'Configurações' }
+  ];
 
   return (
     <header className="bg-background border-b border-border relative z-50">
@@ -33,51 +40,74 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <Icons.logo className="h-6 w-6" />
-              <span className="font-bold">{siteConfig.name}</span>
-            </Link>
+            <button onClick={() => navigate('/')} className="flex items-center space-x-2">
+              <div className="h-6 w-6 bg-primary rounded" />
+              <span className="font-bold">Admin Panel</span>
+            </button>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <MainNav className="mx-6" />
-            <Link href="/orders" className={cn("flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground", router.pathname === '/orders' ? 'bg-accent text-accent-foreground' : '')}>
-              Pedidos
-            </Link>
+            {navItems.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => navigate(item.href)}
+                className={cn(
+                  "flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                  location.pathname === item.href ? 'bg-accent text-accent-foreground' : ''
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
 
           {/* Right section */}
           <div className="flex items-center space-x-2">
             <NotificationBell />
-            <ModeToggle />
+            
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name || 'Avatar'} />
+                    <AvatarImage src="" alt="Avatar" />
                     <AvatarFallback>
-                      {session?.user?.name ? session.user.name[0].toUpperCase() : '?'}</AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel>
-                  {session?.user?.name}
+                  Usuário Admin
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
                   Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
                   Configurações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Mobile Menu */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -90,42 +120,34 @@ export function Header() {
               </SheetTrigger>
               <SheetContent side="left" className="sm:max-w-sm">
                 <SheetHeader>
-                  <SheetTitle>{siteConfig.name}</SheetTitle>
+                  <SheetTitle>Admin Panel</SheetTitle>
                   <SheetDescription>
                     Gerencie sua loja de forma eficiente.
                   </SheetDescription>
                 </SheetHeader>
                 <ScrollArea className="my-4">
-                  <MainNav className="grid gap-4" />
+                  <div className="grid gap-4">
+                    {navItems.map((item) => (
+                      <button
+                        key={item.href}
+                        onClick={() => {
+                          navigate(item.href);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={cn(
+                          "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                          location.pathname === item.href ? 'bg-accent text-accent-foreground' : ''
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </ScrollArea>
               </SheetContent>
             </Sheet>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-sm">
-            <SheetHeader>
-              <SheetTitle>{siteConfig.name}</SheetTitle>
-              <SheetDescription>
-                Gerencie sua loja de forma eficiente.
-              </SheetDescription>
-            </SheetHeader>
-            <ScrollArea className="my-4">
-              <MainNav className="grid gap-4" />
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
       </div>
     </header>
   );
