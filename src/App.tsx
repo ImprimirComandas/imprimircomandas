@@ -1,109 +1,53 @@
-
-import React, { useEffect, useState } from 'react';
-import { Auth } from './pages/Auth';
-import { ResetPassword } from './pages/ResetPassword';
-import { supabase } from './lib/supabase';
-import DeliveryApp from './components/DeliveryApp';
-import type { Profile } from './types/database';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { ThemeProvider } from './components/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
+import { Header } from './components/Header';
+import { Home } from './pages/Home';
 import { Products } from './pages/Products';
-import StoreSettings from './pages/StoreSettings';
+import { Orders } from './pages/Orders';
+import { Delivery } from './pages/Delivery';
+import { Motoboys } from './pages/Motoboys';
+import { Bairros } from './pages/Bairros';
+import { Settings } from './pages/Settings';
+import { Login } from './pages/Login';
+import { NotFound } from './pages/NotFound';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import { SystemLogs } from './pages/SystemLogs';
+import { UserManagement } from './pages/UserManagement';
 import OrdersByDay from './pages/OrdersByDay';
-import DeliveryRates from './pages/DeliveryRates';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
-import { useProfileMenu } from './hooks/useProfileMenu';
-import DeliveryManagement from './components/delivery/DeliveryManagement';
-import { useTheme } from './hooks/useTheme';
-import { Toaster } from 'sonner';
+import AdminNotifications from '@/pages/AdminNotifications';
 
 function App() {
-  const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { showProfileMenu, setShowProfileMenu, handleSignOut } = useProfileMenu();
-  const { theme, changeTheme } = useTheme();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        setTimeout(() => {
-          getProfile(session.user.id);
-        }, 0);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        getProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const getProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-      
-      // Set the user's preferred theme if available
-      if (data?.theme) {
-        changeTheme(data.theme);
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const isResetPassword = window.location.hash === '#reset-password';
-
   return (
-    <>
-      {!session ? (
-        isResetPassword ? <ResetPassword /> : <Auth />
-      ) : (
-        <>
-          <Header 
-            profile={profile} 
-            onSignOut={handleSignOut} 
-            showProfileMenu={showProfileMenu}
-            setShowProfileMenu={setShowProfileMenu}
-          />
-          <Routes>
-            <Route path="/" element={<DeliveryApp profile={profile} />} />
-            <Route path="/delivery" element={<DeliveryManagement />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/store-settings" element={<StoreSettings />} />
-            <Route path="/orders-by-day" element={<OrdersByDay />} />
-            <Route path="/delivery-rates" element={<DeliveryRates />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </>
-      )}
-      <Toaster position="bottom-right" theme={theme === 'dark' ? 'dark' : 'light'} />
-    </>
+    <QueryClientProvider client={new QueryClient()}>
+      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+        <Router>
+          <div className="min-h-screen bg-background text-foreground">
+            <Header />
+            <main className="pt-4">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+                <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                <Route path="/orders-by-day" element={<ProtectedRoute><OrdersByDay /></ProtectedRoute>} />
+                <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
+                <Route path="/motoboys" element={<ProtectedRoute><Motoboys /></ProtectedRoute>} />
+                <Route path="/bairros" element={<ProtectedRoute><Bairros /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/system-logs" element={<ProtectedRoute><SystemLogs /></ProtectedRoute>} />
+                <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+                <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <Toaster />
+          </div>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

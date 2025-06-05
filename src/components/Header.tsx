@@ -1,175 +1,131 @@
+import { useState } from 'react';
+import { useTheme } from 'next-themes';
+import { useRouter } from 'next/router';
+import { useSession, signOut } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Menu } from "lucide-react"
+import { MainNav } from '@/components/MainNav';
+import { siteConfig } from '@/config/site';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { Icons } from './icons';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
-import { Fragment, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Profile } from '../types/database';
-import ShopStatusButton from './header/ShopStatusButton';
-import ProfileMenu from './header/ProfileMenu';
-import NavLink from './header/NavLink';
-import MobileMenu from './header/MobileMenu';
-import ThemeSelector from './ThemeSelector';
-import { useTheme } from '../hooks/useTheme';
+export function Header() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { setTheme } = useTheme();
 
-interface HeaderProps {
-  profile: Profile | null;
-  onSignOut: () => Promise<void>;
-  showProfileMenu: boolean;
-  setShowProfileMenu: (show: boolean) => void;
-}
-
-export default function Header({
-  profile,
-  onSignOut,
-  showProfileMenu,
-  setShowProfileMenu,
-}: HeaderProps) {
-  const location = useLocation();
-  const { isDark, theme } = useTheme();
-  const isSupabase = theme === 'supabase';
-
-  useEffect(() => {
-    setShowProfileMenu(false);
-  }, [location.pathname, setShowProfileMenu]);
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
-    <header className={`
-      sticky top-0 z-50 w-full border-b border-border/50 shadow-sm transition-colors duration-300
-      ${isSupabase ? 'backdrop-blur-lg bg-background/80' : 'backdrop-blur-lg bg-background/90'}
-    `}>
-      <div className="container mx-auto flex items-center justify-between h-16 px-4 md:px-8 lg:px-12">
-        {/* Logo e Navegação */}
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-3">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: 'spring',
-                stiffness: 300,
-                damping: 20,
-                delay: 0.1,
-              }}
-            >
-              <span className={`
-                font-bold text-2xl tracking-tight 
-                ${isSupabase ? 'bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent' : 'text-foreground'}
-              `}>
-                {profile?.store_name || 'Dom Luiz Bebidas'}
-              </span>
-            </motion.div>
-          </Link>
+    <header className="bg-background border-b border-border relative z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo Section */}
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <Icons.logo className="h-6 w-6" />
+              <span className="font-bold">{siteConfig.name}</span>
+            </Link>
+          </div>
 
-          {/* Navegação Desktop */}
-          <nav className="hidden md:flex gap-8">
-            <NavLink
-              to="/delivery"
-              pathname={location.pathname}
-              className={`
-                relative text-sm font-medium transition-colors duration-300
-                ${isSupabase ? 'text-foreground/80 hover:text-primary' : 'text-foreground/80 hover:text-primary'}
-              `}
-            >
-              Delivery
-              {location.pathname === '/delivery' && (
-                <motion.div
-                  className={`absolute -bottom-1 left-0 w-full h-0.5 ${isSupabase ? 'bg-primary' : 'bg-primary'}`}
-                  layoutId="underline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </NavLink>
-            <NavLink
-              to="/products"
-              pathname={location.pathname}
-              className={`
-                relative text-sm font-medium transition-colors duration-300
-                ${isSupabase ? 'text-foreground/80 hover:text-primary' : 'text-foreground/80 hover:text-primary'}
-              `}
-            >
-              Produtos
-              {location.pathname === '/products' && (
-                <motion.div
-                  className={`absolute -bottom-1 left-0 w-full h-0.5 ${isSupabase ? 'bg-primary' : 'bg-primary'}`}
-                  layoutId="underline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </NavLink>
-            <NavLink
-              to="/delivery-rates"
-              pathname={location.pathname}
-              className={`
-                relative text-sm font-medium transition-colors duration-300
-                ${isSupabase ? 'text-foreground/80 hover:text-primary' : 'text-foreground/80 hover:text-primary'}
-              `}
-            >
-              Bairros
-              {location.pathname === '/delivery-rates' && (
-                <motion.div
-                  className={`absolute -bottom-1 left-0 w-full h-0.5 ${isSupabase ? 'bg-primary' : 'bg-primary'}`}
-                  layoutId="underline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </NavLink>
-            <NavLink
-              to="/orders-by-day"
-              pathname={location.pathname}
-              className={`
-                relative text-sm font-medium transition-colors duration-300
-                ${isSupabase ? 'text-foreground/80 hover:text-primary' : 'text-foreground/80 hover:text-primary'}
-              `}
-            >
-              Relatórios
-              {location.pathname === '/orders-by-day' && (
-                <motion.div
-                  className={`absolute -bottom-1 left-0 w-full h-0.5 ${isSupabase ? 'bg-primary' : 'bg-primary'}`}
-                  layoutId="underline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </NavLink>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            <MainNav className="mx-6" />
+            <Link href="/orders" className={cn("flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground", router.pathname === '/orders' ? 'bg-accent text-accent-foreground' : '')}>
+              Pedidos
+            </Link>
           </nav>
+
+          {/* Right section */}
+          <div className="flex items-center space-x-2">
+            <NotificationBell />
+            <ModeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name || 'Avatar'} />
+                    <AvatarFallback>
+                      {session?.user?.name ? session.user.name[0].toUpperCase() : '?'}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel>
+                  {session?.user?.name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Configurações
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="sm:max-w-sm">
+                <SheetHeader>
+                  <SheetTitle>{siteConfig.name}</SheetTitle>
+                  <SheetDescription>
+                    Gerencie sua loja de forma eficiente.
+                  </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="my-4">
+                  <MainNav className="grid gap-4" />
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
 
-        {/* Ações e Menu */}
-        <div className="flex items-center gap-4">
-          <ThemeSelector
-            className={`
-              mr-2 rounded-full p-2 transition-colors duration-200
-              ${isSupabase ? 'hover:bg-primary/10 hover:text-primary' : 'hover:bg-accent'}
-            `}
-          />
-          <ShopStatusButton className={`
-            rounded-full px-4 py-2 text-primary-foreground transition-all duration-300 shadow-sm
-            ${isSupabase ? 'bg-primary hover:bg-primary/90' : 'bg-primary hover:bg-primary/90'}
-          `} />
-          <ProfileMenu
-            profile={profile}
-            onSignOut={onSignOut}
-            showMenu={showProfileMenu}
-            setShowMenu={setShowProfileMenu}
-            className={`
-              rounded-full p-2 transition-colors duration-200
-              ${isSupabase ? 'hover:bg-primary/10 hover:text-primary' : 'hover:bg-accent'}
-            `}
-          />
-          <MobileMenu
-            pathname={location.pathname}
-            className={`
-              md:hidden rounded-full p-2 transition-colors duration-200
-              ${isSupabase ? 'hover:bg-primary/10 hover:text-primary' : 'hover:bg-accent'}
-            `}
-          />
-        </div>
+        {/* Mobile Menu */}
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="sm:max-w-sm">
+            <SheetHeader>
+              <SheetTitle>{siteConfig.name}</SheetTitle>
+              <SheetDescription>
+                Gerencie sua loja de forma eficiente.
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="my-4">
+              <MainNav className="grid gap-4" />
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );
