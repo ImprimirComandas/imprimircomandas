@@ -38,11 +38,9 @@ export function useNotifications() {
         return false;
       }
 
-      // Usar as colunas corretas baseadas no esquema do banco
       const { error } = await supabase
         .from('notifications')
         .insert({
-          user_id: user.id,
           criada_por: user.id,
           tipo,
           titulo,
@@ -57,7 +55,7 @@ export function useNotifications() {
 
       if (error) throw error;
 
-      // Enviar notificação para o app externo
+      // Send notification to external app
       await supabase.functions.invoke('send-notification', {
         body: {
           notification_id: comanda.id,
