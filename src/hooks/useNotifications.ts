@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -12,6 +11,7 @@ export interface Notification {
   dados_extras?: any;
   status?: string;
   user_id: string;
+  read?: boolean; // Adicionando a propriedade read
 }
 
 export function useNotifications() {

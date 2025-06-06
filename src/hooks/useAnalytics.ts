@@ -165,7 +165,7 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(-30); // Últimos 30 dias
 
-      // Buscar estatísticas de motoboys
+      // Buscar estatísticas de motoboys - corrigindo o tipo
       const { data: deliveryData } = await supabase
         .from('entregas')
         .select(`
@@ -177,7 +177,10 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
 
       const motoboyMap = new Map();
       deliveryData?.forEach(entrega => {
-        const nome = entrega.motoboys.nome;
+        // Corrigindo o acesso à propriedade nome
+        const motoboyData = entrega.motoboys as any;
+        const nome = motoboyData?.nome || 'Motoboy Desconhecido';
+        
         if (motoboyMap.has(nome)) {
           const existing = motoboyMap.get(nome);
           existing.total_entregas += 1;
