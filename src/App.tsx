@@ -9,6 +9,8 @@ import { Products } from './pages/Products';
 import StoreSettings from './pages/StoreSettings';
 import OrdersByDay from './pages/OrdersByDay';
 import DeliveryRates from './pages/DeliveryRates';
+import Notifications from './pages/Notifications';
+import Analytics from './pages/Analytics';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import { useProfileMenu } from './hooks/useProfileMenu';
@@ -98,6 +100,8 @@ function App() {
             <Route path="/store-settings" element={<StoreSettings />} />
             <Route path="/orders-by-day" element={<OrdersByDay />} />
             <Route path="/delivery-rates" element={<DeliveryRates />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </>

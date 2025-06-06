@@ -713,6 +713,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_reads: {
+        Row: {
+          created_at: string
+          id: string
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string | null
@@ -779,6 +803,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_session_data: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          session_data: Json
+          session_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          session_data?: Json
+          session_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          session_data?: Json
+          session_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           show_payment_values: boolean | null
@@ -831,6 +885,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_ui_state: {
+        Row: {
+          created_at: string
+          id: string
+          state_key: string
+          state_value: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          state_key: string
+          state_value?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          state_key?: string
+          state_value?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

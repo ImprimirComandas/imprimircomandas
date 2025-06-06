@@ -138,6 +138,25 @@ export default function Header({
                 />
               )}
             </NavLink>
+            <NavLink
+              to="/analytics"
+              pathname={location.pathname}
+              className={`
+                relative text-sm font-medium transition-colors duration-300
+                ${isSupabase ? 'text-foreground/80 hover:text-primary' : 'text-foreground/80 hover:text-primary'}
+              `}
+            >
+              Analytics
+              {location.pathname === '/analytics' && (
+                <motion.div
+                  className={`absolute -bottom-1 left-0 w-full h-0.5 ${isSupabase ? 'bg-primary' : 'bg-primary'}`}
+                  layoutId="underline"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
+            </NavLink>
           </nav>
         </div>
 
