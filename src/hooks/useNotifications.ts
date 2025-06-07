@@ -11,7 +11,7 @@ export interface Notification {
   dados_extras?: any;
   status?: string;
   user_id: string;
-  read?: boolean; // Adicionando a propriedade read
+  read?: boolean;
 }
 
 export function useNotifications() {
@@ -19,26 +19,66 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Função para tocar o beep
+  // Função para tocar o sino bem alto
   const playNotificationSound = useCallback(() => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
       
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      // Criar o som do sino com múltiplas frequências harmônicas
+      const playBellTone = (frequency: number, duration: number, startTime: number, volume: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        // Envelope de volume para simular o sino
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+        gainNode.gain.exponentialRampToValueAtTime(volume, audioContext.currentTime + startTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + duration);
+        
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + duration);
+      };
+
+      // Tocar sino com frequências harmônicas (como um sino real)
+      // Fundamental e harmônicos
+      playBellTone(523, 1.5, 0, 0.6);    // Dó (fundamental) - bem alto
+      playBellTone(659, 1.2, 0.05, 0.4); // Mi (terça maior)
+      playBellTone(784, 1.0, 0.1, 0.3);  // Sol (quinta)
+      playBellTone(1047, 0.8, 0.15, 0.2); // Dó oitava
       
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
+      // Segunda batida do sino (eco)
+      playBellTone(523, 1.2, 0.8, 0.4);
+      playBellTone(659, 1.0, 0.85, 0.25);
+      playBellTone(784, 0.8, 0.9, 0.2);
       
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
       console.log('Erro ao tocar som da notificação:', error);
+      
+      // Fallback: tentar usar um beep simples mais alto
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 1000; // Frequência mais alta
+        oscillator.type = 'square'; // Onda quadrada para som mais penetrante
+        
+        gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // Volume bem alto
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      } catch (fallbackError) {
+        console.log('Erro no fallback do som:', fallbackError);
+      }
     }
   }, []);
 
@@ -166,7 +206,7 @@ export function useNotifications() {
           if (!notificationWithRead.read) {
             setUnreadCount(prev => prev + 1);
             
-            // Tocar som
+            // Tocar som do sino bem alto
             playNotificationSound();
             
             // Mostrar toast
