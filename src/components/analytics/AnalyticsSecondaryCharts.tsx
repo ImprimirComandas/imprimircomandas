@@ -12,22 +12,22 @@ interface AnalyticsSecondaryChartsProps {
 
 export function AnalyticsSecondaryCharts({ hourlyStats, motoboyStats }: AnalyticsSecondaryChartsProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-        <Card>
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+              <Clock className="h-4 w-4 lg:h-5 lg:w-5" />
               Vendas por Horário
             </CardTitle>
-            <CardDescription>Performance por hora do dia</CardDescription>
+            <CardDescription className="text-sm">Performance por hora do dia</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
               <BarChart data={hourlyStats}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hora" />
-                <YAxis />
+                <XAxis dataKey="hora" fontSize={12} />
+                <YAxis fontSize={12} />
                 <Tooltip 
                   formatter={(value: number) => [formatCurrency(value), 'Vendas']}
                   labelFormatter={(label) => `${label}:00h`}
@@ -40,20 +40,20 @@ export function AnalyticsSecondaryCharts({ hourlyStats, motoboyStats }: Analytic
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-        <Card>
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+              <Truck className="h-4 w-4 lg:h-5 lg:w-5" />
               Performance dos Motoboys
             </CardTitle>
-            <CardDescription>Top 10 entregas por motoboy</CardDescription>
+            <CardDescription className="text-sm">Top 10 entregas por motoboy</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
               <BarChart data={motoboyStats} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="nome" type="category" width={100} />
+                <XAxis type="number" fontSize={12} />
+                <YAxis dataKey="nome" type="category" width={80} fontSize={10} />
                 <Tooltip 
                   formatter={(value: number) => [value, 'Entregas']}
                 />

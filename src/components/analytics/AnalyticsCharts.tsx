@@ -14,25 +14,29 @@ const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'
 
 export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-        <Card>
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+              <Calendar className="h-4 w-4 lg:h-5 lg:w-5" />
               Vendas por Período
             </CardTitle>
-            <CardDescription>Evolução das vendas no tempo</CardDescription>
+            <CardDescription className="text-sm">Evolução das vendas no tempo</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
               <AreaChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis 
+                  dataKey="date" 
+                  fontSize={12}
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                />
+                <YAxis fontSize={12} />
                 <Tooltip 
                   formatter={(value: number) => [formatCurrency(value), 'Vendas']}
-                  labelFormatter={(label) => `Data: ${label}`}
+                  labelFormatter={(label) => `Data: ${new Date(label).toLocaleDateString('pt-BR')}`}
                 />
                 <Area type="monotone" dataKey="total" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
               </AreaChart>
@@ -42,16 +46,16 @@ export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsPr
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-        <Card>
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+              <CreditCard className="h-4 w-4 lg:h-5 lg:w-5" />
               Formas de Pagamento
             </CardTitle>
-            <CardDescription>Distribuição por método de pagamento</CardDescription>
+            <CardDescription className="text-sm">Distribuição por método de pagamento</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
               <PieChart>
                 <Pie
                   data={paymentMethods}
@@ -59,9 +63,10 @@ export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsPr
                   cy="50%"
                   labelLine={false}
                   label={({ metodo, porcentagem }) => `${metodo} ${formatPercentage(porcentagem)}`}
-                  outerRadius={80}
+                  outerRadius="80%"
                   fill="#8884d8"
                   dataKey="total"
+                  fontSize={12}
                 >
                   {paymentMethods.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

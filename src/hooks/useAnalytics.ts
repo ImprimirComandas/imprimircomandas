@@ -37,12 +37,6 @@ interface PaymentMethodStats {
   porcentagem: number;
 }
 
-interface OrderStatusStats {
-  confirmados: number;
-  nao_confirmados: number;
-  taxa_confirmacao: number;
-}
-
 interface HourlyStats {
   hora: number;
   total: number;
@@ -56,7 +50,6 @@ interface AnalyticsData {
   salesData: SalesData[];
   motoboyStats: MotoboyStats[];
   paymentMethods: PaymentMethodStats[];
-  orderStatus: OrderStatusStats;
   hourlyStats: HourlyStats[];
   totalStats: {
     totalSales: number;
@@ -77,11 +70,6 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
     salesData: [],
     motoboyStats: [],
     paymentMethods: [],
-    orderStatus: {
-      confirmados: 0,
-      nao_confirmados: 0,
-      taxa_confirmacao: 0,
-    },
     hourlyStats: [],
     totalStats: {
       totalSales: 0,
@@ -101,20 +89,13 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      // Construir filtro de data
-      let dateFilter = '';
-      if (dateRange) {
-        const startDate = dateRange.start.toISOString().split('T')[0];
-        const endDate = dateRange.end.toISOString().split('T')[0];
-        dateFilter = `AND DATE(created_at) BETWEEN '${startDate}' AND '${endDate}'`;
-      }
-
-      // Buscar todas as comandas (com e sem filtro de data)
+      // Construir query base para comandas
       let comandasQuery = supabase
         .from('comandas')
-        .select('produtos, total, created_at, pago, forma_pagamento, bairro')
+        .select('*')
         .eq('user_id', session.user.id);
 
+      // Aplicar filtro de data se fornecido
       if (dateRange) {
         const startDate = dateRange.start.toISOString();
         const endDate = dateRange.end.toISOString();
@@ -123,9 +104,14 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
           .lte('created_at', endDate);
       }
 
-      const { data: comandasData } = await comandasQuery;
+      const { data: comandasData, error } = await comandasQuery;
+      
+      if (error) {
+        console.error('Erro ao buscar comandas:', error);
+        throw error;
+      }
 
-      // Processar produtos mais e menos vendidos
+      // Inicializar contadores e mapas
       const productMap = new Map();
       const paymentMethodMap = new Map();
       const hourlyMap = new Map();
@@ -134,27 +120,27 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
 
       let totalConfirmed = 0;
       let totalUnconfirmed = 0;
+      let totalSales = 0;
+      let totalOrders = 0;
 
+      // Processar dados das comandas
       comandasData?.forEach(comanda => {
         // Contar status de pedidos
         if (comanda.pago) {
           totalConfirmed += 1;
-        } else {
-          totalUnconfirmed += 1;
-        }
+          totalSales += Number(comanda.total) || 0;
+          totalOrders += 1;
 
-        // Processar apenas comandas pagas para métricas de vendas
-        if (comanda.pago) {
-          // Análise por forma de pagamento
+          // Processar apenas comandas pagas para métricas de vendas
           const formaPagamento = comanda.forma_pagamento || 'Não informado';
           if (paymentMethodMap.has(formaPagamento)) {
             const existing = paymentMethodMap.get(formaPagamento);
-            existing.total += Number(comanda.total);
+            existing.total += Number(comanda.total) || 0;
             existing.quantidade += 1;
           } else {
             paymentMethodMap.set(formaPagamento, {
               metodo: formaPagamento,
-              total: Number(comanda.total),
+              total: Number(comanda.total) || 0,
               quantidade: 1,
               porcentagem: 0,
             });
@@ -164,64 +150,68 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
           const hora = new Date(comanda.created_at).getHours();
           if (hourlyMap.has(hora)) {
             const existing = hourlyMap.get(hora);
-            existing.total += Number(comanda.total);
+            existing.total += Number(comanda.total) || 0;
             existing.pedidos += 1;
           } else {
             hourlyMap.set(hora, {
               hora,
-              total: Number(comanda.total),
+              total: Number(comanda.total) || 0,
               pedidos: 1,
             });
           }
 
           // Análise por bairro
-          const bairro = comanda.bairro;
-          if (neighborhoodMap.has(bairro)) {
-            const existing = neighborhoodMap.get(bairro);
-            existing.total_entregas += 1;
-            existing.valor_total += Number(comanda.total);
-          } else {
-            neighborhoodMap.set(bairro, {
-              bairro,
-              total_entregas: 1,
-              valor_total: Number(comanda.total),
-              valor_medio: Number(comanda.total),
-            });
+          if (comanda.bairro) {
+            const bairro = comanda.bairro;
+            if (neighborhoodMap.has(bairro)) {
+              const existing = neighborhoodMap.get(bairro);
+              existing.total_entregas += 1;
+              existing.valor_total += Number(comanda.total) || 0;
+            } else {
+              neighborhoodMap.set(bairro, {
+                bairro,
+                total_entregas: 1,
+                valor_total: Number(comanda.total) || 0,
+                valor_medio: Number(comanda.total) || 0,
+              });
+            }
           }
 
           // Vendas por data
-          const date = comanda.created_at.split('T')[0];
+          const date = comanda.created_at ? comanda.created_at.split('T')[0] : new Date().toISOString().split('T')[0];
           if (salesMap.has(date)) {
             const existing = salesMap.get(date);
-            existing.total += Number(comanda.total);
+            existing.total += Number(comanda.total) || 0;
             existing.orders += 1;
           } else {
             salesMap.set(date, {
               date,
-              total: Number(comanda.total),
+              total: Number(comanda.total) || 0,
               orders: 1,
             });
           }
 
-          // Produtos
-          if (comanda.produtos) {
+          // Processar produtos
+          if (comanda.produtos && Array.isArray(comanda.produtos)) {
             comanda.produtos.forEach((produto: any) => {
               const key = produto.nome;
               if (productMap.has(key)) {
                 const existing = productMap.get(key);
-                existing.quantidade_total += produto.quantidade;
-                existing.valor_total += produto.quantidade * produto.valor;
+                existing.quantidade_total += produto.quantidade || 0;
+                existing.valor_total += (produto.quantidade || 0) * (produto.valor || 0);
               } else {
                 productMap.set(key, {
                   nome: produto.nome,
                   categoria: produto.categoria || 'Sem categoria',
-                  total_vendido: produto.quantidade,
-                  quantidade_total: produto.quantidade,
-                  valor_total: produto.quantidade * produto.valor,
+                  total_vendido: produto.quantidade || 0,
+                  quantidade_total: produto.quantidade || 0,
+                  valor_total: (produto.quantidade || 0) * (produto.valor || 0),
                 });
               }
             });
           }
+        } else {
+          totalUnconfirmed += 1;
         }
       });
 
@@ -292,12 +282,12 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
         if (motoboyMap.has(nome)) {
           const existing = motoboyMap.get(nome);
           existing.total_entregas += 1;
-          existing.valor_total += Number(entrega.valor_entrega);
+          existing.valor_total += Number(entrega.valor_entrega) || 0;
         } else {
           motoboyMap.set(nome, {
             nome,
             total_entregas: 1,
-            valor_total: Number(entrega.valor_entrega),
+            valor_total: Number(entrega.valor_entrega) || 0,
           });
         }
       });
@@ -307,8 +297,6 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
         .slice(0, 10);
 
       // Calcular estatísticas totais
-      const totalSales = comandasData?.filter(c => c.pago).reduce((sum, comanda) => sum + Number(comanda.total), 0) || 0;
-      const totalOrders = comandasData?.filter(c => c.pago).length || 0;
       const totalDeliveries = deliveryData?.length || 0;
       const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
       const conversionRate = (totalConfirmed + totalUnconfirmed) > 0 ? (totalConfirmed / (totalConfirmed + totalUnconfirmed)) * 100 : 0;
@@ -320,11 +308,6 @@ export function useAnalytics(dateRange?: { start: Date; end: Date }) {
         salesData,
         motoboyStats,
         paymentMethods,
-        orderStatus: {
-          confirmados: totalConfirmed,
-          nao_confirmados: totalUnconfirmed,
-          taxa_confirmacao: conversionRate,
-        },
         hourlyStats,
         totalStats: {
           totalSales,
