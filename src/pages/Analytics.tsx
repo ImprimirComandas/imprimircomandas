@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getInitialDateRange } from '../utils/dateUtils';
 import type { DateRange } from 'react-date-range';
 import { useAnalyticsOptimized } from '../hooks/useAnalyticsOptimized';
@@ -21,6 +21,11 @@ export default function Analytics() {
   } : undefined;
 
   const { data, loading, error, refetch, isEmpty } = useAnalyticsOptimized(analyticsDateRange);
+
+  // Debug log for date changes
+  useEffect(() => {
+    console.log('Date range changed:', analyticsDateRange);
+  }, [analyticsDateRange]);
 
   if (loading) {
     return <AnalyticsLoadingState />;

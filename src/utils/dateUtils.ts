@@ -8,6 +8,34 @@ export const getInitialDateRange = (): DateRange[] => [{
   key: 'selection'
 }];
 
+export const getDateRangeForPeriod = (period: 'today' | 'week' | 'month' | '3months'): DateRange[] => {
+  const today = new Date();
+  let startDate: Date;
+  
+  switch (period) {
+    case 'today':
+      startDate = startOfDay(today);
+      break;
+    case 'week':
+      startDate = startOfDay(subDays(today, 6));
+      break;
+    case 'month':
+      startDate = startOfDay(subDays(today, 29));
+      break;
+    case '3months':
+      startDate = startOfDay(subDays(today, 89));
+      break;
+    default:
+      startDate = startOfDay(today);
+  }
+  
+  return [{
+    startDate,
+    endDate: endOfDay(today),
+    key: 'selection'
+  }];
+};
+
 export const calculateNewDateRange = (
   currentRange: DateRange[],
   direction: 'prev' | 'next'
@@ -17,7 +45,6 @@ export const calculateNewDateRange = (
     return currentRange;
   }
 
-  // Calculate the number of days in the current range
   const days = Math.ceil(
     Math.abs(
       (currentRange[0].endDate.getTime() || 0) - 
@@ -41,7 +68,6 @@ export const calculateNewDateRange = (
     const endDate = addDays(currentRange[0].endDate, days);
     const maxDate = new Date();
     
-    // Don't allow future dates
     if (startDate > maxDate) {
       console.log("Can't go to future dates");
       return currentRange;

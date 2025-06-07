@@ -39,9 +39,9 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
   }, [dateRange?.start.getTime(), dateRange?.end.getTime()]);
 
   const fetchAnalytics = useCallback(async (forceRefresh = false) => {
-    // Prevent excessive API calls
+    // Prevent excessive API calls (debounce)
     const now = Date.now();
-    if (!forceRefresh && now - lastFetch < 5000) return;
+    if (!forceRefresh && now - lastFetch < 1000) return; // 1 second debounce
 
     try {
       setLoading(true);
@@ -52,7 +52,9 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
         throw new Error('Usuário não autenticado');
       }
 
-      // Build base query
+      console.log('Fetching analytics for period:', memoizedDateRange);
+
+      // Build base query for comandas
       let baseQuery = supabase
         .from('comandas')
         .select('*')
@@ -69,10 +71,12 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
       
       if (comandasError) throw comandasError;
 
-      // Process data efficiently
+      console.log('Comandas data loaded:', comandasData?.length || 0, 'records');
+
+      // Process comandas data efficiently
       const processedData = processComandas(comandasData || []);
 
-      // Fetch delivery data
+      // Fetch delivery data in parallel
       let deliveryQuery = supabase
         .from('entregas')
         .select(`
@@ -89,8 +93,12 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
       }
 
       const { data: deliveryData } = await deliveryQuery;
+      console.log('Delivery data loaded:', deliveryData?.length || 0, 'records');
 
       const motoboyStats = processDeliveryData(deliveryData || []);
+
+      // Update total deliveries count
+      processedData.totalStats.totalDeliveries = deliveryData?.length || 0;
 
       setData({
         ...processedData,
@@ -98,6 +106,7 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
       });
 
       setLastFetch(now);
+      console.log('Analytics data processed successfully');
     } catch (err) {
       console.error('Erro ao carregar analytics:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -109,6 +118,8 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
   }, [memoizedDateRange, lastFetch]);
 
   const processComandas = useCallback((comandas: any[]) => {
+    console.log('Processing comandas:', comandas.length);
+    
     const productMap = new Map();
     const paymentMethodMap = new Map();
     const hourlyMap = new Map();
@@ -216,8 +227,7 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
 
     // Process sales data
     const salesData = Array.from(salesMap.values())
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(-30);
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Process hourly stats
     const hourlyStats = Array.from(hourlyMap.values())
@@ -271,8 +281,13 @@ export function useAnalyticsOptimized(dateRange?: AnalyticsDateRange) {
     fetchAnalytics(true);
   }, [fetchAnalytics]);
 
+  // Fetch data when date range changes
   useEffect(() => {
-    fetchAnalytics();
+    const timeoutId = setTimeout(() => {
+      fetchAnalytics();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [fetchAnalytics]);
 
   return { 

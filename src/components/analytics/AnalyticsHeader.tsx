@@ -1,6 +1,6 @@
 
 import { Button } from '../ui/button';
-import { DateRangeSelector } from '../orders/DateRangeSelector';
+import { AnalyticsDateRangeSelector } from './AnalyticsDateRangeSelector';
 import { TrendingUp, RefreshCw } from 'lucide-react';
 import type { DateRange } from 'react-date-range';
 
@@ -36,7 +36,7 @@ export function AnalyticsHeader({ dateRange, onDateChange, loading, onRefetch }:
         </Button>
       </div>
       
-      <DateRangeSelector
+      <AnalyticsDateRangeSelector
         dateRange={dateRange}
         onDateChange={onDateChange}
         loading={loading}
