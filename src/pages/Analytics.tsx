@@ -1,13 +1,16 @@
 
 import { useState } from 'react';
-import { useAnalytics } from '../hooks/useAnalytics';
 import { getInitialDateRange } from '../utils/dateUtils';
 import type { DateRange } from 'react-date-range';
+import { useAnalyticsOptimized } from '../hooks/useAnalyticsOptimized';
 import { AnalyticsHeader } from '../components/analytics/AnalyticsHeader';
 import { AnalyticsKPIs } from '../components/analytics/AnalyticsKPIs';
 import { AnalyticsCharts } from '../components/analytics/AnalyticsCharts';
 import { AnalyticsSecondaryCharts } from '../components/analytics/AnalyticsSecondaryCharts';
 import { AnalyticsDataTables } from '../components/analytics/AnalyticsDataTables';
+import { AnalyticsLoadingState } from '../components/analytics/AnalyticsLoadingState';
+import { AnalyticsEmptyState } from '../components/analytics/AnalyticsEmptyState';
+import { AnalyticsErrorState } from '../components/analytics/AnalyticsErrorState';
 
 export default function Analytics() {
   const [dateRange, setDateRange] = useState<DateRange[]>(getInitialDateRange());
@@ -17,16 +20,18 @@ export default function Analytics() {
     end: dateRange[0].endDate
   } : undefined;
 
-  const { data, loading, refetch } = useAnalytics(analyticsDateRange);
+  const { data, loading, error, refetch, isEmpty } = useAnalyticsOptimized(analyticsDateRange);
 
   if (loading) {
-    return (
-      <div className="container mx-auto p-4 lg:p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
+    return <AnalyticsLoadingState />;
+  }
+
+  if (error) {
+    return <AnalyticsErrorState error={error.message} onRetry={refetch} />;
+  }
+
+  if (isEmpty) {
+    return <AnalyticsEmptyState />;
   }
 
   return (

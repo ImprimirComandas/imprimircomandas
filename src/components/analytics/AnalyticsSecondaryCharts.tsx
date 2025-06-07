@@ -4,10 +4,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Clock, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '../../utils/analyticsFormatters';
+import type { HourlyStats, MotoboyStats } from '../../types/analytics';
 
 interface AnalyticsSecondaryChartsProps {
-  hourlyStats: Array<{ hora: number; total: number; pedidos: number }>;
-  motoboyStats: Array<{ nome: string; total_entregas: number; valor_total: number }>;
+  hourlyStats: HourlyStats[];
+  motoboyStats: MotoboyStats[];
 }
 
 export function AnalyticsSecondaryCharts({ hourlyStats, motoboyStats }: AnalyticsSecondaryChartsProps) {
@@ -16,23 +17,36 @@ export function AnalyticsSecondaryCharts({ hourlyStats, motoboyStats }: Analytic
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <Clock className="h-4 w-4 lg:h-5 lg:w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5" />
               Vendas por Horário
             </CardTitle>
-            <CardDescription className="text-sm">Performance por hora do dia</CardDescription>
+            <CardDescription>Performance por hora do dia</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={hourlyStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hora" fontSize={12} />
-                <YAxis fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="hora" 
+                  fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
                 <Tooltip 
                   formatter={(value: number) => [formatCurrency(value), 'Vendas']}
                   labelFormatter={(label) => `${label}:00h`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
                 />
-                <Bar dataKey="total" fill="#10b981" />
+                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -42,22 +56,37 @@ export function AnalyticsSecondaryCharts({ hourlyStats, motoboyStats }: Analytic
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <Truck className="h-4 w-4 lg:h-5 lg:w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Truck className="h-5 w-5" />
               Performance dos Motoboys
             </CardTitle>
-            <CardDescription className="text-sm">Top 10 entregas por motoboy</CardDescription>
+            <CardDescription>Top 10 entregas por motoboy</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={motoboyStats} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" fontSize={12} />
-                <YAxis dataKey="nome" type="category" width={80} fontSize={10} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  type="number" 
+                  fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis 
+                  dataKey="nome" 
+                  type="category" 
+                  width={80} 
+                  fontSize={10}
+                  stroke="hsl(var(--muted-foreground))"
+                />
                 <Tooltip 
                   formatter={(value: number) => [value, 'Entregas']}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
                 />
-                <Bar dataKey="total_entregas" fill="#8b5cf6" />
+                <Bar dataKey="total_entregas" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

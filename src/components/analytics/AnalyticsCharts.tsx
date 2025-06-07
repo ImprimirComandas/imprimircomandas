@@ -4,10 +4,11 @@ import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tool
 import { Calendar, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency, formatPercentage } from '../../utils/analyticsFormatters';
+import type { SalesData, PaymentMethodStats } from '../../types/analytics';
 
 interface AnalyticsChartsProps {
-  salesData: Array<{ date: string; total: number; orders: number }>;
-  paymentMethods: Array<{ metodo: string; total: number; quantidade: number; porcentagem: number }>;
+  salesData: SalesData[];
+  paymentMethods: PaymentMethodStats[];
 }
 
 const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
@@ -18,27 +19,44 @@ export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsPr
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <Calendar className="h-4 w-4 lg:h-5 lg:w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Calendar className="h-5 w-5" />
               Vendas por Período
             </CardTitle>
-            <CardDescription className="text-sm">Evolução das vendas no tempo</CardDescription>
+            <CardDescription>Evolução das vendas no tempo</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="date" 
                   fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
                   tickFormatter={(value) => new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 />
-                <YAxis fontSize={12} />
+                <YAxis 
+                  fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
                 <Tooltip 
                   formatter={(value: number) => [formatCurrency(value), 'Vendas']}
                   labelFormatter={(label) => `Data: ${new Date(label).toLocaleDateString('pt-BR')}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
                 />
-                <Area type="monotone" dataKey="total" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                <Area 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="hsl(var(--primary))" 
+                  fill="hsl(var(--primary))" 
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -48,14 +66,14 @@ export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsPr
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <CreditCard className="h-4 w-4 lg:h-5 lg:w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CreditCard className="h-5 w-5" />
               Formas de Pagamento
             </CardTitle>
-            <CardDescription className="text-sm">Distribuição por método de pagamento</CardDescription>
+            <CardDescription>Distribuição por método de pagamento</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="lg:h-[300px]">
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={paymentMethods}
@@ -72,7 +90,14 @@ export function AnalyticsCharts({ salesData, paymentMethods }: AnalyticsChartsPr
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Total']} />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'Total']}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
