@@ -413,7 +413,7 @@ export default function StoreSettings() {
       </PageContainer>
 
       <section className="my-8">
-        <MercadoPagoConfigPanel />
+        <MercadoPagoConfigPanel showApplicationId />
       </section>
     </div>
   );

@@ -1,4 +1,3 @@
-
 // Painel de configuração Mercado Pago
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
-export default function MercadoPagoConfigPanel() {
+export default function MercadoPagoConfigPanel({ showApplicationId = false }: { showApplicationId?: boolean }) {
   const { user } = useAuth();
   const [accessToken, setAccessToken] = useState("");
   const [publicKey, setPublicKey] = useState("");
@@ -15,6 +14,7 @@ export default function MercadoPagoConfigPanel() {
   const [productionMode, setProductionMode] = useState(false);
   const [ativo, setAtivo] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [applicationId, setApplicationId] = useState("");
 
   useEffect(() => {
     // Carrega config existente
@@ -29,6 +29,7 @@ export default function MercadoPagoConfigPanel() {
           setWebhookUrl(data.webhook_url || "");
           setProductionMode(!!data.production_mode);
           setAtivo(!!data.ativo);
+          setApplicationId(data.application_id || "");
         })
     }
   }, [user]);
@@ -73,6 +74,13 @@ export default function MercadoPagoConfigPanel() {
         <Switch checked={ativo} onCheckedChange={setAtivo} />
         <span>Configuração ativa</span>
       </div>
+      {showApplicationId && (
+        <div className="mb-2">
+          <label className="block mb-1">Application ID</label>
+          <Input value={applicationId} readOnly />
+          <p className="text-xs text-muted-foreground">Use este Application ID ao criar integrações Mercado Pago.</p>
+        </div>
+      )}
       <Button onClick={salvar} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
     </div>
   );

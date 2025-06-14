@@ -1,10 +1,11 @@
-
 // Página pública da loja online: catálogo, carrinho e checkout
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, DollarSign, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import { useRealtimeOrderStatus } from "../hooks/useRealtimeOrderStatus";
+import { Button } from "@/components/ui/button";
 
 // Tipos simples
 interface Produto {
@@ -130,6 +131,29 @@ export default function PublicStore() {
     return cartTotal() + (bairroSelecionado?.taxa ?? 0);
   }
 
+  // Track current orderId for realtime updates (set after order created)
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  // New state for order status (used for instant updates)
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
+
+  // Hooks: Listen for real-time order status with Supabase Realtime
+  useRealtimeOrderStatus({
+    orderId: currentOrderId,
+    onStatusChange: (status) => {
+      setOrderStatus(status);
+      // Show toast if order is approved or rejected
+      if (status === "aprovado") {
+        toast.success("Pedido aprovado! Seu pedido está sendo preparado.");
+      }
+      if (status === "recusado") {
+        toast.error("Seu pedido foi recusado, entre em contato.");
+      }
+      if (status === "pago") {
+        toast.success("Pagamento confirmado pelo Mercado Pago!");
+      }
+    },
+  });
+
   // Registro de pedido e checkout Mercado Pago
   async function fazerPedidoOnline() {
     if (!bairroSelecionado) { toast.error("Selecione o bairro de entrega."); return; }
@@ -164,12 +188,13 @@ export default function PublicStore() {
 
       if (error || !data) throw new Error("Erro ao registrar pedido. Tente novamente.");
 
-      // 2. Chama função edge criar preferência Mercado Pago
+      setCurrentOrderId(data.id); // Track order ID for live updates
+
+      // 2. Chama função edge criar preferência Mercado Pago (transparent checkout)
       const { data: funcData, error: funcError } = await supabase.functions.invoke("create-mercado-pago-payment", {
         body: { orderId: data.id }
       });
       if (funcError) throw new Error("Erro ao iniciar checkout com Mercado Pago");
-      // Pega o link de checkout retornado
       const mpLink = funcData?.mp?.init_point || funcData?.mp?.sandbox_init_point;
       if (!mpLink) throw new Error("Não foi possível obter link do Mercado Pago");
       setCheckoutUrl(mpLink);
@@ -178,6 +203,16 @@ export default function PublicStore() {
       toast.error(e.message || "Erro desconhecido");
     }
     setCheckoutLoading(false);
+  }
+
+  // Exibe o status em tempo real do pedido (client view)
+  function mostrarStatus() {
+    if (!orderStatus) return null;
+    if (orderStatus === "aguardando_pagamento") return <div className="my-3 text-yellow-600">Aguardando pagamento...</div>;
+    if (orderStatus === "aprovado") return <div className="my-3 text-green-700 font-semibold">Pedido aprovado!</div>;
+    if (orderStatus === "recusado") return <div className="my-3 text-red-600 font-semibold">Pedido recusado</div>;
+    if (orderStatus === "pago") return <div className="my-3 text-blue-700">Pagamento confirmado!</div>;
+    return <div className="my-3 text-muted-foreground">Status: {orderStatus}</div>;
   }
 
   if (checkoutUrl) {
@@ -339,4 +374,3 @@ export default function PublicStore() {
     </div>
   );
 }
-
