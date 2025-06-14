@@ -283,6 +283,33 @@ export default function StoreSettings() {
               </div>
             )}
           </Section>
+
+          {/* NOVA SEÇÃO: Atalhos de configuração */}
+          <Section>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <span>🛠️</span> Gerencie sua loja
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/produtos')}
+                className="bg-secondary hover:bg-secondary/90 rounded-lg px-4 py-3 flex items-center flex-col gap-2 border"
+              >
+                <span className="font-bold text-lg">Produtos</span>
+                <span className="text-muted-foreground text-xs text-center">
+                  Adicione, edite ou remova produtos do seu catálogo.
+                </span>
+              </button>
+              <button
+                onClick={() => navigate('/delivery-rates')}
+                className="bg-secondary hover:bg-secondary/90 rounded-lg px-4 py-3 flex items-center flex-col gap-2 border"
+              >
+                <span className="font-bold text-lg">Bairros & Taxas</span>
+                <span className="text-muted-foreground text-xs text-center">
+                  Configure bairros atendidos e taxas de entrega.
+                </span>
+              </button>
+            </div>
+          </Section>
         </div>
       </PageContainer>
 
