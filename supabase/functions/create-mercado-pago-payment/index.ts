@@ -1,7 +1,7 @@
 
 // Função para criar uma preferência de pagamento Mercado Pago
 import { serve } from 'std/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "npm:@supabase/supabase-js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
