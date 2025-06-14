@@ -23,6 +23,11 @@ export default function StoreSettings() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [printSize, setPrintSize] = useState<'80mm' | '58mm'>('80mm');
+  const [descricao, setDescricao] = useState('');
+  const [mensagemPublica, setMensagemPublica] = useState('');
+  const [slug, setSlug] = useState('');
+  const [horario, setHorario] = useState('');
+  const [lojaOnlineAtiva, setLojaOnlineAtiva] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,6 +59,11 @@ export default function StoreSettings() {
         if (data.print_size) {
           setPrintSize(data.print_size);
         }
+        setDescricao(data.loja_online_descricao || '');
+        setMensagemPublica(data.loja_online_mensagem_publica || '');
+        setSlug(data.loja_online_slug || '');
+        setHorario(data.loja_online_horario || '');
+        setLojaOnlineAtiva(!!data.loja_online_ativa);
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
@@ -73,12 +83,17 @@ export default function StoreSettings() {
         return;
       }
 
-      const updates = {
+      const updates: any = {
         id: session.user.id,
         store_name: storeName,
         avatar_url: avatarUrl,
         print_size: printSize,
         updated_at: new Date().toISOString(),
+        loja_online_descricao: descricao,
+        loja_online_mensagem_publica: mensagemPublica,
+        loja_online_slug: slug,
+        loja_online_horario: horario,
+        loja_online_ativa: lojaOnlineAtiva,
       };
 
       const { error } = await supabase
@@ -94,6 +109,7 @@ export default function StoreSettings() {
       toast.error('Erro ao atualizar dados da loja');
     } finally {
       setLoading(false);
+      getProfile();
     }
   }
 
@@ -245,6 +261,89 @@ export default function StoreSettings() {
                   <p className="text-sm text-muted-foreground">
                     Escolha o tamanho do papel da sua impressora térmica
                   </p>
+                </div>
+
+                {/* Campos extras para configuração da loja online */}
+                <div>
+                  <label
+                    htmlFor="loja-online-ativa"
+                    className="flex items-center gap-2 mb-2 text-sm font-medium text-foreground"
+                  >
+                    <input
+                      id="loja-online-ativa"
+                      type="checkbox"
+                      checked={lojaOnlineAtiva}
+                      onChange={(e) => setLojaOnlineAtiva(e.target.checked)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    Ativar loja online
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Slug da loja pública (Endereço da página)
+                  </label>
+                  <div className="flex gap-2">
+                    <span className="py-2 px-2 text-muted-foreground rounded-l bg-muted min-w-[100px]">{window.location.origin}/loja/</span>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={e => setSlug(e.target.value.replace(/[^\w\-]/g, '').toLowerCase())}
+                      placeholder="ex: minha-loja"
+                      className="flex-1 px-3 py-2 border border-input rounded-r bg-background"
+                      maxLength={32}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Link público da loja:{" "}
+                    <a 
+                      className="underline text-primary" 
+                      target="_blank" 
+                      rel="noopener"
+                      href={slug ? `/loja/${slug}` : "#"}
+                    >
+                      {window.location.origin}/loja/{slug || "<slug>"}
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Descrição da loja (aparece no topo da loja)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={descricao}
+                    onChange={e => setDescricao(e.target.value)}
+                    placeholder="Ex: Pizzas artesanais, lanches e bebidas."
+                    className="w-full px-4 py-2 rounded-lg border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                    maxLength={128}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Mensagem pública (opcional, rodapé da loja)
+                  </label>
+                  <input
+                    type="text"
+                    value={mensagemPublica}
+                    onChange={e => setMensagemPublica(e.target.value)}
+                    placeholder="Ex: Entregas até as 23h. Aceitamos Pix!"
+                    className="w-full px-4 py-2 rounded-lg border border-input bg-background"
+                    maxLength={80}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Horário de funcionamento exibido na loja (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={horario}
+                    onChange={e => setHorario(e.target.value)}
+                    placeholder="Ex: Seg-Sáb 18h às 23h"
+                    className="w-full px-4 py-2 rounded-lg border border-input bg-background"
+                    maxLength={64}
+                  />
                 </div>
 
                 <button
