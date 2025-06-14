@@ -236,6 +236,42 @@ export type Database = {
           },
         ]
       }
+      mercado_pago_settings: {
+        Row: {
+          access_token: string
+          ativo: boolean
+          created_at: string | null
+          id: string
+          production_mode: boolean
+          public_key: string
+          updated_at: string | null
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          access_token: string
+          ativo?: boolean
+          created_at?: string | null
+          id?: string
+          production_mode?: boolean
+          public_key: string
+          updated_at?: string | null
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          access_token?: string
+          ativo?: boolean
+          created_at?: string | null
+          id?: string
+          production_mode?: boolean
+          public_key?: string
+          updated_at?: string | null
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       motoboy_sessions: {
         Row: {
           end_time: string | null
@@ -488,6 +524,57 @@ export type Database = {
           },
         ]
       }
+      online_orders: {
+        Row: {
+          carrinho: Json | null
+          cliente_email: string | null
+          cliente_endereco: string | null
+          cliente_nome: string | null
+          cliente_telefone: string | null
+          created_at: string | null
+          id: string
+          mercado_pago_payment_id: string | null
+          mercado_pago_status: string | null
+          pagamento_metodo: string | null
+          status: string
+          store_id: string
+          updated_at: string | null
+          valor_total: number
+        }
+        Insert: {
+          carrinho?: Json | null
+          cliente_email?: string | null
+          cliente_endereco?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string | null
+          id?: string
+          mercado_pago_payment_id?: string | null
+          mercado_pago_status?: string | null
+          pagamento_metodo?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string | null
+          valor_total: number
+        }
+        Update: {
+          carrinho?: Json | null
+          cliente_email?: string | null
+          cliente_endereco?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string | null
+          id?: string
+          mercado_pago_payment_id?: string | null
+          mercado_pago_status?: string | null
+          pagamento_metodo?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string | null
+          valor_total?: number
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           cash_amount: number | null
@@ -579,6 +666,11 @@ export type Database = {
           last_login: string | null
           locked_until: string | null
           login_attempts: number | null
+          loja_online_ativa: boolean
+          loja_online_descricao: string | null
+          loja_online_horario: string | null
+          loja_online_mensagem_publica: string | null
+          loja_online_slug: string | null
           phone: string | null
           print_size: string | null
           show_values: boolean | null
@@ -598,6 +690,11 @@ export type Database = {
           last_login?: string | null
           locked_until?: string | null
           login_attempts?: number | null
+          loja_online_ativa?: boolean
+          loja_online_descricao?: string | null
+          loja_online_horario?: string | null
+          loja_online_mensagem_publica?: string | null
+          loja_online_slug?: string | null
           phone?: string | null
           print_size?: string | null
           show_values?: boolean | null
@@ -617,6 +714,11 @@ export type Database = {
           last_login?: string | null
           locked_until?: string | null
           login_attempts?: number | null
+          loja_online_ativa?: boolean
+          loja_online_descricao?: string | null
+          loja_online_horario?: string | null
+          loja_online_mensagem_publica?: string | null
+          loja_online_slug?: string | null
           phone?: string | null
           print_size?: string | null
           show_values?: boolean | null
@@ -916,6 +1018,33 @@ export type Database = {
           state_value?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          id: string
+          order_id: string | null
+          payload: Json | null
+          received_at: string | null
+          store_id: string | null
+          webhook_event: string | null
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          received_at?: string | null
+          store_id?: string | null
+          webhook_event?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          received_at?: string | null
+          store_id?: string | null
+          webhook_event?: string | null
         }
         Relationships: []
       }
