@@ -1,6 +1,5 @@
-
 import { FC } from 'react';
-import ComandaForm from '../comanda/ComandaForm';
+import ComandaForm from '../ComandaForm';
 import type { Comanda } from '../../types/database';
 
 interface LeftColumnProps {
@@ -19,6 +18,8 @@ interface LeftColumnProps {
   onFormaPagamentoChange: (forma: 'pix' | 'dinheiro' | 'cartao' | 'misto' | '') => void;
   selecionarProdutoCadastrado: (produto: { id: string; nome: string; valor: number }) => void;
   startEditingProduct: (produto: { id: string; nome: string; valor: number }) => void;
+  isCadastroBloqueado: boolean;
+  loadingBloqueio: boolean;
 }
 
 const LeftColumn: FC<LeftColumnProps> = ({
@@ -37,6 +38,8 @@ const LeftColumn: FC<LeftColumnProps> = ({
   onFormaPagamentoChange,
   selecionarProdutoCadastrado,
   startEditingProduct,
+  isCadastroBloqueado,
+  loadingBloqueio,
 }) => {
   return (
     <ComandaForm
@@ -55,6 +58,8 @@ const LeftColumn: FC<LeftColumnProps> = ({
       onFormaPagamentoChange={onFormaPagamentoChange}
       selecionarProdutoCadastrado={selecionarProdutoCadastrado}
       startEditingProduct={startEditingProduct}
+      isCadastroBloqueado={isCadastroBloqueado}
+      loadingBloqueio={loadingBloqueio}
     />
   );
 };

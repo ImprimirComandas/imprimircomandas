@@ -584,6 +584,8 @@ export type Database = {
           show_values: boolean | null
           status: string | null
           store_name: string | null
+          store_open: boolean | null
+          taxa_entrega_default: number | null
           theme: string | null
           updated_at: string | null
         }
@@ -601,6 +603,8 @@ export type Database = {
           show_values?: boolean | null
           status?: string | null
           store_name?: string | null
+          store_open?: boolean | null
+          taxa_entrega_default?: number | null
           theme?: string | null
           updated_at?: string | null
         }
@@ -618,6 +622,8 @@ export type Database = {
           show_values?: boolean | null
           status?: string | null
           store_name?: string | null
+          store_open?: boolean | null
+          taxa_entrega_default?: number | null
           theme?: string | null
           updated_at?: string | null
         }

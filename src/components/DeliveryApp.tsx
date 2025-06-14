@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useComandaForm } from '../hooks/useComandaForm';
 import { useComandas } from '../hooks/useComandas';
@@ -67,6 +66,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
     salvarComanda,
     selecionarProdutoCadastrado,
     startEditingProduct,
+    isCadastroBloqueado,
+    loadingBloqueio,
   } = useComandaForm(carregarComandas, setSalvando);
 
   // Estado para o gráfico
@@ -117,6 +118,8 @@ export default function DeliveryApp({ profile }: DeliveryAppProps) {
               onFormaPagamentoChange={onFormaPagamentoChange}
               selecionarProdutoCadastrado={selecionarProdutoCadastrado}
               startEditingProduct={startEditingProduct}
+              isCadastroBloqueado={isCadastroBloqueado}
+              loadingBloqueio={loadingBloqueio}
             />
           </div>
 

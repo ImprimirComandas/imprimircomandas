@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useBairros } from './useBairros';
 import { useProdutoSearch } from './useProdutoSearch';
@@ -6,10 +5,16 @@ import { usePagamento } from './usePagamento';
 import { useComandaState } from './useComandaState';
 import { useSalvarComanda } from './useSalvarComanda';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth'; // Para pegar o usuário logado
+import { usePendingComandasCount } from './usePendingComandasCount'; // Novo hook
+
+export const MAX_PENDING_COMANDAS = 3;
 
 export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvando: (value: boolean) => void) => {
   const { bairroTaxas, bairrosDisponiveis, loading: bairrosLoading, refreshBairros } = useBairros();
-  
+  const { user } = useAuth(); // Pega o usuário logado
+  const { pendingCount, loading: loadingPendentes } = usePendingComandasCount(user?.id);
+
   const {
     comanda,
     subtotal,
@@ -136,6 +141,9 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     updateComandaField('forma_pagamento', forma);
   };
 
+  // Determinar se está bloqueado pelo limite de pendentes
+  const isCadastroBloqueado = pendingCount >= MAX_PENDING_COMANDAS;
+
   return {
     comanda: comandaWithPayment, // Return the updated comanda with payment info
     pesquisaProduto,
@@ -168,5 +176,7 @@ export const useComandaForm = (carregarComandas: () => Promise<void>, setSalvand
     startEditingProduct,
     refreshBairros,
     resetComanda, // Add this to the return object
+    isCadastroBloqueado,
+    loadingBloqueio: loadingPendentes,
   };
 };
