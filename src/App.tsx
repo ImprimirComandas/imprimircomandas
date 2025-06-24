@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Auth } from './pages/Auth';
 import { ResetPassword } from './pages/ResetPassword';
@@ -16,7 +17,6 @@ import { useProfileMenu } from './hooks/useProfileMenu';
 import DeliveryManagement from './components/delivery/DeliveryManagement';
 import { useTheme } from './hooks/useTheme';
 import { Toaster } from 'sonner';
-import PublicStore from "@/pages/PublicStore";
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -102,7 +102,6 @@ function App() {
             <Route path="/delivery-rates" element={<DeliveryRates />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/analytics" element={<Analytics />} />
-            <Route path="/loja/:slug" element={<PublicStore />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </>
